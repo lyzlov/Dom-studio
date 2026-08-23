@@ -519,13 +519,27 @@ table.schedule, table.table-simple {
 
 /* #region Вкладки — CSS-табы без JS */
 .tabs { padding: var(--space-md) 0; }
+/* Ряд вкладок — одна строка. Перенос на вторую строку ломал главное:
+   пять подписей вразнобой перестают читаться как один переключатель, и
+   чёрная активная теряется среди серых. Не влезло — ряд прокручивается. */
 .tabs .tab-labels {
   display: flex;
   gap: var(--space-md);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
   list-style: none;
   margin: 0 0 var(--space-sm);
   padding: 0;
+}
+.tabs .tab-labels::-webkit-scrollbar { display: none; }
+.tabs .tab-labels label { white-space: nowrap; }
+/* На узком экране ряд превращается в раскрывающийся список — тот же элемент,
+   что фильтр карточек: видно только выбранное, остальное под шевроном. */
+.tab-select { display: none; margin: 0 0 var(--space-sm); }
+@media (max-width: 699px) {
+  .tabs .tab-labels { display: none; }
+  .tab-select { display: block; }
 }
 .tabs .tab-labels label {
   display: inline-block;
@@ -537,9 +551,6 @@ table.schedule, table.table-simple {
   cursor: pointer;
 }
 .tabs .tab-labels label:hover { color: var(--color-text); }
-/* Действие в ряду вкладок — кнопка, а не вкладка: переключение вида
-   и запуск действия не должны выглядеть одинаково. */
-.tabs .tab-labels .tab-action { margin-left: var(--space-2xs); }
 .tabs input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
 .tabs .tab-panel { display: none; max-width: var(--measure); }
 .tabs .tab-panel:has(.schedule-wrap) { max-width: none; }
@@ -968,8 +979,8 @@ table.table-simple th, table.table-simple td {
 }
 table.schedule th:first-child, table.schedule td:first-child,
 table.table-simple th:first-child, table.table-simple td:first-child { padding-left: var(--space-xs); }
-/* Шапка — тот же стиль, что ряд вкладок: своего вида у таблицы нет. */
-table.schedule th, table.table-simple th {
+/* Простая таблица: шапка в стиле вкладок, без градиента. */
+table.table-simple th {
   font-weight: 400;
   color: var(--color-muted);
   text-transform: uppercase;
@@ -978,11 +989,23 @@ table.schedule th, table.table-simple th {
   padding-top: var(--space-2xs);
   padding-bottom: var(--space-2xs);
 }
+/* Расписание: шапка полосой фирменного градиента, белый капс — как было
+   до 2026-08-23. Строки при наведении не подсвечиваются. */
+table.schedule thead tr { background: var(--gradient-brand); }
+table.schedule th {
+  font-weight: 600;
+  color: var(--white);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  white-space: nowrap;
+  border-bottom: none;
+  padding-top: var(--space-2xs);
+  padding-bottom: var(--space-2xs);
+}
 /* Отступ до следующего абзаца — тот же, что «заголовок → содержимое». */
 table.table-simple { margin-bottom: var(--space-sm); }
 table.schedule td.cell-day, table.schedule td.cell-time { padding-left: var(--space-sm); }
 table.schedule tbody tr { background: var(--color-bg); }
-table.schedule tbody tr:hover { background: var(--color-surface); }
 table.schedule th { user-select: none; padding: 0; }
 /* Сортировка — кнопка внутри th: <th> сам по себе не фокусируется
    и с клавиатуры был недоступен. */
@@ -1002,17 +1025,61 @@ table.schedule th .sort-btn {
   cursor: pointer;
 }
 table.schedule th:first-child .sort-btn { padding-left: var(--space-xs); }
-table.schedule th .sort-btn:hover { color: var(--color-text); }
+table.schedule th .sort-btn:hover { color: var(--white); text-decoration: underline; }
 table.schedule th .sort-btn::after { content: ""; font-size: 0.8em; }
-table.schedule th[aria-sort] .sort-btn { color: var(--color-text); text-decoration: underline; }
+table.schedule th[aria-sort] .sort-btn { color: var(--white); text-decoration: underline; }
 table.schedule th[aria-sort="ascending"] .sort-btn::after { content: "\2191"; }
 table.schedule th[aria-sort="descending"] .sort-btn::after { content: "\2193"; }
-table.schedule th .sort-btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+table.schedule th .sort-btn:focus-visible { outline: 2px solid var(--white); outline-offset: -2px; }
 table.schedule td.cell-time { font-weight: 500; color: var(--color-text); white-space: nowrap; }
 table.schedule td.cell-day { font-weight: 600; color: var(--color-text); }
 /* Тип занятия — цветом, куратор — обычным текстом: пять кураторов не
    раскладывались на три акцента, а типов занятий ровно три. */
 .type-tag { font-weight: 500; }
+/* Таблица на узком экране разворачивается в блоки: четыре-семь колонок в 358 px
+   не помещаются, шапка налезает сама на себя, а горизонтальная прокрутка
+   заставляет возить таблицу пальцем. Каждая строка становится карточкой,
+   подпись колонки берётся из data-label ячейки. */
+@media (max-width: 699px) {
+  table.schedule, table.table-simple { display: block; min-width: 0; }
+  .tabs table.schedule { min-width: 0; }
+  table.schedule colgroup, table.table-simple colgroup,
+  table.schedule thead, table.table-simple thead { display: none; }
+  table.schedule tbody, table.table-simple tbody,
+  table.schedule tr, table.table-simple tr,
+  table.schedule td, table.table-simple td { display: block; }
+  table.schedule tr, table.table-simple tr {
+    border-bottom: 1px solid var(--color-text);
+    padding: var(--space-2xs) 0;
+  }
+  table.schedule td, table.table-simple td {
+    border: none;
+    padding: var(--space-3xs) 0;
+    display: grid;
+    grid-template-columns: 11ch 1fr;
+    gap: var(--space-2xs);
+    align-items: baseline;
+  }
+  table.schedule td::before, table.table-simple td::before {
+    content: attr(data-label);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  table.schedule td:empty { display: none; }
+  /* День недели — заголовок группы строк, а не поле со значением. */
+  table.schedule td.cell-day {
+    display: block;
+    padding: 0 0 var(--space-2xs);
+    font-size: var(--text-md);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+  table.schedule td.cell-day::before { content: none; }
+  table.schedule td:first-child, table.table-simple td:first-child,
+  table.schedule td.cell-time, table.schedule td.cell-day { padding-left: 0; }
+}
 .type-courses { color: var(--type-courses); }
 .type-buro { color: var(--type-buro); }
 .type-subscription { color: var(--type-subscription); }

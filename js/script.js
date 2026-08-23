@@ -74,6 +74,55 @@
   }
   /* #endregion */
 
+  /* #region Вкладки на узком экране — раскрывающийся список
+     Разметка вкладок остаётся прежней (radio + label), список строится рядом
+     и просто нажимает нужную подпись. Внешне это тот же элемент, что фильтр
+     карточек, поэтому отдельного вида в каталоге не появляется. */
+  document.querySelectorAll(".tabs").forEach(function (tabs) {
+    var labels = Array.prototype.slice.call(tabs.querySelectorAll(".tab-labels label"));
+    if (labels.length < 2) return;
+
+    var box = document.createElement("div");
+    box.className = "tab-select filter-tab";
+    var current = labels.filter(function (l) {
+      var input = document.getElementById(l.getAttribute("for"));
+      return input && input.checked;
+    })[0] || labels[0];
+
+    box.innerHTML = '<button type="button" class="filter-tab-label">'
+      + '<span class="filter-tab-title">Раздел</span>'
+      + '<span class="filter-current"></span></button>'
+      + '<div class="dropdown filter-dropdown"><ul class="dropdown-inner"></ul></div>';
+    var toggle = box.querySelector(".filter-tab-label");
+    var value = box.querySelector(".filter-current");
+    var list = box.querySelector(".dropdown-inner");
+    value.textContent = current.textContent;
+
+    labels.forEach(function (label) {
+      var li = document.createElement("li");
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = label.textContent;
+      btn.addEventListener("click", function () {
+        label.click();
+        value.textContent = label.textContent;
+        box.classList.remove("is-open");
+      });
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+
+    toggle.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var wasOpen = box.classList.contains("is-open");
+      document.querySelectorAll(".filter-tab.is-open").forEach(function (g) { g.classList.remove("is-open"); });
+      if (!wasOpen) box.classList.add("is-open");
+    });
+
+    tabs.querySelector(".tab-labels").insertAdjacentElement("beforebegin", box);
+  });
+  /* #endregion */
+
   /* #region Управление фокусом для наложений (модалка, лайтбокс)
      Общий хелпер: запоминает элемент, с которого открыли, держит табуляцию
      внутри панели и возвращает фокус на место при закрытии. Без этого
@@ -254,13 +303,14 @@
         for (var j = 0; j < runLen; j++) {
           var r = data[i + j];
           var dayCell = j === 0 ? '<td class="cell-day" rowspan="' + runLen + '">' + r.day + "</td>" : "";
+          // data-label — подпись колонки для мобильного вида, где шапка скрыта.
           html += "<tr>" + dayCell +
-            '<td class="cell-time">' + r.time + "</td>" +
-            "<td>" + r.course + "</td>" +
-            "<td>" + r.age + "</td>" +
-            "<td>" + typeTag(r.direction) + "</td>" +
-            "<td>" + r.hall + "</td>" +
-            "<td>" + r.curator + "</td>" +
+            '<td class="cell-time" data-label="Время">' + r.time + "</td>" +
+            '<td data-label="Занятие">' + r.course + "</td>" +
+            '<td data-label="Возраст">' + r.age + "</td>" +
+            '<td data-label="Направление">' + typeTag(r.direction) + "</td>" +
+            '<td data-label="Зал">' + r.hall + "</td>" +
+            '<td data-label="Куратор">' + r.curator + "</td>" +
             "</tr>";
         }
         i += runLen;
