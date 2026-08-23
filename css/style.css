@@ -989,12 +989,18 @@ table.table-simple th {
   padding-top: var(--space-2xs);
   padding-bottom: var(--space-2xs);
 }
-/* Расписание: шапка полосой фирменного градиента, белый капс — как было
-   до 2026-08-23. Строки при наведении не подсвечиваются. */
-table.schedule thead tr { background: var(--gradient-brand); }
+/* Расписание: шапка полосой фирменного градиента. Градиент приглушён
+   наполовину белым слоем поверх — это тот же токен, отдельного «светлого»
+   градиента заводить не пришлось. Текст чёрный: белый на полном градиенте
+   давал 2.8–3.9:1 и не проходил AA. Строки при наведении не подсвечиваются. */
+table.schedule thead tr {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .5), rgba(255, 255, 255, .5)),
+    var(--gradient-brand);
+}
 table.schedule th {
   font-weight: 600;
-  color: var(--white);
+  color: var(--color-text);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
   white-space: nowrap;
@@ -1025,12 +1031,12 @@ table.schedule th .sort-btn {
   cursor: pointer;
 }
 table.schedule th:first-child .sort-btn { padding-left: var(--space-xs); }
-table.schedule th .sort-btn:hover { color: var(--white); text-decoration: underline; }
+table.schedule th .sort-btn:hover { color: var(--color-text); text-decoration: underline; }
 table.schedule th .sort-btn::after { content: ""; font-size: 0.8em; }
-table.schedule th[aria-sort] .sort-btn { color: var(--white); text-decoration: underline; }
+table.schedule th[aria-sort] .sort-btn { color: var(--color-text); text-decoration: underline; }
 table.schedule th[aria-sort="ascending"] .sort-btn::after { content: "\2191"; }
 table.schedule th[aria-sort="descending"] .sort-btn::after { content: "\2193"; }
-table.schedule th .sort-btn:focus-visible { outline: 2px solid var(--white); outline-offset: -2px; }
+table.schedule th .sort-btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
 table.schedule td.cell-time { font-weight: 500; color: var(--color-text); white-space: nowrap; }
 table.schedule td.cell-day { font-weight: 600; color: var(--color-text); }
 /* Тип занятия — цветом, куратор — обычным текстом: пять кураторов не
