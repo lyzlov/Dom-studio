@@ -6,9 +6,9 @@
   <title>События — ДОМ Студия архитектуры и искусства</title>
   <meta name="description" content="Разовые интенсивы, открытые уроки и воркшопы студии ДОМ.">
   <link rel="icon" href="../../favicon.ico">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preload" href="../../fonts/golos-text-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../../fonts/roboto-mono-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../../css/fonts.css">
   <link rel="stylesheet" href="../../css/tokens.css">
   <link rel="stylesheet" href="../../css/style.css">
   <link rel="canonical" href="https://lyzlov.github.io/Dom-studio/html/events/events.html">
@@ -80,11 +80,13 @@
       <input type="radio" name="tabs" id="tabs-format" checked>
       <input type="radio" name="tabs" id="tabs-age">
       <input type="radio" name="tabs" id="tabs-price">
+      <div class="tab-bar">
       <ul class="tab-labels">
         <li><label for="tabs-format">Формат</label></li>
         <li><label for="tabs-age">Возраст</label></li>
         <li><label for="tabs-price">Стоимость</label></li>
       </ul>
+      </div>
       <div class="tab-panels">
         <div class="tab-panel panel-format"><p>Интенсивы, открытые уроки, воркшопы с приглашёнными архитекторами, ярмарки и выставки работ.</p></div>
         <div class="tab-panel panel-age"><p>Указывается в карточке каждого события — участвовать может любая возрастная ступень (3–16 лет), если событие не помечено иначе.</p></div>
@@ -134,8 +136,8 @@
       <div class="footer-legal">
 <!-- TODO: реквизиты не согласованы — ТЗ/Сводные вопросы (согласовать).md, группа 2 -->
       <span>Архитектурная студия ДОМ</span>
-      <span>Политика конфиденциальности</span>
-      <span>Договор-оферты</span>
+      <a href="../about/privacy.html">Политика конфиденциальности</a>
+      <a href="../about/offer.html">Договор-оферта</a>
       </div>
     </div>
   </footer>

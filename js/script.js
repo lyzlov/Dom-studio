@@ -119,7 +119,8 @@
       if (!wasOpen) box.classList.add("is-open");
     });
 
-    tabs.querySelector(".tab-labels").insertAdjacentElement("beforebegin", box);
+    var bar = tabs.querySelector(".tab-bar") || tabs.querySelector(".tab-labels");
+    bar.insertAdjacentElement("beforebegin", box);
   });
   /* #endregion */
 
@@ -141,7 +142,12 @@
         document.body.classList.add("is-locked");
         var panel = root.querySelector(panelSelector) || root;
         var first = panel.querySelector(FOCUSABLE);
-        (first || panel).focus();
+        if (first) { first.focus(); return; }
+        // Внутри панели нечего фокусировать (лайтбокс — одна картинка).
+        // Без tabindex фокус остаётся на странице под наложением, и Escape
+        // до обработчика не доходит.
+        if (!panel.hasAttribute("tabindex")) panel.setAttribute("tabindex", "-1");
+        panel.focus();
       },
       close: function () {
         if (root.hidden) return;
@@ -449,10 +455,19 @@
       b.setAttribute("aria-expanded", "false");
     });
   }
+  // Иконка бургера и подпись меняются вместе с состоянием: открытое меню
+  // закрывается тем же местом, куда пользователь уже целился.
+  function setToggleIcon(open) {
+    if (!toggle) return;
+    var img = toggle.querySelector("img");
+    if (img) img.src = img.src.replace(/(menu|close)\.svg$/, open ? "close.svg" : "menu.svg");
+    toggle.setAttribute("aria-label", open ? "Закрыть меню" : "Меню");
+  }
   function closeNav() {
     if (!toggle || !nav) return;
     nav.classList.remove("is-open");
     toggle.setAttribute("aria-expanded", "false");
+    setToggleIcon(false);
     closeAllGroups();
   }
 
@@ -461,6 +476,7 @@
       var open = !nav.classList.contains("is-open");
       nav.classList.toggle("is-open", open);
       toggle.setAttribute("aria-expanded", String(open));
+      setToggleIcon(open);
       if (!open) closeAllGroups();
     });
     // Клик по ссылке в открытом меню — меню закрывается.

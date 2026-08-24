@@ -6,9 +6,9 @@
   <title>ДОМ — Студия архитектуры и искусства для детей</title>
   <meta name="description" content="Учим создавать, а не копировать. Архитектура и искусство для детей 3–16 лет, Красногорск. 1 сентября 2026 — день открытых дверей, первое занятие бесплатно.">
   <link rel="icon" href="favicon.ico">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preload" href="fonts/golos-text-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/roboto-mono-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="canonical" href="https://lyzlov.github.io/Dom-studio/">
@@ -76,6 +76,7 @@
         <p class="hero-slogan"><!-- Формулировка из Манифест и принципы.md, раздел 1.
              На согласовании у Ольги — Структура сайта, раздел 1, Hero, п.2 -->Учим создавать, а не копировать</p>
         <p class="hero-facts">3–16 лет · Красногорск, Ильинское-Усово · первое занятие бесплатно</p>
+        <p class="head-actions"><button type="button" class="btn" data-modal-open>Записаться</button></p>
       </div>
       <a class="hero-banner" href="html/events/event-opendoor.html">
         <span class="banner-date">1 сентября 2026</span>
@@ -87,12 +88,9 @@
   </section>
 
   
-  <section class="directions">
+  <section class="quicklinks">
     <div class="container">
-      <div class="directions-grid"><div class="direction"><a class="direction-title" href="html/courses/courses.html#direction=Авторские%20курсы">Авторские курсы</a><p>Модулями по 5–6 недель. Робототехника, архитектура игр.</p></div><div class="direction"><a class="direction-title" href="html/courses/courses.html#direction=Бюро">Бюро</a><p>Два семестра: осень-зима 17 недель, зима-весна 19 недель.</p></div><div class="direction"><a class="direction-title" href="html/courses/courses.html#direction=Занятия%20по%20абонементу">Занятия по абонементу</a><p>Абонемент на 6 или 12 занятий, разовое посещение.</p></div></div>
-      <p class="hero-links">
-        <button type="button" class="btn" data-modal-open>Записаться</button>
-      </p>
+      <p><a href="html/courses/courses.html">Курсы</a><a href="html/events/events.html">События</a><a href="html/about/studio.html">Студия</a></p>
     </div>
   </section>
   </div>
@@ -122,8 +120,8 @@
       <div class="footer-legal">
 <!-- TODO: реквизиты не согласованы — ТЗ/Сводные вопросы (согласовать).md, группа 2 -->
       <span>Архитектурная студия ДОМ</span>
-      <span>Политика конфиденциальности</span>
-      <span>Договор-оферты</span>
+      <a href="html/about/privacy.html">Политика конфиденциальности</a>
+      <a href="html/about/offer.html">Договор-оферта</a>
       </div>
     </div>
   </footer>
