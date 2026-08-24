@@ -36,7 +36,7 @@
             <ul class="dropdown-inner">
             <li><a href="courses.html" aria-current="page">Курсы</a></li>
             <li><a href="../events/events.html">События</a></li>
-                        <li><a href="../services/services.html">Услуги</a></li>
+            <li><a href="../services/services.html">Услуги</a></li>
             <li><a href="../services/admissions.html">Профориентация</a></li>
             <li><a href="../camp/camp.html">Летний лагерь</a></li>
             </ul>
@@ -86,8 +86,8 @@
             <button type="button" class="icon-btn" data-gallery-next aria-label="Следующий кадр"><img src="../../icons/chevron-right.svg" alt="" width="20" height="20"></button>
           </div>
           <div class="gallery-modes" role="group" aria-label="Вид галереи">
-            <button type="button" class="icon-btn" data-mode="strip" aria-pressed="true" aria-label="Лента"><img src="../../icons/view-strip.svg" alt="" width="20" height="20"></button>
-            <button type="button" class="icon-btn" data-mode="grid" aria-pressed="false" aria-label="Плитка"><img src="../../icons/view-grid.svg" alt="" width="20" height="20"></button>
+            <button type="button" class="icon-btn" data-mode="strip" aria-pressed="false" aria-label="Лента"><img src="../../icons/view-strip.svg" alt="" width="20" height="20"></button>
+            <button type="button" class="icon-btn" data-mode="grid" aria-pressed="true" aria-label="Плитка"><img src="../../icons/view-grid.svg" alt="" width="20" height="20"></button>
           </div>
         </div>
         <div class="gallery-view" data-gallery-view><button type="button" class="gallery-item" data-lightbox-open data-full="../../images/courses/course-arch-46-800.jpg" aria-label="Архитектура"><picture><source type="image/webp" srcset="../../images/courses/course-arch-46-400.webp 400w, ../../images/courses/course-arch-46-800.webp 800w" sizes="(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw"><img src="../../images/courses/course-arch-46-400.jpg" srcset="../../images/courses/course-arch-46-400.jpg 400w, ../../images/courses/course-arch-46-800.jpg 800w" sizes="(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw" class="card-image" alt="Архитектура" width="400" height="300" loading="eager" fetchpriority="high" decoding="async"></picture></button></div>
@@ -105,8 +105,6 @@
 <p>Сквозная структура занятия для всех курсов студии — общий круг (беседа, знакомство с темой) → творчество (работа по теме с заданным набором материалов) → рефлексия (обсуждение сделанного, мини-презентация); для курсов с макетированием и графикой перед творческой частью — вводная презентация по теме.</p><!-- TODO: подробная программа курса Архитектура (Занятия по абонементу) не описана в собранных материалах — курс из новой линейки афиш 2026, Курсы (согласовать).md, раздел 2. Формат и темы уточняются у Ольги/Регины. -->
     </div>
   </section>
-
-  
   </main>
 
   <footer class="site-footer">
@@ -124,7 +122,7 @@
         </div>
         <div>
           <h2>Разделы</h2>
-          <p><a href="../courses/courses.html">Курсы</a></p>
+          <p><a href="courses.html">Курсы</a></p>
           <p><a href="../events/events.html">События</a></p>
           <p><a href="../services/services.html">Услуги</a></p>
           <p><a href="../about/studio.html">Студия</a></p>
@@ -147,7 +145,6 @@
       <!-- TODO: форма не отправляется — бэкенд (Cloudflare Worker → Telegram + таблица)
            не реализован, ДОМ - ТЗ на сайт.md, раздел 2, п.2 -->
       <div class="form-fields">
-      
         <div class="form-row">
           <label for="modal-name">Имя родителя</label>
           <input type="text" id="modal-name" name="name" required>

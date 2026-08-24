@@ -36,7 +36,7 @@
             <ul class="dropdown-inner">
             <li><a href="../courses/courses.html">Курсы</a></li>
             <li><a href="events.html" aria-current="page">События</a></li>
-                        <li><a href="../services/services.html">Услуги</a></li>
+            <li><a href="../services/services.html">Услуги</a></li>
             <li><a href="../services/admissions.html">Профориентация</a></li>
             <li><a href="../camp/camp.html">Летний лагерь</a></li>
             </ul>
@@ -72,7 +72,9 @@
       <div>
         <p class="eyebrow">Показ работ</p>
         <h1>Экскурсия и показ работ учеников</h1>
-        <p class="meta-line"><strong>Дата:</strong> 11–13 июня 2026<br><!-- TODO: возраст не указан --><strong>Место:</strong> Студия ДОМ, Новая Рига<br><strong>Цена:</strong> Бесплатно</p>
+        <p class="meta-line"><strong>Дата:</strong> 11–13 июня 2026<br>
+        <strong>Место:</strong> Студия ДОМ, Ильинское-Усово<br>
+        <strong>Цена:</strong> Бесплатно</p>
       </div>
       <div class="gallery" data-gallery data-default-mode="grid">
         <div class="gallery-bar">
@@ -82,8 +84,8 @@
             <button type="button" class="icon-btn" data-gallery-next aria-label="Следующий кадр"><img src="../../icons/chevron-right.svg" alt="" width="20" height="20"></button>
           </div>
           <div class="gallery-modes" role="group" aria-label="Вид галереи">
-            <button type="button" class="icon-btn" data-mode="strip" aria-pressed="true" aria-label="Лента"><img src="../../icons/view-strip.svg" alt="" width="20" height="20"></button>
-            <button type="button" class="icon-btn" data-mode="grid" aria-pressed="false" aria-label="Плитка"><img src="../../icons/view-grid.svg" alt="" width="20" height="20"></button>
+            <button type="button" class="icon-btn" data-mode="strip" aria-pressed="false" aria-label="Лента"><img src="../../icons/view-strip.svg" alt="" width="20" height="20"></button>
+            <button type="button" class="icon-btn" data-mode="grid" aria-pressed="true" aria-label="Плитка"><img src="../../icons/view-grid.svg" alt="" width="20" height="20"></button>
           </div>
         </div>
         <div class="gallery-view" data-gallery-view><button type="button" class="gallery-item" data-lightbox-open data-full="../../images/events/ev-13-parents-800.jpg" aria-label="Экскурсия и показ работ учеников"><picture><source type="image/webp" srcset="../../images/events/ev-13-parents-400.webp 400w, ../../images/events/ev-13-parents-800.webp 800w" sizes="(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw"><img src="../../images/events/ev-13-parents-400.jpg" srcset="../../images/events/ev-13-parents-400.jpg 400w, ../../images/events/ev-13-parents-800.jpg 800w" sizes="(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw" class="card-image" alt="Экскурсия и показ работ учеников" width="400" height="710" loading="eager" fetchpriority="high" decoding="async"></picture></button></div>
@@ -96,16 +98,11 @@
     </div>
   </section>
 
-  <!-- TODO: галерея прошедшего события — кадры не разложены по событиям, нужен разбор заказчика. -->
-
   <section class="block">
     <div class="container">
 <p>Итоговый показ работ учеников студии для родителей и гостей.</p><!-- TODO: развёрнутое описание события не подтверждено — черновик по краткому заголовку из корпуса материалов. -->
     </div>
   </section>
-
-
-  
   </main>
 
   <footer class="site-footer">
@@ -124,7 +121,7 @@
         <div>
           <h2>Разделы</h2>
           <p><a href="../courses/courses.html">Курсы</a></p>
-          <p><a href="../events/events.html">События</a></p>
+          <p><a href="events.html">События</a></p>
           <p><a href="../services/services.html">Услуги</a></p>
           <p><a href="../about/studio.html">Студия</a></p>
         </div>
@@ -146,7 +143,6 @@
       <!-- TODO: форма не отправляется — бэкенд (Cloudflare Worker → Telegram + таблица)
            не реализован, ДОМ - ТЗ на сайт.md, раздел 2, п.2 -->
       <div class="form-fields">
-      
         <div class="form-row">
           <label for="modal-name">Имя родителя</label>
           <input type="text" id="modal-name" name="name" required>

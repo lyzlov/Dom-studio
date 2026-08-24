@@ -36,7 +36,7 @@
             <ul class="dropdown-inner">
             <li><a href="../courses/courses.html">Курсы</a></li>
             <li><a href="events.html" aria-current="page">События</a></li>
-                        <li><a href="../services/services.html">Услуги</a></li>
+            <li><a href="../services/services.html">Услуги</a></li>
             <li><a href="../services/admissions.html">Профориентация</a></li>
             <li><a href="../camp/camp.html">Летний лагерь</a></li>
             </ul>
@@ -72,7 +72,11 @@
       <div>
         <p class="eyebrow">Открытый день</p>
         <h1>День открытых дверей</h1>
-        <p class="meta-line"><strong>Дата:</strong> 1 сентября 2026<br><strong>Время и возраст:</strong> любой возраст<br><strong>Место:</strong> Студия ДОМ, Новая Рига<br><strong>Кураторы:</strong> Ольга Зинюкова, Регина Назарова<br><strong>Цена:</strong> Бесплатно</p>
+        <p class="meta-line"><strong>Дата:</strong> 1 сентября 2026<br>
+        <strong>Время и возраст:</strong> любой возраст<br>
+        <strong>Место:</strong> Студия ДОМ, Ильинское-Усово<br>
+        <strong>Кураторы:</strong> Ольга Зинюкова, Регина Назарова<br>
+        <strong>Цена:</strong> Бесплатно</p>
         <p class="head-actions"><button type="button" class="btn" data-modal-open>Записаться</button></p>
       </div>
       <div class="gallery" data-gallery data-default-mode="grid">
@@ -83,8 +87,8 @@
             <button type="button" class="icon-btn" data-gallery-next aria-label="Следующий кадр"><img src="../../icons/chevron-right.svg" alt="" width="20" height="20"></button>
           </div>
           <div class="gallery-modes" role="group" aria-label="Вид галереи">
-            <button type="button" class="icon-btn" data-mode="strip" aria-pressed="true" aria-label="Лента"><img src="../../icons/view-strip.svg" alt="" width="20" height="20"></button>
-            <button type="button" class="icon-btn" data-mode="grid" aria-pressed="false" aria-label="Плитка"><img src="../../icons/view-grid.svg" alt="" width="20" height="20"></button>
+            <button type="button" class="icon-btn" data-mode="strip" aria-pressed="false" aria-label="Лента"><img src="../../icons/view-strip.svg" alt="" width="20" height="20"></button>
+            <button type="button" class="icon-btn" data-mode="grid" aria-pressed="true" aria-label="Плитка"><img src="../../icons/view-grid.svg" alt="" width="20" height="20"></button>
           </div>
         </div>
         <div class="gallery-view" data-gallery-view><button type="button" class="gallery-item" data-lightbox-open data-full="../../images/events/ev-06-opendoor-800.jpg" aria-label="День открытых дверей"><picture><source type="image/webp" srcset="../../images/events/ev-06-opendoor-400.webp 400w, ../../images/events/ev-06-opendoor-800.webp 800w" sizes="(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw"><img src="../../images/events/ev-06-opendoor-400.jpg" srcset="../../images/events/ev-06-opendoor-400.jpg 400w, ../../images/events/ev-06-opendoor-800.jpg 800w" sizes="(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw" class="card-image" alt="День открытых дверей" width="400" height="496" loading="eager" fetchpriority="high" decoding="async"></picture></button></div>
@@ -102,9 +106,6 @@
 <p>День открытых дверей — способ познакомиться со студией без обязательств: пройти по обоим залам (Большому и Малому), увидеть, как устроено рабочее пространство (зона пуфиков для общего круга, стол для малышей, большой стол для старших учеников с одновременной работой над 5–8 макетами), и застать открытый мастер-класс, чтобы оценить формат занятий — круг → творчество → рефлексия — на месте, а не по описанию.</p><p>Для родителей — короткая презентация о методике студии и педагогах, возможность задать вопросы Ольге Зинюковой и администратору студии напрямую, обсудить выбор направления и подходящую возрастную группу для ребёнка.</p><!-- TODO: точное время начала/продолжительность дня открытых дверей не подтверждены в собранных материалах — уточнить у Ольги/Регины перед публикацией. -->
     </div>
   </section>
-
-
-  
   </main>
 
   <footer class="site-footer">
@@ -123,7 +124,7 @@
         <div>
           <h2>Разделы</h2>
           <p><a href="../courses/courses.html">Курсы</a></p>
-          <p><a href="../events/events.html">События</a></p>
+          <p><a href="events.html">События</a></p>
           <p><a href="../services/services.html">Услуги</a></p>
           <p><a href="../about/studio.html">Студия</a></p>
         </div>
@@ -145,7 +146,6 @@
       <!-- TODO: форма не отправляется — бэкенд (Cloudflare Worker → Telegram + таблица)
            не реализован, ДОМ - ТЗ на сайт.md, раздел 2, п.2 -->
       <div class="form-fields">
-      
         <div class="form-row">
           <label for="modal-name">Имя родителя</label>
           <input type="text" id="modal-name" name="name" required>
