@@ -45,7 +45,8 @@
         "тип": "текст",
         "текст": "_content/text/pages/privacy.html"
       }
-    ]
+    ],
+    "обёртка": "doc"
   },
   "about/offer/index.html": {
     "title": "Договор-оферта — ДОМ",
@@ -68,7 +69,8 @@
         "тип": "текст",
         "текст": "_content/text/pages/offer.html"
       }
-    ]
+    ],
+    "обёртка": "doc"
   },
   "about/principles/index.html": {
     "title": "Наши принципы — ДОМ",

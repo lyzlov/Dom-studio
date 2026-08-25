@@ -1,369 +1,154 @@
 /**
- * render.mjs — сборка страниц сайта ДОМ из данных.
- *
- * Модуль чистый: ни файловой системы, ни сети, ни Node-API. Поэтому один и тот
- * же код работает в двух местах — в браузерном редакторе и в Node при сборке
- * из командной строки или по расписанию.
- *
- * Сборка происходит при сохранении, а не при просмотре: на выходе обычный
- * статический html, в котором лежит всё. Сборка в браузере посетителя ломает
- * превью в мессенджерах (они не выполняют JS) и ухудшает индексацию.
+ * render.mjs — каркас страницы: голова, шапка, подвал, форма, галерея, заголовок раздела.
  */
+
+import { Р as рисовать, esc } from './template.mjs';
+
+const Р = (имя, данные) => рисовать(имя, данные).replace(/\n$/, '');
 
 /* #region Вспомогательное */
-export const esc = s => String(s == null ? '' : s)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+export { esc };
 
-/** Путь к корню сайта с глубины depth: 0 → '', 2 → '../../' */
 export const up = depth => '../'.repeat(depth);
 
-/** Глубина страницы выводится из её пути, отдельно передавать нечего. */
 export const глубина = путь => путь.split('/').length - 1;
 
-/**
- * Кратчайшая ссылка от одной страницы сайта к другой.
- * 'html/courses/c.html' → 'html/events/e.html' даёт '../events/e.html'.
- * Так же, как писали руками: без общего префикса и без лишних '../'.
- */
 export function ссылка(откуда, куда) {
   const a = откуда.split('/').slice(0, -1), b = куда.split('/');
   let i = 0;
   while (i < a.length && i < b.length - 1 && a[i] === b[i]) i++;
   const путь = '../'.repeat(a.length - i) + b.slice(i).join('/');
-  // Адрес указывает на папку: /courses/game-arch/, а не /…/index.html.
-  // Имя файла из ссылки убирается, иначе оно навсегда попадёт в адресную строку.
   const без = путь.replace(/(^|\/)index\.html$/, '$1');
   return без === '' ? './' : без;
 }
 
-/** Строка есть — вернуть, нет — пустая строка. Убирает россыпь тернарников. */
 const opt = (v, fn) => (v == null || v === '' || (Array.isArray(v) && !v.length)) ? '' : fn(v);
 
-/** Отступ в n пробелов для каждой строки блока — чтобы вложенность читалась. */
 export const pad = (n, s) => s.split('\n').map(l => l ? ' '.repeat(n) + l : l).join('\n');
 
-/** Прошло ли событие. Сравнение по дате окончания включительно. */
 export const прошло = (поКакую, сегодня) => поКакую < сегодня;
-/* #endregion */
 
 /* #region Каркас: head, шапка, подвал, модальное окно */
-// Две группы и два пункта верхнего уровня. Порядок и подписи одни на весь
-// сайт: раньше на страницах лагеря пункт назывался «Лагерь» и стоял третьим,
-// а на остальных — «Летний лагерь» и пятым.
-const НАВИГАЦИЯ = [
-  { группа: 'Деятельность', пункты: [
-    { имя: 'Курсы', путь: 'courses/index.html' },
-    { имя: 'События', путь: 'events/index.html' },
-    { имя: 'Услуги', путь: 'services/index.html' },
-    { имя: 'Профориентация', путь: 'services/admissions/index.html' },
-    { имя: 'Летний лагерь', путь: 'camp/index.html' },
-  ]},
-  { группа: 'О нас', пункты: [
-    { имя: 'Студия', путь: 'about/studio/index.html' },
-    { имя: 'Команда', путь: 'about/team/index.html' },
-    { имя: 'Наши принципы', путь: 'about/principles/index.html' },
-  ]},
-  { имя: 'Блог', путь: 'blog/index.html' },
-  { имя: 'FAQ', путь: 'about/faq/index.html' },
-];
-
-const ПОДВАЛ_РАЗДЕЛЫ = [
-  { имя: 'Курсы', путь: 'courses/index.html' },
-  { имя: 'События', путь: 'events/index.html' },
-  { имя: 'Услуги', путь: 'services/index.html' },
-  { имя: 'Студия', путь: 'about/studio/index.html' },
-];
-
 function head({ site, title, description, путь, depth, image }) {
-  const u = up(depth);
-  // Канонический адрес — тот, что видит человек: папка, а не index.html.
   const абс = p => site.сайт.адрес.replace(/\/$/, '') + '/' + p.replace(/(^|\/)index\.html$/, '$1');
-  const og = image || '_content/media/og-cover.jpg';
-  return `<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${esc(title)}</title>
-  <meta name="description" content="${esc(description)}">
-  <link rel="icon" href="${u}favicon.ico">
-  <link rel="preload" href="${u}_theme/fonts/golos-text-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="${u}_theme/fonts/roboto-mono-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="${u}_theme/fonts.css">
-  <link rel="stylesheet" href="${u}_theme/tokens.css">
-  <link rel="stylesheet" href="${u}_theme/style.css">
-  <link rel="canonical" href="${esc(абс(путь))}">
-  <meta name="theme-color" content="#ffffff">
-  <meta property="og:type" content="website">
-  <meta property="og:locale" content="ru_RU">
-  <meta property="og:site_name" content="${esc(site.организация.полное)}">
-  <meta property="og:title" content="${esc(title)}">
-  <meta property="og:description" content="${esc(description)}">
-  <meta property="og:url" content="${esc(абс(путь))}">
-  <meta property="og:image" content="${esc(абс(og))}">
-  <meta name="twitter:card" content="summary_large_image">
-</head>`;
+  return Р('head', {
+    u: up(depth), title, description,
+    канонический: абс(путь),
+    организация: site.организация.полное,
+    обложка: абс(image || '_content/media/og-cover.jpg'),
+  });
 }
 
-function шапка({ site, depth, путь, активный, крошки }) {
-  const u = up(depth);
+function шапка({ site, структура, depth, путь, активный, крошки }) {
   const L = цель => ссылка(путь, цель);
-  const пункт = (p, отступ) =>
-    `${отступ}<li><a href="${L(p.путь)}"${p.путь === активный ? ' aria-current="page"' : ''}>${esc(p.имя)}</a></li>`;
-  const меню = НАВИГАЦИЯ.map(г => г.группа ? `        <li class="nav-group">
-          <button type="button" class="nav-group-label" aria-expanded="false">${esc(г.группа)}</button>
-          <div class="dropdown">
-            <ul class="dropdown-inner">
-${г.пункты.map(p => пункт(p, '            ')).join('\n')}
-            </ul>
-          </div>
-        </li>` : пункт(г, '        ')).join('\n');
-
-  // Последняя крошка — не ссылка, и разделитель перед ней лежит внутри span:
-  // так он не отрывается от названия при переносе строки.
-  const ссылки = крошки.slice(0, -1).map(к => `<a href="${L(к.путь)}">${esc(к.имя)}</a>`).join(' / ');
-  const последняя = крошки[крошки.length - 1];
-  const строкаКрошек = ссылки
-    + `<span class="current" aria-current="page">${ссылки ? ' / ' : ''}${esc(последняя.имя)}</span>`;
-
-  return `<body>
-  <a class="skip-link" href="#main">К содержимому</a>
-  <header class="site-header">
-    <div class="container bar">
-      <a class="logo" href="${u}index.html"><img src="${u}_theme/brand/logo-dark.svg" alt="${esc(site.организация.полное)}" width="533" height="300"></a>
-      <button type="button" class="nav-toggle" aria-label="Меню" aria-expanded="false" aria-controls="site-nav"><img src="${u}_theme/icons/menu.svg" alt="" width="24" height="24"></button>
-      <nav class="site-nav" id="site-nav" aria-label="Основная навигация">
-        <ul class="nav-list">
-${меню}
-        </ul>
-      </nav>
-      <div class="header-actions">
-        <div class="social-icons" aria-label="Соцсети">
-          <a href="https://${esc(site.контакты.telegram)}" aria-label="Telegram" target="_blank" rel="noopener"><img src="${u}_theme/icons/telegram.svg" alt="" width="20" height="20"></a>
-        </div>
-      </div>
-    </div>
-    <div class="container breadcrumbs-row">
-      <nav class="breadcrumbs" aria-label="Хлебные крошки">${строкаКрошек}</nav>
-    </div>
-  </header>`;
+  const пункт = p => ({ имя: p.имя, ссылка: L(p.путь), текущий: p.путь === активный });
+  const ссылки = крошки.slice(0, -1).map((к, i) => ({ имя: к.имя, ссылка: L(к.путь), непервая: i > 0 }));
+  return Р('header', {
+    u: up(depth),
+    организация: site.организация.полное,
+    telegram: site.контакты.telegram,
+    меню: структура.navigation.меню.map(г => г.группа
+      ? { группа: г.группа, пункты: г.пункты.map(пункт) }
+      : пункт(г)),
+    ссылки, естьСсылки: ссылки.length > 0,
+    последняя: крошки[крошки.length - 1].имя,
+  });
 }
 
-function подвал({ site, depth, путь }) {
-  const u = up(depth);
+function подвал({ site, структура, depth, путь }) {
   const L = цель => ссылка(путь, цель);
-  const тел = site.контакты.телефон.replace(/[^\d+]/g, '');
-  return `  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div>
-          <img class="footer-logo" src="${u}_theme/brand/logo.svg" alt="${esc(site.организация.название)}" width="533" height="300">
-          <p>${esc(site.организация.слоган)}</p>
-        </div>
-        <div>
-          <h2>Контакты</h2>
-          <p><a href="${L('about/contacts/index.html')}">${esc(site.контакты.адрес)}</a></p>
-          <p><a href="tel:${тел}">${esc(site.контакты.телефон)}</a></p>
-          <p><a href="https://${esc(site.контакты.telegram)}" target="_blank" rel="noopener">${esc(site.контакты.telegram)}</a></p>
-        </div>
-        <div>
-          <h2>Разделы</h2>
-${ПОДВАЛ_РАЗДЕЛЫ.map(р => `          <p><a href="${L(р.путь)}">${esc(р.имя)}</a></p>`).join('\n')}
-        </div>
-      </div>
-      <div class="footer-legal">
-<!-- TODO: реквизиты не согласованы — ТЗ/Сводные вопросы (согласовать).md, группа 2 -->
-      <span>Архитектурная студия ДОМ</span>
-      <a href="${L('about/privacy/index.html')}">Политика обработки данных</a>
-      <a href="${L('about/offer/index.html')}">Договор-оферта</a>
-      </div>
-    </div>
-  </footer>`;
+  return Р('footer', {
+    u: up(depth),
+    название: site.организация.название,
+    слоган: site.организация.слоган,
+    контакты: L('about/contacts/index.html'),
+    адрес: site.контакты.адрес,
+    тел: site.контакты.телефон.replace(/[^\d+]/g, ''),
+    телефон: site.контакты.телефон,
+    telegram: site.контакты.telegram,
+    разделы: структура.navigation.подвал.map(р => ({ имя: р.имя, ссылка: L(р.путь) })),
+    политика: L('about/privacy/index.html'),
+    оферта: L('about/offer/index.html'),
+  });
 }
 
-/**
- * Форма записи. Одна разметка на два места: модальное окно и страницу
- * контактов. Идентификаторы полей различаются приставкой — два элемента с
- * одним id на странице недопустимы.
- *
- * Направление списком не спрашивается: без расписания перед глазами это
- * угадывание. Если форму открыли с карточки или со страницы занятия, данные
- * занятия подставляются справа от полей и уходят в заявку скрытым полем.
- */
-export function форма(приставка) {
-  const поле = (имя, подпись, тег, доп = '') => {
-    const id = `${приставка}-${имя}`;
-    const вход = тег === 'textarea'
-      ? `<textarea id="${id}" name="${доп}" rows="3"></textarea>`
-      : `<input type="${тег}" id="${id}" name="${доп.split(' ')[0]}"${доп.includes('required') ? ' required' : ''}>`;
-    return `        <div class="form-row${имя === 'comment' ? ' form-row-wide' : ''}">
-          <label for="${id}">${esc(подпись)}</label>
-          ${вход}
-        </div>`;
-  };
-  return `      <form class="signup-form" data-role="signup">
-      <!-- TODO: форма не отправляется — приём заявок на почту студии
-           не реализован, ДОМ - ТЗ на сайт.md, раздел 2, п.2 -->
-      <div class="form-fields">
-${поле('name', 'Имя родителя', 'text', 'name required')}
-${поле('phone', 'Телефон', 'tel', 'phone required')}
-${поле('age', 'Возраст ребёнка', 'text', 'child_age')}
-${поле('time', 'Удобное время', 'text', 'time')}
-${поле('comment', 'Комментарий', 'textarea', 'comment')}
-      </div>
-      <div class="signup-context" data-signup-context hidden>
-        <span class="contact-label">Занятие</span>
-        <p class="signup-context-title" data-signup-title></p>
-        <p class="signup-context-meta" data-signup-meta></p>
-      </div>
-      <input type="hidden" name="lesson" data-signup-value>
-      <label class="form-consent"><input type="checkbox" required> Согласен(на) на обработку персональных данных</label>
-      <button type="submit" class="btn">Отправить заявку</button>
-    </form>`;
+export function форма(приставка, поля) {
+  return Р('form', {
+    поля: поля.map(п => ({
+      id: `${приставка}-${п.имя}`,
+      подпись: п.подпись,
+      тип: п.тип,
+      name: п.name,
+      required: !!п.обязательное,
+      textarea: !!п.многострочное,
+      широкая: !!п.широкая,
+    })),
+  });
 }
 
-function модалка() {
-  return `  <div class="modal" id="signup-modal" data-modal hidden>
-    <div class="modal-backdrop" data-modal-close></div>
-    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <button type="button" class="modal-close" data-modal-close aria-label="Закрыть">×</button>
-      <h2 id="modal-title">Записаться</h2>
-${форма('modal')}
-    </div>
-  </div>`;
-}
-
-/* #endregion */
+const модалка = поля => Р('modal', { форма: форма('modal', поля) });
 
 /* #region Галерея — один элемент на весь сайт, два режима */
 const SIZES = '(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw';
 
-/**
- * @param кадры [{ основа, ширина, высота, подпись }] — основа без суффикса «-400.jpg»
- */
 export function галерея({ кадры, depth, режим, первыйСрочный = true, полный = '-800', sizes = SIZES, класс = 'card-image' }) {
-  const u = up(depth);
   if (!кадры.length) return '';
-  const item = (к, i) => {
-    const b = `${u}${к.основа}`;
-    const срочно = первыйСрочный && i === 0
-      ? ' loading="eager" fetchpriority="high" decoding="async"'
-      : ' loading="lazy" decoding="async"';
-    return `<button type="button" class="gallery-item" data-lightbox-open data-full="${b}${к.полный || полный}.jpg" aria-label="${esc(к.подпись)}"><picture>`
-      + `<source type="image/webp" srcset="${b}-400.webp 400w, ${b}-800.webp 800w" sizes="${sizes}">`
-      + `<img src="${b}-400.jpg" srcset="${b}-400.jpg 400w, ${b}-800.jpg 800w" sizes="${sizes}" ${класс ? ` class="${класс}"` : ''} alt="${esc(к.подпись)}" width="${к.ширина}" height="${к.высота}"${срочно}></picture></button>`;
-  };
-  // Панель выводится всегда: при единственном кадре её прячет CSS
-  // (.gallery:has(.gallery-view > .gallery-item:only-child)), и галерея
-  // выглядит обычной иллюстрацией. Разметка от числа кадров не зависит.
-  const панель = `
-  <div class="gallery-bar">
-    <div class="gallery-nav">
-      <button type="button" class="icon-btn" data-gallery-prev aria-label="Предыдущий кадр"><img src="${u}_theme/icons/chevron-left.svg" alt="" width="20" height="20"></button>
-      <span class="gallery-counter" data-gallery-counter aria-live="polite"></span>
-      <button type="button" class="icon-btn" data-gallery-next aria-label="Следующий кадр"><img src="${u}_theme/icons/chevron-right.svg" alt="" width="20" height="20"></button>
-    </div>
-    <div class="gallery-modes" role="group" aria-label="Вид галереи">
-      <button type="button" class="icon-btn" data-mode="strip" aria-pressed="${(режим || 'strip') === 'strip'}" aria-label="Лента"><img src="${u}_theme/icons/view-strip.svg" alt="" width="20" height="20"></button>
-      <button type="button" class="icon-btn" data-mode="grid" aria-pressed="${режим === 'grid'}" aria-label="Плитка"><img src="${u}_theme/icons/view-grid.svg" alt="" width="20" height="20"></button>
-    </div>
-  </div>`;
-  // Без режима по умолчанию остаётся плитка (.gallery:not([data-mode])):
-  // лента без стрелок бесполезна, а стрелки появляются только со скриптом.
-  const атрибут = режим ? ` data-default-mode="${режим}"` : '';
-  return `<div class="gallery" data-gallery${атрибут}>${панель}
-  <div class="gallery-view" data-gallery-view>${кадры.map(item).join('')}</div>
-  <div class="lightbox" data-lightbox hidden>
-    <div class="lightbox-backdrop" data-lightbox-close></div>
-    <button type="button" class="icon-btn lightbox-close" data-lightbox-close aria-label="Закрыть"><img src="${u}_theme/icons/close.svg" alt="" width="20" height="20"></button>
-    <figure class="lightbox-figure"><img class="lightbox-img" data-lightbox-img alt=""></figure>
-  </div>
-</div>`;
+  const u = up(depth);
+  return Р('gallery', {
+    u, режим, sizes,
+    лента: String((режим || 'strip') === 'strip'),
+    плитка: String(режим === 'grid'),
+    классАтрибут: класс ? ` class="${класс}"` : '',
+    кадры: кадры.map((к, i) => ({
+      основа: u + к.основа,
+      полный: `${u}${к.основа}${к.полный || полный}.jpg`,
+      подпись: к.подпись, ширина: к.ширина, высота: к.высота,
+      срочно: первыйСрочный && i === 0,
+    })),
+  });
 }
-
-/* #endregion */
 
 /* #region Заголовок раздела */
-/**
- * Вся общая информация — одной мета-строкой, там же кнопка записи.
- * Поле без значения не выводится вовсе.
- */
 export function заголовокРаздела({ надзаголовок, h1, поля = [], кнопка, мета, лид = [], абзацы = [], дополнительно = '', галереяHtml }) {
-  // Либо мета-строка фактов «подпись: значение», либо готовая строка (у поста).
   const строки = мета || поля.filter(([, v]) => v != null && v !== '')
     .map(([k, v]) => `<strong>${esc(k)}:</strong> ${v}`).join('<br>\n        ');
-  const внутри = [
-    `<p class="eyebrow">${esc(надзаголовок)}</p>`,
-    `<h1>${esc(h1)}</h1>`,
-    строки ? `<p class="meta-line">${строки}</p>` : '',
-    ...лид.map(т => `<p class="lead">${т}</p>`),
-    ...абзацы.map(т => `<p>${т}</p>`),
-    кнопка ? `<p class="head-actions"><button type="button" class="btn" data-modal-open>Записаться</button></p>` : '',
-    дополнительно,
-  ].filter(Boolean);
-  // Без иллюстрации колонок нет: лишняя обёртка ломала бы сетку заголовка.
-  if (!галереяHtml) {
-    return `  <section class="page-head">\n    <div class="container">\n`
-      + pad(6, внутри.join('\n')) + `\n    </div>\n  </section>`;
-  }
-  return `  <section class="page-head">
-    <div class="container hero-row">
-      <div>
-${pad(8, внутри.join('\n'))}
-      </div>
-${pad(6, галереяHtml)}
-    </div>
-  </section>`;
+  const внутри = Р('page-head-inner', { надзаголовок, h1, строки, лид, абзацы, кнопка, дополнительно });
+  return Р('page-head', {
+    сИллюстрацией: !!галереяHtml,
+    внутри: pad(галереяHtml ? 8 : 6, внутри),
+    иллюстрация: галереяHtml ? pad(6, галереяHtml) : '',
+  });
 }
-
-/* #endregion */
 
 /* #region Блоки */
 export const блок = (внутри, id) =>
-  `  <section class="block"${id ? ` id="${id}"` : ''}>\n    <div class="container">\n${внутри.replace(/\n$/, '')}\n    </div>\n  </section>`;
+  Р('block', { классы: 'block', id, тело: внутри.replace(/\n$/, '') });
 
-/** Простая таблица: без сортировки и без градиента в шапке. */
 export function таблицаПростая({ колонки, строки, ширины, шапкаБезScope }) {
-  const cg = ширины ? `<colgroup>${ширины.map(w => `<col style="width:${w}">`).join('')}</colgroup>` : '';
-  const th = c => шапкаБезScope ? `<th>${esc(c)}</th>` : `<th scope="col">${esc(c)}</th>`;
-  return `<table class="table-simple">
-${cg}${шапкаБезScope ? '' : '\n'}<thead><tr>${колонки.map(th).join('')}</tr></thead>
-<tbody>
-${строки.map(r => `<tr>${r.map((v, i) => `<td data-label="${esc(колонки[i])}">${esc(v)}</td>`).join('')}</tr>`).join('\n')}
-</tbody>
-</table>`;
+  return Р('table', {
+    colgroup: (ширины ? Р('colgroup', { ширины }) : '') + (шапкаБезScope ? '' : '\n'),
+    колонки: колонки.map(и => ({ имя: и, scope: !шапкаБезScope })),
+    строки: строки.map(r => ({ ячейки: r.map((v, i) => ({ подпись: колонки[i], значение: v })) })),
+  });
 }
-/* #endregion */
 
 /* #region Страница целиком */
-export function страница({ site, title, description, путь, image, активный, крошки, тело }) {
+export function страница({ site, структура, title, description, путь, image, активный, крошки, тело }) {
   const depth = глубина(путь);
-  return [
-    head({ site, title, description, путь, depth, image }),
-    шапка({ site, depth, путь, активный, крошки }),
-    `  <main id="main">`,
+  return рисовать('page', {
+    u: up(depth),
     тело,
-    `  </main>`,
-    '',
-    подвал({ site, depth, путь }),
-    модалка(),
-    `  <script src="${up(depth)}_elements/script.js" defer></script>`,
-    `</body>`,
-    `</html>`,
-    '',
-  ].join('\n');
+    head: head({ site, title, description, путь, depth, image }),
+    header: шапка({ site, структура, depth, путь, активный, крошки }),
+    footer: подвал({ site, структура, depth, путь }),
+    modal: модалка(структура.form.поля),
+  });
 }
-/* #endregion */
 
-/* #region Страница-сущность: курс, событие, смена
-   Три типа собираются одной функцией по описанию из structure/templates.json.
-   Здесь остаётся только то, что нельзя выразить данными: как из полей
-   сущности получается мета-строка заголовка раздела. */
+/* #region Страница-сущность */
 
-/** Подстановка {ключ} значениями сущности. */
 const подставить = (шаблон, знач) => String(шаблон).replace(/\{([^}]+)\}/g, (_, k) => знач[k] ?? '');
 
-/** Мета-строка заголовка раздела: подпись → значение, по одному полю на вид. */
 export const ПОЛЯ_ЗАГОЛОВКА = {
   курс: (c, ctx) => [
     ['Возраст', esc(c.возраст)],
@@ -378,7 +163,6 @@ export const ПОЛЯ_ЗАГОЛОВКА = {
     [e.кураторы.length > 1 ? 'Кураторы' : 'Куратор', esc(e.кураторы.join(', '))],
     ['Цена', esc(e.цена)],
   ],
-  // У поста фактов нет: вместо мета-строки — дата и время чтения одной строкой.
   пост: () => [],
   смена: s => [
     ['Даты', esc(s.даты.подпись)],
@@ -389,7 +173,6 @@ export const ПОЛЯ_ЗАГОЛОВКА = {
   ],
 };
 
-/** Подпись кадра в заголовке раздела различается только у смен. */
 const ПОДПИСЬ_КАДРА = {
   курс: c => c.название,
   событие: e => e.название,
@@ -397,14 +180,13 @@ const ПОДПИСЬ_КАДРА = {
   смена: s => `Афиша смены «${s.название}»`,
 };
 
-/** Строка оплаты собирается из тарифа: пакеты со второго идут кратко. */
 export const строкаОплаты = тариф => [
   тариф.пробное ? `Пробное — ${тариф.пробное} ₽` : 'Пробного нет',
   тариф.разовое ? `разовое — ${тариф.разовое} ₽` : 'разового занятия нет',
 ].join(', ') + '. '
   + тариф.пакеты.map((п, i) => `${i && п.краткое ? п.краткое : п.название} — ${п.цена} ₽`).join(', ') + '.';
 
-export function страницаСущности({ вид, сущность, шаблон, site, ctx, блоки }) {
+export function страницаСущности({ вид, сущность, шаблон, site, структура, ctx, блоки }) {
   const путь = `${шаблон.папка}/${сущность.id}/index.html`;
   const depth = глубина(путь);
   const прошедшее = шаблон.кнопка === 'пока не прошло' && ctx.прошло(сущность);
@@ -415,7 +197,6 @@ export function страницаСущности({ вид, сущность, ш�
   const иллюстрация = кадры.length
     ? галерея({ кадры, depth, режим: 'grid' })
     : шаблон.кнопка === 'нет' && вид === 'пост' ? ''
-    // Фото нет — честная заглушка вместо пустого места и вместо чужой картинки.
     : '';
 
   const тело = [
@@ -431,7 +212,7 @@ export function страницаСущности({ вид, сущность, ш�
   ].join('\n');
 
   return страница({
-    site, depth, тело,
+    site, структура, depth, тело,
     title: подставить(шаблон.title, ctx.значения),
     description: подставить(шаблон.description, ctx.значения),
     путь,
@@ -441,4 +222,3 @@ export function страницаСущности({ вид, сущность, ш�
              { имя: сущность.название || сущность.заголовок }],
   });
 }
-/* #endregion */

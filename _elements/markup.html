@@ -1,0 +1,410 @@
+<!-- Разметка сайта. Каждый элемент — <template id="имя">.
+     {{поле}} — значение, {{{поле}}} — без экранирования, {{#список}}…{{/список}} — повтор,
+     {{^поле}}…{{/поле}} — обратное условие, {{>имя}} — вставка другого шаблона. -->
+
+<!-- #region Каркас страницы -->
+<template id="page">
+{{{head}}}
+{{{header}}}
+  <main id="main">
+{{{тело}}}
+  </main>
+
+{{{footer}}}
+{{{modal}}}
+  <script src="{{u}}_elements/script.js" defer></script>
+</body>
+</html>
+</template>
+<template id="head">
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <meta name="description" content="{{description}}">
+  <link rel="icon" href="{{u}}favicon.ico">
+  <link rel="preload" href="{{u}}_theme/fonts/golos-text-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{u}}_theme/fonts/roboto-mono-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{u}}_theme/fonts.css">
+  <link rel="stylesheet" href="{{u}}_theme/tokens.css">
+  <link rel="stylesheet" href="{{u}}_theme/style.css">
+  <link rel="canonical" href="{{канонический}}">
+  <meta name="theme-color" content="#ffffff">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:site_name" content="{{организация}}">
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:url" content="{{канонический}}">
+  <meta property="og:image" content="{{обложка}}">
+  <meta name="twitter:card" content="summary_large_image">
+</head>
+</template>
+<template id="header">
+<body>
+  <a class="skip-link" href="#main">К содержимому</a>
+  <header class="site-header">
+    <div class="container bar">
+      <a class="logo" href="{{u}}index.html"><img src="{{u}}_theme/brand/logo-dark.svg" alt="{{организация}}" width="533" height="300"></a>
+      <button type="button" class="nav-toggle" aria-label="Меню" aria-expanded="false" aria-controls="site-nav"><img src="{{u}}_theme/icons/menu.svg" alt="" width="24" height="24"></button>
+      <nav class="site-nav" id="site-nav" aria-label="Основная навигация">
+        <ul class="nav-list">
+{{#меню}}
+        {{>nav-item}}
+{{/меню}}
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <div class="social-icons" aria-label="Соцсети">
+          <a href="https://{{telegram}}" aria-label="Telegram" target="_blank" rel="noopener"><img src="{{u}}_theme/icons/telegram.svg" alt="" width="20" height="20"></a>
+        </div>
+      </div>
+    </div>
+    <div class="container breadcrumbs-row">
+      <nav class="breadcrumbs" aria-label="Хлебные крошки">{{#ссылки}}{{#непервая}} / {{/непервая}}<a href="{{ссылка}}">{{имя}}</a>{{/ссылки}}<span class="current" aria-current="page">{{#естьСсылки}} / {{/естьСсылки}}{{последняя}}</span></nav>
+    </div>
+  </header>
+</template>
+<template id="nav-item">
+{{#группа}}
+<li class="nav-group">
+  <button type="button" class="nav-group-label" aria-expanded="false">{{группа}}</button>
+  <div class="dropdown">
+    <ul class="dropdown-inner">
+{{#пункты}}
+    {{>nav-link}}
+{{/пункты}}
+    </ul>
+  </div>
+</li>
+{{/группа}}
+{{^группа}}
+{{>nav-link}}
+{{/группа}}
+</template>
+<template id="nav-link">
+<li><a href="{{ссылка}}"{{#текущий}} aria-current="page"{{/текущий}}>{{имя}}</a></li>
+</template>
+<template id="footer">
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <img class="footer-logo" src="{{u}}_theme/brand/logo.svg" alt="{{название}}" width="533" height="300">
+          <p>{{слоган}}</p>
+        </div>
+        <div>
+          <h2>Контакты</h2>
+          <p><a href="{{контакты}}">{{адрес}}</a></p>
+          <p><a href="tel:{{тел}}">{{телефон}}</a></p>
+          <p><a href="https://{{telegram}}" target="_blank" rel="noopener">{{telegram}}</a></p>
+        </div>
+        <div>
+          <h2>Разделы</h2>
+{{#разделы}}
+          <p><a href="{{ссылка}}">{{имя}}</a></p>
+{{/разделы}}
+        </div>
+      </div>
+      <div class="footer-legal">
+<!-- TODO: реквизиты не согласованы — ТЗ/Сводные вопросы (согласовать).md, группа 2 -->
+      <span>Архитектурная студия ДОМ</span>
+      <a href="{{политика}}">Политика обработки данных</a>
+      <a href="{{оферта}}">Договор-оферта</a>
+      </div>
+    </div>
+  </footer>
+</template>
+<template id="modal">
+  <div class="modal" id="signup-modal" data-modal hidden>
+    <div class="modal-backdrop" data-modal-close></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button type="button" class="modal-close" data-modal-close aria-label="Закрыть">×</button>
+      <h2 id="modal-title">Записаться</h2>
+{{{форма}}}
+    </div>
+  </div>
+</template>
+<template id="form">
+      <form class="signup-form" data-role="signup">
+      <!-- TODO: форма не отправляется — приём заявок на почту студии
+           не реализован, ДОМ - ТЗ на сайт.md, раздел 2, п.2 -->
+      <div class="form-fields">
+{{#поля}}
+        {{>form-row}}
+{{/поля}}
+      </div>
+      <div class="signup-context" data-signup-context hidden>
+        <span class="contact-label">Занятие</span>
+        <p class="signup-context-title" data-signup-title></p>
+        <p class="signup-context-meta" data-signup-meta></p>
+      </div>
+      <input type="hidden" name="lesson" data-signup-value>
+      <label class="form-consent"><input type="checkbox" required> Согласен(на) на обработку персональных данных</label>
+      <button type="submit" class="btn">Отправить заявку</button>
+    </form>
+</template>
+<template id="form-row">
+<div class="form-row{{#широкая}} form-row-wide{{/широкая}}">
+  <label for="{{id}}">{{подпись}}</label>
+  {{#textarea}}<textarea id="{{id}}" name="{{name}}" rows="3"></textarea>{{/textarea}}{{^textarea}}<input type="{{тип}}" id="{{id}}" name="{{name}}"{{#required}} required{{/required}}>{{/textarea}}
+</div>
+</template>
+<!-- #endregion -->
+
+<!-- #region Заголовок раздела -->
+<template id="page-head">
+  <section class="page-head">
+{{#сИллюстрацией}}
+    <div class="container hero-row">
+      <div>
+{{{внутри}}}
+      </div>
+{{{иллюстрация}}}
+    </div>
+{{/сИллюстрацией}}
+{{^сИллюстрацией}}
+    <div class="container">
+{{{внутри}}}
+    </div>
+{{/сИллюстрацией}}
+  </section>
+</template>
+<template id="page-head-inner">
+<p class="eyebrow">{{надзаголовок}}</p>
+<h1>{{h1}}</h1>
+{{#строки}}
+<p class="meta-line">{{{строки}}}</p>
+{{/строки}}
+{{#лид}}
+<p class="lead">{{{.}}}</p>
+{{/лид}}
+{{#абзацы}}
+<p>{{{.}}}</p>
+{{/абзацы}}
+{{#кнопка}}
+<p class="head-actions"><button type="button" class="btn" data-modal-open>Записаться</button></p>
+{{/кнопка}}
+{{#дополнительно}}
+{{{дополнительно}}}
+{{/дополнительно}}
+</template>
+<!-- #endregion -->
+
+<!-- #region Блок -->
+<template id="block">
+  <section class="{{классы}}"{{#id}} id="{{id}}"{{/id}}>
+    <div class="container">
+{{{тело}}}
+    </div>
+  </section>
+</template>
+<template id="block-title">
+<h2{{#скрытый}} class="visually-hidden"{{/скрытый}}>{{заголовок}}</h2>
+</template>
+<!-- #endregion -->
+
+<!-- #region Карточки -->
+<template id="card">
+<div class="{{классы}}"{{{атрибуты}}}>{{#ссылкаНа}}<a class="card-link" href="{{ссылкаНа}}" aria-label="{{подписьСсылки}}"></a>{{/ссылкаНа}}{{{картинка}}}<div class="card-body">{{#части}}{{#мета}}<span class="card-meta">{{{значение}}}</span>{{/мета}}{{#заголовок}}<h3 class="card-title">{{значение}}</h3>{{/заголовок}}{{#подзаголовок}}<p class="card-meta">{{{значение}}}</p>{{/подзаголовок}}{{#описание}}<p class="card-desc">{{{значение}}}</p>{{/описание}}{{#примечание}}<p class="card-meta">{{{значение}}}</p>{{/примечание}}{{#действие}}<div class="card-actions"><button type="button" class="btn" data-modal-open>{{значение}}</button></div>{{/действие}}{{/части}}</div></div>
+</template>
+<template id="cards">
+{{{фильтры}}}<div class="card-grid"{{#фильтруемая}} data-filterable{{/фильтруемая}}>
+{{{карточки}}}
+</div>
+</template>
+<template id="picture">
+<picture><source type="image/webp" srcset="{{основа}}-400.webp 400w, {{основа}}-800.webp 800w" sizes="{{sizes}}"><img src="{{основа}}-400.jpg" srcset="{{основа}}-400.jpg 400w, {{основа}}-800.jpg 800w" sizes="{{sizes}}"{{{классАтрибут}}} alt="{{подпись}}" width="{{ширина}}" height="{{высота}}"{{#лениво}} loading="lazy" decoding="async"{{/лениво}}{{^лениво}} loading="eager" fetchpriority="high" decoding="async"{{/лениво}}></picture>
+</template>
+<template id="placeholder">
+<div class="placeholder">{{имя}}</div>
+</template>
+<!-- #endregion -->
+
+<!-- #region Таблицы -->
+<template id="table">
+<table class="table-simple">
+{{{colgroup}}}<thead><tr>{{#колонки}}<th{{#scope}} scope="col"{{/scope}}>{{имя}}</th>{{/колонки}}</tr></thead>
+<tbody>
+{{#строки}}
+<tr>{{#ячейки}}<td data-label="{{подпись}}">{{значение}}</td>{{/ячейки}}</tr>
+{{/строки}}
+</tbody>
+</table>
+</template>
+<template id="colgroup">
+<colgroup>{{#ширины}}<col style="width:{{.}}">{{/ширины}}</colgroup>
+</template>
+<template id="schedule">
+<div class="schedule-wrap">
+    <p class="visually-hidden" data-schedule-status role="status" aria-live="polite"></p>
+<div class="table-scroll">
+      <table class="schedule" id="schedule-table" data-rows='{{{rows}}}'>{{{colgroup}}}
+<thead>
+<tr>
+{{#колонки}}
+<th data-sort-key="{{ключ}}">{{имя}}</th>
+{{/колонки}}
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div></div>
+</template>
+<template id="note">
+<p>{{текст}}</p>
+</template>
+<!-- #endregion -->
+
+<!-- #region Списки и фильтры -->
+<template id="filters">
+<div class="filter-row" data-filter-bar>
+{{#фильтры}}
+{{>filter-tab}}
+{{/фильтры}}
+<p class="filter-status" data-filter-status role="status" aria-live="polite"></p>
+</div>
+</template>
+<template id="filter-tab">
+<div class="filter-tab" data-filter-group="{{группа}}">
+<button type="button" class="filter-tab-label" data-filter-toggle><span class="filter-tab-title">{{подпись}}</span><span class="filter-current" data-filter-current></span></button>
+<div class="dropdown filter-dropdown">
+<ul class="dropdown-inner">
+<li><button type="button" data-value="">Все</button></li>
+{{#значения}}
+<li><button type="button" data-value="{{.}}">{{.}}</button></li>
+{{/значения}}
+</ul>
+</div>
+</div>
+</template>
+<template id="faq">
+<div class="faq-list">{{#вопросы}}<details class="disclosure"><summary>{{вопрос}}</summary><p>{{{ответ}}}</p></details>{{/вопросы}}</div>
+</template>
+<template id="quicklinks">
+<p>{{#пункты}}<a href="{{ссылка}}">{{имя}}</a>{{/пункты}}</p>
+</template>
+<!-- #endregion -->
+
+<!-- #region Раскрывающиеся -->
+<template id="disclosure">
+<details class="disclosure {{класс}}">
+<summary>{{подпись}}</summary>
+{{{внутри}}}
+</details>
+</template>
+<!-- #endregion -->
+
+<!-- #region Галерея и медиа -->
+<template id="gallery">
+<div class="gallery" data-gallery{{#режим}} data-default-mode="{{режим}}"{{/режим}}>
+  <div class="gallery-bar">
+    <div class="gallery-nav">
+      <button type="button" class="icon-btn" data-gallery-prev aria-label="Предыдущий кадр"><img src="{{u}}_theme/icons/chevron-left.svg" alt="" width="20" height="20"></button>
+      <span class="gallery-counter" data-gallery-counter aria-live="polite"></span>
+      <button type="button" class="icon-btn" data-gallery-next aria-label="Следующий кадр"><img src="{{u}}_theme/icons/chevron-right.svg" alt="" width="20" height="20"></button>
+    </div>
+    <div class="gallery-modes" role="group" aria-label="Вид галереи">
+      <button type="button" class="icon-btn" data-mode="strip" aria-pressed="{{лента}}" aria-label="Лента"><img src="{{u}}_theme/icons/view-strip.svg" alt="" width="20" height="20"></button>
+      <button type="button" class="icon-btn" data-mode="grid" aria-pressed="{{плитка}}" aria-label="Плитка"><img src="{{u}}_theme/icons/view-grid.svg" alt="" width="20" height="20"></button>
+    </div>
+  </div>
+  <div class="gallery-view" data-gallery-view>{{#кадры}}<button type="button" class="gallery-item" data-lightbox-open data-full="{{полный}}" aria-label="{{подпись}}"><picture><source type="image/webp" srcset="{{основа}}-400.webp 400w, {{основа}}-800.webp 800w" sizes="{{sizes}}"><img src="{{основа}}-400.jpg" srcset="{{основа}}-400.jpg 400w, {{основа}}-800.jpg 800w" sizes="{{sizes}}" {{{классАтрибут}}} alt="{{подпись}}" width="{{ширина}}" height="{{высота}}"{{#срочно}} loading="eager" fetchpriority="high" decoding="async"{{/срочно}}{{^срочно}} loading="lazy" decoding="async"{{/срочно}}></picture></button>{{/кадры}}</div>
+  <div class="lightbox" data-lightbox hidden>
+    <div class="lightbox-backdrop" data-lightbox-close></div>
+    <button type="button" class="icon-btn lightbox-close" data-lightbox-close aria-label="Закрыть"><img src="{{u}}_theme/icons/close.svg" alt="" width="20" height="20"></button>
+    <figure class="lightbox-figure"><img class="lightbox-img" data-lightbox-img alt=""></figure>
+  </div>
+</div>
+</template>
+<template id="map">
+<div class="map-block">
+<iframe src="https://yandex.ru/map-widget/v1/?ll={{долгота}}%2C{{широта}}&amp;z=17&amp;pt={{долгота}},{{широта}},pm2rdm" title="{{подпись}}" loading="lazy" allowfullscreen></iframe>
+</div>
+<p class="map-actions"><a class="btn" href="{{{маршрут}}}" target="_blank" rel="noopener" aria-label="Маршрут в Яндекс.Картах, откроется в новой вкладке">Маршрут в Яндекс.Картах</a></p>
+</template>
+<!-- #endregion -->
+
+<!-- #region Люди и контакты -->
+<template id="team">
+<div class="team-grid" data-team-grid>{{#люди}}<div class="team-card" data-name="{{имя}}" data-role="{{роль}}" data-bio="{{био}}"><button type="button" class="team-toggle" aria-expanded="false"><span>Открыть био: {{имя}}</span></button>{{{кадр}}}<h3 class="card-title">{{имя}}</h3><p class="card-meta">{{роль}}</p></div>{{/люди}}<div class="team-bio" data-team-bio hidden><button type="button" class="team-bio-close" data-bio-close aria-label="Закрыть">&times;</button><h3 data-bio-name></h3><p class="bio-role" data-bio-role></p><div data-bio-text></div></div></div>
+</template>
+<template id="contacts">
+{{#абзацы}}
+<p><strong>Адрес:</strong> {{адрес}}</p>
+<p><strong>Телефон / Telegram:</strong> {{{телефон}}} · {{{telegram}}}</p>
+{{/абзацы}}
+{{^абзацы}}
+<div class="contact-grid">
+{{#строки}}
+<div class="contact-item"><span class="contact-label">{{подпись}}</span>{{{значение}}}</div>
+{{/строки}}
+</div>
+{{/абзацы}}
+</template>
+<template id="tel-link">
+<a href="tel:{{номер}}">{{телефон}}</a>
+</template>
+<template id="tg-link">
+<a href="https://{{telegram}}" target="_blank" rel="noopener" aria-label="Telegram студии, откроется в новой вкладке">{{telegram}}</a>
+</template>
+<template id="rating">
+<div class="rating">
+<span class="rating-value">{{оценка}}</span>
+<span class="rating-meta">{{подпись}}</span>
+</div>
+<p class="map-actions"><a class="btn" href="{{{ссылка}}}" target="_blank" rel="noopener" aria-label="{{кнопка}}, откроется в новой вкладке">{{кнопка}}</a></p>
+</template>
+<!-- #endregion -->
+
+<!-- #region Вкладки и первый экран -->
+<template id="tabs">
+  <section class="tabs">
+    <div class="container">
+{{#вкладки}}
+      <input type="radio" name="tabs" id="tabs-{{ключ}}"{{#первая}} checked{{/первая}}>
+{{/вкладки}}
+      <div class="tab-bar">
+<ul class="tab-labels">
+{{#вкладки}}
+        <li><label for="tabs-{{ключ}}">{{имя}}</label></li>
+{{/вкладки}}
+      </ul>{{{действие}}}
+      </div>
+      <div class="tab-panels">
+{{#вкладки}}
+        <div class="tab-panel panel-{{ключ}}">{{{панель}}}</div>
+{{/вкладки}}
+      </div>
+    </div>
+  </section>
+</template>
+<template id="tab-action">
+        <button type="button" class="icon-btn" {{{атрибут}}} aria-label="{{подпись}}" title="{{подпись}}"><img src="{{u}}_theme/icons/{{иконка}}.svg" alt="" width="20" height="20"></button>
+</template>
+<template id="hero">
+  <section class="hero">
+    <div class="container hero-row">
+      <div class="hero-copy">
+        <img class="hero-circle" src="{{u}}_theme/brand/hero.svg" alt="" width="658" height="658" aria-hidden="true">
+        <div class="hero-title-group">
+          <h1 class="hero-title">{{заголовок}}</h1>
+          <p class="hero-subtitle">{{подзаголовок}}</p>
+        </div>
+        <p class="hero-slogan">{{{слоган}}}</p>
+        <p class="hero-facts">{{факты}}</p>
+        <p class="head-actions"><button type="button" class="btn" data-modal-open>Записаться</button></p>
+      </div>{{{баннер}}}
+    </div>
+  </section>
+</template>
+<template id="banner">
+      <a class="hero-banner" href="{{ссылка}}">
+        <span class="banner-date">{{дата}}</span>
+        <span class="banner-title">{{заголовок}}</span>
+        <span class="banner-meta">{{{подпись}}}</span>
+      </a>
+</template>
+<!-- #endregion -->

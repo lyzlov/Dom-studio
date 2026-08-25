@@ -1,8 +1,15 @@
-// ДОМ — сайт. Vanilla JS без сборки: фильтрация карточек курсов, раскрывающиеся
-// табы-фильтры, модальное окно записи, сортируемая/печатаемая таблица расписания,
-// мобильное меню.
 (function () {
   "use strict";
+
+  /* #region Просмотр с диска */
+  if (location.protocol === "file:") {
+    document.querySelectorAll("a[href]").forEach(function (a) {
+      var h = a.getAttribute("href");
+      if (/^(#|[a-z]+:)/.test(h)) return;
+      if (h.slice(-1) === "/") a.setAttribute("href", h + "index.html");
+    });
+  }
+  /* #endregion */
 
   /* #region Фильтр карточек курсов */
   function applyFilters(grid) {
@@ -23,8 +30,6 @@
       card.hidden = !visible;
       if (visible) shown++;
     });
-    // Результат фильтрации — текстом: смена набора карточек иначе никак
-    // не сообщается ни скринридеру, ни пользователю при пустой выдаче.
     var status = document.querySelector("[data-filter-status]");
     if (status) {
       status.textContent = shown
@@ -50,8 +55,6 @@
       btn.addEventListener("click", function () {
         group.dataset.value = btn.dataset.value;
         if (current) current.textContent = btn.dataset.value || "";
-        // is-set — подсветка выбранного фильтра, тем же способом, что и
-        // активная вкладка (цвет + подчёркивание), см. style.css
         group.classList.toggle("is-set", !!btn.dataset.value);
         group.querySelectorAll("[data-value]").forEach(function (b) { b.classList.toggle("is-active", b === btn); });
         group.classList.remove("is-open");
@@ -63,9 +66,6 @@
     document.querySelectorAll(".filter-tab.is-open").forEach(function (g) { g.classList.remove("is-open"); });
   });
 
-  // Значение фильтра из адреса: #direction=Бюро. Так блок направлений на
-  // главной ведёт на «Курсы» с уже выбранным типом занятия, а не просто
-  // на общий список, одинаковый для всех трёх ссылок.
   if (grid && location.hash.indexOf("=") > 0) {
     var pair = decodeURIComponent(location.hash.slice(1)).split("=");
     var group = document.querySelector('[data-filter-group="' + pair[0] + '"]');
@@ -74,10 +74,7 @@
   }
   /* #endregion */
 
-  /* #region Вкладки на узком экране — раскрывающийся список
-     Разметка вкладок остаётся прежней (radio + label), список строится рядом
-     и просто нажимает нужную подпись. Внешне это тот же элемент, что фильтр
-     карточек, поэтому отдельного вида в каталоге не появляется. */
+  /* #region Вкладки на узком экране */
   document.querySelectorAll(".tabs").forEach(function (tabs) {
     var labels = Array.prototype.slice.call(tabs.querySelectorAll(".tab-labels label"));
     if (labels.length < 2) return;
@@ -122,12 +119,8 @@
     var bar = tabs.querySelector(".tab-bar") || tabs.querySelector(".tab-labels");
     bar.insertAdjacentElement("beforebegin", box);
   });
-  /* #endregion */
 
-  /* #region Управление фокусом для наложений (модалка, лайтбокс)
-     Общий хелпер: запоминает элемент, с которого открыли, держит табуляцию
-     внутри панели и возвращает фокус на место при закрытии. Без этого
-     табуляция уходит на страницу под наложением. */
+  /* #region Управление фокусом для наложений (модалка, лайтбокс) */
   var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
   function createOverlay(root, panelSelector) {
@@ -143,9 +136,6 @@
         var panel = root.querySelector(panelSelector) || root;
         var first = panel.querySelector(FOCUSABLE);
         if (first) { first.focus(); return; }
-        // Внутри панели нечего фокусировать (лайтбокс — одна картинка).
-        // Без tabindex фокус остаётся на странице под наложением, и Escape
-        // до обработчика не доходит.
         if (!panel.hasAttribute("tabindex")) panel.setAttribute("tabindex", "-1");
         panel.focus();
       },
@@ -171,13 +161,9 @@
     });
     return api;
   }
-  /* #endregion */
 
   /* #region Модальное окно записи */
   var modal = createOverlay(document.querySelector("[data-modal]"), ".modal-panel");
-  // Данные занятия берём из того места, откуда открыли форму: карточка или
-  // заголовок страницы. Отдельных атрибутов на каждой кнопке не заводим —
-  // они бы дублировали то, что уже написано рядом, и разошлись бы с ним.
   function lessonContext(btn) {
     var card = btn.closest(".card");
     var head = btn.closest(".page-head");
@@ -191,8 +177,6 @@
     }
     if (!title) return null;
     var line = function (el) { return el ? el.textContent.replace(/\s+/g, " ").trim() : ""; };
-    // innerText, а не textContent: <br> в мета-строке должны остаться
-    // переносами, иначе «10–12 лет Время: Вс 18:00» слипается в одну строку.
     var block = function (el) { return el ? el.innerText.replace(/[ \t]+/g, " ").trim() : ""; };
     return { title: line(title), meta: block(meta) };
   }
@@ -226,12 +210,8 @@
   document.querySelectorAll("[data-modal-close]").forEach(function (el) {
     el.addEventListener("click", function () { if (modal) modal.close(); });
   });
-  /* #endregion */
 
-  /* #region Форма записи — бэкенда нет, submit не отправляется никуда
-     Форма не удаляется из разметки: раньше её заменяли на сообщение, и второй
-     раз записаться можно было только после перезагрузки страницы. Сообщение
-     показывается рядом, поля очищаются, форма остаётся на месте. */
+  /* #region Форма записи */
   document.querySelectorAll('[data-role="signup"]').forEach(function (form) {
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -248,10 +228,8 @@
       form.reset();
     });
   });
-  /* #endregion */
 
-  /* #region Таблица расписания — rowspan по соседним строкам с одинаковым днём,
-     сортировка по клику (фиксированный порядок на колонку, без переключения asc/desc), печать */
+  /* #region Таблица расписания */
   var WEEKDAY_ORDER = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
   function weekdayIndex(day) {
@@ -270,8 +248,6 @@
     return (a[key] || "").toString().localeCompare((b[key] || "").toString(), "ru");
   }
 
-  // Цветом различается тип занятия, а не куратор: типов ровно три, как и
-  // акцентов в палитре. Цвет дублирует текст в той же ячейке.
   var TYPE_CLASS = {
     "Авторские курсы": "type-courses",
     "Бюро": "type-buro",
@@ -303,13 +279,11 @@
       var html = "";
       var i = 0;
       while (i < data.length) {
-        // Длина текущего "забега" — только строки, идущие подряд с тем же днём.
         var runLen = 1;
         while (i + runLen < data.length && data[i + runLen].day === data[i].day) runLen++;
         for (var j = 0; j < runLen; j++) {
           var r = data[i + j];
           var dayCell = j === 0 ? '<td class="cell-day" rowspan="' + runLen + '">' + r.day + "</td>" : "";
-          // data-label — подпись колонки для мобильного вида, где шапка скрыта.
           html += "<tr>" + dayCell +
             '<td class="cell-time" data-label="Время">' + r.time + "</td>" +
             '<td data-label="Занятие">' + r.course + "</td>" +
@@ -324,9 +298,6 @@
       tbody.innerHTML = html;
     }
 
-    // Каждый заголовок — кнопка: <th> сам по себе не фокусируется, и до
-    // сортировки нельзя было добраться с клавиатуры. aria-sort сообщает
-    // скринридеру, по какой колонке отсортировано.
     headers.forEach(function (th) {
       var label = th.textContent.trim();
       var btn = document.createElement("button");
@@ -352,11 +323,8 @@
   document.querySelectorAll("[data-print]").forEach(function (btn) {
     btn.addEventListener("click", function () { window.print(); });
   });
-  /* #endregion */
 
-  /* #region Лайтбокс — кадр в полный размер.
-     Только показать и закрыть: листать можно в самой ленте галереи, второй
-     набор стрелок поверх экрана дублировал бы её. */
+  /* #region Лайтбокс */
   var lightboxRoot = document.querySelector("[data-lightbox]");
   var lightboxImg = lightboxRoot ? lightboxRoot.querySelector("[data-lightbox-img]") : null;
   var lightbox = createOverlay(lightboxRoot, ".lightbox-figure");
@@ -377,13 +345,8 @@
       if (lightboxImg) lightboxImg.removeAttribute("src");
     });
   });
-  /* #endregion */
 
-  /* #region Команда — био раскрывается панелью под рядом карточек
-     Панель кладётся сразу за последней карточкой того ряда, в котором стоит
-     открытая карточка: связь «карточка → её био» видна без подписей.
-     Сколько карточек в ряду — считаем по фактическим координатам, чтобы не
-     дублировать брейкпойнты сетки в JS. */
+  /* #region Команда */
   var teamGrid = document.querySelector("[data-team-grid]");
   if (teamGrid) {
     var bio = teamGrid.querySelector("[data-team-bio]");
@@ -441,12 +404,8 @@
     });
     window.addEventListener("resize", function () { if (openCard) openBio(openCard); });
   }
-  /* #endregion */
 
-  /* #region Мобильное меню и подменю шапки
-     Лейбл группы — <button aria-expanded>, а не <span>: на тач-устройствах
-     ховера нет, и подменю иначе не открывалось вовсе. Мышь по-прежнему
-     раскрывает список наведением (правило в CSS), клавиатура и тач — кликом. */
+  /* #region Мобильное меню и подменю шапки */
   var toggle = document.querySelector(".nav-toggle");
   var nav = document.querySelector(".site-nav");
 
@@ -455,8 +414,6 @@
       b.setAttribute("aria-expanded", "false");
     });
   }
-  // Иконка бургера и подпись меняются вместе с состоянием: открытое меню
-  // закрывается тем же местом, куда пользователь уже целился.
   function setToggleIcon(open) {
     if (!toggle) return;
     var img = toggle.querySelector("img");
@@ -479,7 +436,6 @@
       setToggleIcon(open);
       if (!open) closeAllGroups();
     });
-    // Клик по ссылке в открытом меню — меню закрывается.
     nav.addEventListener("click", function (e) {
       if (e.target.closest("a")) closeNav();
     });
@@ -502,14 +458,8 @@
     if (document.querySelector('.nav-group-label[aria-expanded="true"]')) { closeAllGroups(); return; }
     if (nav && nav.classList.contains("is-open")) { closeNav(); toggle.focus(); }
   });
-  /* #endregion */
 
-  /* #region Подменю шапки — декоративная подложка на всю ширину экрана.
-     .dropdown стоит в потоке (position:absolute, top:100% от пункта меню) — так наведение
-     курсора без разрыва работает само по себе. Полноширинный белый фон под списком —
-     отдельный ::before, чисто визуальный (pointer-events:none), не участвует в геометрии
-     наведения; его положение/ширину передаём через CSS-переменные, т.к. чистым CSS
-     растянуть фон на весь экран от произвольно смещённого блока нельзя. */
+  /* #region Подменю шапки */
   document.querySelectorAll(".nav-group").forEach(function (group) {
     var dropdown = group.querySelector(".dropdown");
     if (!dropdown) return;
@@ -523,10 +473,7 @@
     group.addEventListener("focusin", setBackdrop);
     window.addEventListener("resize", setBackdrop);
   });
-  /* #endregion */
-  /* #region Галерея — переключение режима и листание ленты.
-     Режим по умолчанию ставит JS: без него остаётся плитка (в CSS это состояние
-     .gallery:not([data-mode])), потому что лента без стрелок бесполезна. */
+  /* #region Галерея */
   document.querySelectorAll("[data-gallery]").forEach(function (gallery) {
     var view = gallery.querySelector("[data-gallery-view]");
     var counter = gallery.querySelector("[data-gallery-counter]");
@@ -579,5 +526,4 @@
     window.addEventListener("resize", updateStrip);
     setMode(gallery.dataset.defaultMode || "strip");
   });
-  /* #endregion */
 })();

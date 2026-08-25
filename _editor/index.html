@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Редактор — ДОМ</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="../favicon.ico">
+  <link rel="stylesheet" href="../_theme/fonts.css">
+  <link rel="stylesheet" href="../_theme/tokens.css">
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <header class="ed-top">
+    <span class="ed-mark">ДОМ</span>
+    <nav class="ed-tabs" id="вкладки"></nav>
+    <span class="ed-status" id="состояние">Загрузка…</span>
+    <button class="ed-btn" id="сохранить" type="button" disabled>Сохранить</button>
+  </header>
+
+  <main class="ed-main">
+    <section class="ed-left">
+      <nav class="ed-list" id="список"></nav>
+      <div class="ed-form" id="форма"></div>
+    </section>
+
+    <section class="ed-right">
+      <div class="ed-bar">
+        <label class="ed-inline">
+          <span class="ed-label">Страница</span>
+          <select id="страница"></select>
+        </label>
+        <a class="ed-link" id="открыть" href="#" target="_blank" rel="noopener">Открыть отдельно</a>
+      </div>
+      <div class="ed-checks" id="проверки" hidden></div>
+      <iframe class="ed-frame" id="просмотр" title="Предпросмотр страницы"></iframe>
+    </section>
+  </main>
+
+  <dialog class="ed-dialog" id="диалог"></dialog>
+
+  <script type="module" src="editor.mjs"></script>
+</body>
+</html>
