@@ -181,36 +181,35 @@ ${ПОДВАЛ_РАЗДЕЛЫ.map(р => `          <p><a href="${L(р.путь)}
   </footer>`;
 }
 
-function модалка() {
-  return `  <div class="modal" id="signup-modal" data-modal hidden>
-    <div class="modal-backdrop" data-modal-close></div>
-    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <button type="button" class="modal-close" data-modal-close aria-label="Закрыть">×</button>
-      <h2 id="modal-title">Записаться</h2>
-      <form class="signup-form" data-role="signup">
-      <!-- TODO: форма не отправляется — бэкенд (Cloudflare Worker → Telegram + таблица)
+/**
+ * Форма записи. Одна разметка на два места: модальное окно и страницу
+ * контактов. Идентификаторы полей различаются приставкой — два элемента с
+ * одним id на странице недопустимы.
+ *
+ * Направление списком не спрашивается: без расписания перед глазами это
+ * угадывание. Если форму открыли с карточки или со страницы занятия, данные
+ * занятия подставляются справа от полей и уходят в заявку скрытым полем.
+ */
+export function форма(приставка) {
+  const поле = (имя, подпись, тег, доп = '') => {
+    const id = `${приставка}-${имя}`;
+    const вход = тег === 'textarea'
+      ? `<textarea id="${id}" name="${доп}" rows="3"></textarea>`
+      : `<input type="${тег}" id="${id}" name="${доп.split(' ')[0]}"${доп.includes('required') ? ' required' : ''}>`;
+    return `        <div class="form-row${имя === 'comment' ? ' form-row-wide' : ''}">
+          <label for="${id}">${esc(подпись)}</label>
+          ${вход}
+        </div>`;
+  };
+  return `      <form class="signup-form" data-role="signup">
+      <!-- TODO: форма не отправляется — приём заявок на почту студии
            не реализован, ДОМ - ТЗ на сайт.md, раздел 2, п.2 -->
       <div class="form-fields">
-        <div class="form-row">
-          <label for="modal-name">Имя родителя</label>
-          <input type="text" id="modal-name" name="name" required>
-        </div>
-        <div class="form-row">
-          <label for="modal-phone">Телефон</label>
-          <input type="tel" id="modal-phone" name="phone" required>
-        </div>
-        <div class="form-row">
-          <label for="modal-age">Возраст ребёнка</label>
-          <input type="text" id="modal-age" name="child_age">
-        </div>
-        <div class="form-row">
-          <label for="modal-time">Удобное время</label>
-          <input type="text" id="modal-time" name="time">
-        </div>
-        <div class="form-row form-row-wide">
-          <label for="modal-comment">Комментарий</label>
-          <textarea id="modal-comment" name="comment" rows="3"></textarea>
-        </div>
+${поле('name', 'Имя родителя', 'text', 'name required')}
+${поле('phone', 'Телефон', 'tel', 'phone required')}
+${поле('age', 'Возраст ребёнка', 'text', 'child_age')}
+${поле('time', 'Удобное время', 'text', 'time')}
+${поле('comment', 'Комментарий', 'textarea', 'comment')}
       </div>
       <div class="signup-context" data-signup-context hidden>
         <span class="contact-label">Занятие</span>
@@ -220,10 +219,20 @@ function модалка() {
       <input type="hidden" name="lesson" data-signup-value>
       <label class="form-consent"><input type="checkbox" required> Согласен(на) на обработку персональных данных</label>
       <button type="submit" class="btn">Отправить заявку</button>
-    </form>
+    </form>`;
+}
+
+function модалка() {
+  return `  <div class="modal" id="signup-modal" data-modal hidden>
+    <div class="modal-backdrop" data-modal-close></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button type="button" class="modal-close" data-modal-close aria-label="Закрыть">×</button>
+      <h2 id="modal-title">Записаться</h2>
+${форма('modal')}
     </div>
   </div>`;
 }
+
 /* #endregion */
 
 /* #region Галерея — один элемент на весь сайт, два режима */
@@ -232,7 +241,7 @@ const SIZES = '(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw';
 /**
  * @param кадры [{ основа, ширина, высота, подпись }] — основа без суффикса «-400.jpg»
  */
-export function галерея({ кадры, depth, режим = 'grid', первыйСрочный = true }) {
+export function галерея({ кадры, depth, режим, первыйСрочный = true, полный = '-800', sizes = SIZES, класс = 'card-image' }) {
   const u = up(depth);
   if (!кадры.length) return '';
   const item = (к, i) => {
@@ -240,9 +249,9 @@ export function галерея({ кадры, depth, режим = 'grid', пер�
     const срочно = первыйСрочный && i === 0
       ? ' loading="eager" fetchpriority="high" decoding="async"'
       : ' loading="lazy" decoding="async"';
-    return `<button type="button" class="gallery-item" data-lightbox-open data-full="${b}-800.jpg" aria-label="${esc(к.подпись)}"><picture>`
-      + `<source type="image/webp" srcset="${b}-400.webp 400w, ${b}-800.webp 800w" sizes="${SIZES}">`
-      + `<img src="${b}-400.jpg" srcset="${b}-400.jpg 400w, ${b}-800.jpg 800w" sizes="${SIZES}" class="card-image" alt="${esc(к.подпись)}" width="${к.ширина}" height="${к.высота}"${срочно}></picture></button>`;
+    return `<button type="button" class="gallery-item" data-lightbox-open data-full="${b}${к.полный || полный}.jpg" aria-label="${esc(к.подпись)}"><picture>`
+      + `<source type="image/webp" srcset="${b}-400.webp 400w, ${b}-800.webp 800w" sizes="${sizes}">`
+      + `<img src="${b}-400.jpg" srcset="${b}-400.jpg 400w, ${b}-800.jpg 800w" sizes="${sizes}" ${класс ? ` class="${класс}"` : ''} alt="${esc(к.подпись)}" width="${к.ширина}" height="${к.высота}"${срочно}></picture></button>`;
   };
   // Панель выводится всегда: при единственном кадре её прячет CSS
   // (.gallery:has(.gallery-view > .gallery-item:only-child)), и галерея
@@ -255,11 +264,14 @@ export function галерея({ кадры, depth, режим = 'grid', пер�
       <button type="button" class="icon-btn" data-gallery-next aria-label="Следующий кадр"><img src="${u}_theme/icons/chevron-right.svg" alt="" width="20" height="20"></button>
     </div>
     <div class="gallery-modes" role="group" aria-label="Вид галереи">
-      <button type="button" class="icon-btn" data-mode="strip" aria-pressed="${режим === 'strip'}" aria-label="Лента"><img src="${u}_theme/icons/view-strip.svg" alt="" width="20" height="20"></button>
+      <button type="button" class="icon-btn" data-mode="strip" aria-pressed="${(режим || 'strip') === 'strip'}" aria-label="Лента"><img src="${u}_theme/icons/view-strip.svg" alt="" width="20" height="20"></button>
       <button type="button" class="icon-btn" data-mode="grid" aria-pressed="${режим === 'grid'}" aria-label="Плитка"><img src="${u}_theme/icons/view-grid.svg" alt="" width="20" height="20"></button>
     </div>
   </div>`;
-  return `<div class="gallery" data-gallery data-default-mode="${режим}">${панель}
+  // Без режима по умолчанию остаётся плитка (.gallery:not([data-mode])):
+  // лента без стрелок бесполезна, а стрелки появляются только со скриптом.
+  const атрибут = режим ? ` data-default-mode="${режим}"` : '';
+  return `<div class="gallery" data-gallery${атрибут}>${панель}
   <div class="gallery-view" data-gallery-view>${кадры.map(item).join('')}</div>
   <div class="lightbox" data-lightbox hidden>
     <div class="lightbox-backdrop" data-lightbox-close></div>
@@ -268,6 +280,7 @@ export function галерея({ кадры, depth, режим = 'grid', пер�
   </div>
 </div>`;
 }
+
 /* #endregion */
 
 /* #region Заголовок раздела */
@@ -275,20 +288,34 @@ export function галерея({ кадры, depth, режим = 'grid', пер�
  * Вся общая информация — одной мета-строкой, там же кнопка записи.
  * Поле без значения не выводится вовсе.
  */
-export function заголовокРаздела({ надзаголовок, h1, поля, кнопка, мета, галереяHtml }) {
+export function заголовокРаздела({ надзаголовок, h1, поля = [], кнопка, мета, лид = [], абзацы = [], дополнительно = '', галереяHtml }) {
   // Либо мета-строка фактов «подпись: значение», либо готовая строка (у поста).
   const строки = мета || поля.filter(([, v]) => v != null && v !== '')
     .map(([k, v]) => `<strong>${esc(k)}:</strong> ${v}`).join('<br>\n        ');
+  const внутри = [
+    `<p class="eyebrow">${esc(надзаголовок)}</p>`,
+    `<h1>${esc(h1)}</h1>`,
+    строки ? `<p class="meta-line">${строки}</p>` : '',
+    ...лид.map(т => `<p class="lead">${т}</p>`),
+    ...абзацы.map(т => `<p>${т}</p>`),
+    кнопка ? `<p class="head-actions"><button type="button" class="btn" data-modal-open>Записаться</button></p>` : '',
+    дополнительно,
+  ].filter(Boolean);
+  // Без иллюстрации колонок нет: лишняя обёртка ломала бы сетку заголовка.
+  if (!галереяHtml) {
+    return `  <section class="page-head">\n    <div class="container">\n`
+      + pad(6, внутри.join('\n')) + `\n    </div>\n  </section>`;
+  }
   return `  <section class="page-head">
     <div class="container hero-row">
       <div>
-        <p class="eyebrow">${esc(надзаголовок)}</p>
-        <h1>${esc(h1)}</h1>
-${opt(строки, s => `        <p class="meta-line">${s}</p>\n`)}${
-    кнопка ? `        <p class="head-actions"><button type="button" class="btn" data-modal-open>Записаться</button></p>\n` : ''}      </div>
-${opt(галереяHtml, g => pad(6, g) + '\n')}    </div>
+${pad(8, внутри.join('\n'))}
+      </div>
+${pad(6, галереяHtml)}
+    </div>
   </section>`;
 }
+
 /* #endregion */
 
 /* #region Блоки */
@@ -296,10 +323,11 @@ export const блок = (внутри, id) =>
   `  <section class="block"${id ? ` id="${id}"` : ''}>\n    <div class="container">\n${внутри.replace(/\n$/, '')}\n    </div>\n  </section>`;
 
 /** Простая таблица: без сортировки и без градиента в шапке. */
-export function таблицаПростая({ колонки, строки, ширины }) {
-  const cg = ширины ? `<colgroup>${ширины.map(w => `<col style="width:${w}">`).join('')}</colgroup>\n` : '';
+export function таблицаПростая({ колонки, строки, ширины, шапкаБезScope }) {
+  const cg = ширины ? `<colgroup>${ширины.map(w => `<col style="width:${w}">`).join('')}</colgroup>` : '';
+  const th = c => шапкаБезScope ? `<th>${esc(c)}</th>` : `<th scope="col">${esc(c)}</th>`;
   return `<table class="table-simple">
-${cg}<thead><tr>${колонки.map(c => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead>
+${cg}${шапкаБезScope ? '' : '\n'}<thead><tr>${колонки.map(th).join('')}</tr></thead>
 <tbody>
 ${строки.map(r => `<tr>${r.map((v, i) => `<td data-label="${esc(колонки[i])}">${esc(v)}</td>`).join('')}</tr>`).join('\n')}
 </tbody>
@@ -385,7 +413,7 @@ export function страницаСущности({ вид, сущность, ш�
     ...(ctx.размеры[сущность.изображение] || { ширина: 400, высота: 300 }),
   }] : [];
   const иллюстрация = кадры.length
-    ? галерея({ кадры, depth })
+    ? галерея({ кадры, depth, режим: 'grid' })
     : шаблон.кнопка === 'нет' && вид === 'пост' ? ''
     // Фото нет — честная заглушка вместо пустого места и вместо чужой картинки.
     : '';

@@ -2,51 +2,61 @@
   {
     "имя": "Ольга Зинюкова",
     "роль": "Основатель, архитектор, педагог",
-    "био": null
+    "био": "Образование: МАрхИ, 2004, факультет жилых и общественных зданий. Путь: архитектор-проектировщик посёлков таунхаусов (Новая Рига) → живопись, выставки в Европе → художник-иллюстратор (журнал Marie Claire Dubai, издательство Паулсен — детские книги о покорении Севера) → участие в детских проектах на станции Барнео с Дмитрием и Матвеем Шпаро, Галей Моррелл → автор апсайкл-бижутерии из радиодеталей (бренд radio) → шоу-рум мебели из индонезийских лодок → хранитель игры в лесном детском саду, затем педагог в детском саду при демократической школе Перемена (Новая Рига) → художественный руководитель, педагог ИЗО и проектной деятельности в частной школе СмартСкул Новая Рига, параллельно частная практика и авторские занятия в реджио-садах → сентябрь 2023 — открытие собственной студии.Дополнительное образование: сертифицированный педагог проектной деятельности сети школ СмартСкул; практический курс по арт-терапии; личная терапия (гештальт, КПТ). Работа иллюстратора выставлялась в мэрии Нуука (Гренландия).",
+    "фото": "_content/media/team/olga"
   },
   {
     "имя": "Александра Мельникова",
     "роль": "Скульптура, Рисовашки",
-    "био": null
+    "био": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "фото": null
   },
   {
     "имя": "Светлана Реймер",
     "роль": "Подготовка к школе",
-    "био": null
+    "био": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "фото": null
   },
   {
     "имя": "Регина Назарова",
     "роль": "Администратор студии, книжный клуб",
-    "био": null
+    "био": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "фото": null
   },
   {
     "имя": "Елена Юкина",
     "роль": "Педагог-дефектолог, Арт-терапия для особенных деток",
-    "био": null
+    "био": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "фото": null
   },
   {
     "имя": "Андрей Павленко",
     "роль": "Мастер на все руки студии",
-    "био": null
+    "био": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "фото": null
   },
   {
     "имя": "Милана Чернышова",
     "роль": "Куратор курса Архитектура игр (Авторские курсы), Архитектура и Рисовашки (абонемент)",
-    "био": null
+    "био": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "фото": null
   },
   {
     "имя": "Варвара Голубчекова",
     "роль": "Живопись, Графика, Скульптура (абонемент)",
-    "био": null
+    "био": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "фото": null
   },
   {
     "имя": "Антон Чепелюк",
     "роль": "Куратор курса Робототехника (Авторские курсы)",
-    "био": null
+    "био": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "фото": null
   },
   {
     "имя": "Софья Виноградова",
     "роль": "Академический рисунок (абонемент)",
-    "био": null
+    "био": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "фото": null
   }
 ]

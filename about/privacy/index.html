@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Политика обработки данных — ДОМ</title>
-  <meta name="description" content="Какие данные собирает сайт студии ДОМ, зачем и как долго хранятся.">
+  <meta name="description" content="Как студия ДОМ обрабатывает персональные данные.">
   <link rel="icon" href="../../favicon.ico">
   <link rel="preload" href="../../_theme/fonts/golos-text-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../../_theme/fonts/roboto-mono-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -17,7 +17,7 @@
   <meta property="og:locale" content="ru_RU">
   <meta property="og:site_name" content="ДОМ — студия архитектуры и искусства">
   <meta property="og:title" content="Политика обработки данных — ДОМ">
-  <meta property="og:description" content="Какие данные собирает сайт студии ДОМ, зачем и как долго хранятся.">
+  <meta property="og:description" content="Как студия ДОМ обрабатывает персональные данные.">
   <meta property="og:url" content="https://lyzlov.github.io/Dom-studio/about/privacy/">
   <meta property="og:image" content="https://lyzlov.github.io/Dom-studio/_content/media/og-cover.jpg">
   <meta name="twitter:card" content="summary_large_image">
@@ -26,7 +26,7 @@
   <a class="skip-link" href="#main">К содержимому</a>
   <header class="site-header">
     <div class="container bar">
-      <a class="logo" href="../../"><img src="../../_theme/brand/logo-dark.svg" alt="ДОМ — студия архитектуры и искусства" width="533" height="300"></a>
+      <a class="logo" href="../../index.html"><img src="../../_theme/brand/logo-dark.svg" alt="ДОМ — студия архитектуры и искусства" width="533" height="300"></a>
       <button type="button" class="nav-toggle" aria-label="Меню" aria-expanded="false" aria-controls="site-nav"><img src="../../_theme/icons/menu.svg" alt="" width="24" height="24"></button>
       <nav class="site-nav" id="site-nav" aria-label="Основная навигация">
         <ul class="nav-list">
@@ -36,7 +36,7 @@
             <ul class="dropdown-inner">
             <li><a href="../../courses/">Курсы</a></li>
             <li><a href="../../events/">События</a></li>
-                        <li><a href="../../services/">Услуги</a></li>
+            <li><a href="../../services/">Услуги</a></li>
             <li><a href="../../services/admissions/">Профориентация</a></li>
             <li><a href="../../camp/">Летний лагерь</a></li>
             </ul>
@@ -48,7 +48,7 @@
             <ul class="dropdown-inner">
             <li><a href="../studio/">Студия</a></li>
             <li><a href="../team/">Команда</a></li>
-            <li><a href="../principles/" aria-current="page">Наши принципы</a></li>
+            <li><a href="../principles/">Наши принципы</a></li>
             </ul>
           </div>
         </li>
@@ -63,7 +63,7 @@
       </div>
     </div>
     <div class="container breadcrumbs-row">
-      <nav class="breadcrumbs" aria-label="Хлебные крошки"><a href="../../">Главная</a> / <span class="current" aria-current="page">Политика обработки данных</span></nav>
+      <nav class="breadcrumbs" aria-label="Хлебные крошки"><a href="../../">Главная</a><span class="current" aria-current="page"> / Политика обработки данных</span></nav>
     </div>
   </header>
   <main id="main">
@@ -76,7 +76,7 @@
 
   <section class="block">
     <div class="container">
-      <!-- TODO: реквизиты и условия не согласованы. Текст — типовой каркас,
+<!-- TODO: реквизиты и условия не согласованы. Текст — типовой каркас,
      подставляет и вычитывает заказчик (Регина). До этого страницу не публиковать
      как действующий документ — ТЗ/Сводные вопросы.md, группа 2. -->
       <p>Настоящая политика описывает, какие персональные данные собирает сайт студии ДОМ, зачем и как долго они хранятся.</p>
@@ -141,10 +141,9 @@
       <button type="button" class="modal-close" data-modal-close aria-label="Закрыть">×</button>
       <h2 id="modal-title">Записаться</h2>
       <form class="signup-form" data-role="signup">
-      <!-- TODO: форма не отправляется — бэкенд (Cloudflare Worker → Telegram + таблица)
+      <!-- TODO: форма не отправляется — приём заявок на почту студии
            не реализован, ДОМ - ТЗ на сайт.md, раздел 2, п.2 -->
       <div class="form-fields">
-      
         <div class="form-row">
           <label for="modal-name">Имя родителя</label>
           <input type="text" id="modal-name" name="name" required>
