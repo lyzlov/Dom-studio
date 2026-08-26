@@ -127,11 +127,17 @@ table.schedule, table.table-simple {
   transition: color var(--dur-micro) var(--ease-out);
   cursor: pointer;
 }
-.site-nav .nav-list a:hover,
 .site-nav .nav-list a[aria-current="page"],
-.nav-group:hover .nav-group-label,
 .nav-group-label[aria-expanded="true"] {
   color: var(--color-primary-text);
+}
+/* Наведение описывается только там, где оно есть. На тач-устройстве палец
+   оставляет :hover на элементе до следующего касания, и подсветка залипает. */
+@media (hover: hover) {
+  .site-nav .nav-list a:hover,
+  .nav-group:hover .nav-group-label {
+    color: var(--color-primary-text);
+  }
 }
 .nav-group-label {
   font: inherit;
@@ -166,12 +172,14 @@ table.schedule, table.table-simple {
   list-style: none;
   margin: 0;
 }
-.nav-group:hover .dropdown,
+/* Раскрытие подменю: клавиатура и явное состояние — везде, наведение — только
+   там, где есть указатель. Прежде наведение описывалось безусловно, а тач
+   гасился отдельным `@media (hover: none)`; два контекста перекрывались, и на
+   телефоне правило с :hover перебивало мобильное по специфичности. */
 .nav-group:focus-within .dropdown,
 .nav-group-label[aria-expanded="true"] + .dropdown { display: block; }
-@media (hover: none) {
-  .nav-group:hover .dropdown { display: none; }
-  .nav-group-label[aria-expanded="true"] + .dropdown { display: block; }
+@media (hover: hover) {
+  .nav-group:hover .dropdown { display: block; }
 }
 .nav-group .dropdown a {
   display: block;
@@ -1116,8 +1124,14 @@ body.is-locked { overflow: hidden; }
     top: var(--header-h);
     left: 0;
     right: 0;
-    bottom: 0;
+    /* Высота от малого вьюпорта, а не bottom:0: fixed-блок отсчитывается от
+       большого вьюпорта, и при видимой адресной строке низ списка уходит под
+       обвязку браузера. Та же мера, что у первого экрана. */
+    height: calc(100vh - var(--header-h));
+    height: calc(100svh - var(--header-h));
     overflow-y: auto;
+    /* Докрутив меню до края, страница под ним не продолжает прокрутку. */
+    overscroll-behavior: contain;
     background: var(--color-bg);
     z-index: 25;
     padding: var(--space-related) var(--grid-margin) var(--space-section);
@@ -1126,6 +1140,8 @@ body.is-locked { overflow: hidden; }
   .site-nav .nav-list { flex-direction: column; gap: 0; margin: 0; }
   .site-nav .nav-list > li > a,
   .nav-group-label { padding: var(--space-inner) 0; min-height: 44px; display: flex; align-items: center; }
+  /* Подменю раскрыты всегда. Правило единственное: раскрытием по наведению
+     владеет `@media (hover: hover)`, и на узком экране оно с этим не спорит. */
   .nav-group .dropdown { position: static; display: block; }
   .nav-group .dropdown::before { display: none; }
   .nav-group .dropdown-inner { padding: 0 0 var(--space-tight) var(--space-related); margin: 0; }

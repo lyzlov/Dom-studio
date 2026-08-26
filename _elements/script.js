@@ -408,8 +408,18 @@
   /* #region Мобильное меню и подменю шапки */
   var toggle = document.querySelector(".nav-toggle");
   var nav = document.querySelector(".site-nav");
+  // Порог тот же, что у медиазапроса раскладки шапки в style.css.
+  var УЗКИЙ = window.matchMedia("(max-width: 899px)");
 
+  // На узком экране подменю раскрыты правилом CSS и не сворачиваются. Лейбл
+  // группы там не переключатель: он сообщает раскрытое состояние и не меняет его.
+  function группыРаскрыты(да) {
+    document.querySelectorAll(".nav-group-label").forEach(function (b) {
+      b.setAttribute("aria-expanded", String(да));
+    });
+  }
   function closeAllGroups() {
+    if (УЗКИЙ.matches) { группыРаскрыты(true); return; }
     document.querySelectorAll('.nav-group-label[aria-expanded="true"]').forEach(function (b) {
       b.setAttribute("aria-expanded", "false");
     });
@@ -425,6 +435,9 @@
     nav.classList.remove("is-open");
     toggle.setAttribute("aria-expanded", "false");
     setToggleIcon(false);
+    // Тот же замок, что у модалки и лайтбокса: наложение на весь экран
+    // не даёт прокручивать страницу под собой.
+    document.body.classList.remove("is-locked");
     closeAllGroups();
   }
 
@@ -434,6 +447,7 @@
       nav.classList.toggle("is-open", open);
       toggle.setAttribute("aria-expanded", String(open));
       setToggleIcon(open);
+      document.body.classList.toggle("is-locked", open);
       if (!open) closeAllGroups();
     });
     nav.addEventListener("click", function (e) {
@@ -444,10 +458,20 @@
   document.querySelectorAll(".nav-group-label").forEach(function (label) {
     label.addEventListener("click", function (e) {
       e.stopPropagation();
+      if (УЗКИЙ.matches) return;
       var open = label.getAttribute("aria-expanded") !== "true";
       closeAllGroups();
       label.setAttribute("aria-expanded", String(open));
     });
+  });
+
+  // Состояние групп принадлежит одной из сторон: на узком экране — CSS, на
+  // широком — этому скрипту. При переходе через порог владелец меняется.
+  группыРаскрыты(УЗКИЙ.matches);
+  УЗКИЙ.addEventListener("change", function () {
+    if (УЗКИЙ.matches) { группыРаскрыты(true); return; }
+    closeNav();
+    группыРаскрыты(false);
   });
 
   document.addEventListener("click", function (e) {
@@ -455,7 +479,7 @@
   });
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
-    if (document.querySelector('.nav-group-label[aria-expanded="true"]')) { closeAllGroups(); return; }
+    if (!УЗКИЙ.matches && document.querySelector('.nav-group-label[aria-expanded="true"]')) { closeAllGroups(); return; }
     if (nav && nav.classList.contains("is-open")) { closeNav(); toggle.focus(); }
   });
 
