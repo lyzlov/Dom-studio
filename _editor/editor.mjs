@@ -36,8 +36,19 @@ const эл = (тег, класс, текст) => {
   return e;
 };
 const сегодня = () => new Date().toISOString().slice(0, 10);
+const КЛЮЧ = 'dom-ключ';
+const ПРЕВЬЮ = 'dom-превью';
+const локально = () => ['localhost', '127.0.0.1'].includes(location.hostname);
+const склонение = (n, ф) => {
+  const a = Math.abs(n) % 100, b = a % 10;
+  if (a > 10 && a < 20) return ф[2];
+  if (b === 1) return ф[0];
+  if (b > 1 && b < 5) return ф[1];
+  return ф[2];
+};
 
 const S = {
+  токен: '', пишем: false, головы: null,
   данные: null,
   исходники: new Map(),      // путь файла → текст, каким он лежит на сайте
   тексты: new Map(),         // _content/text/**.html → содержимое
@@ -114,11 +125,6 @@ async function загрузить() {
   собрать();
 
   S.загружено = true;
-  // Голова веток запоминается при открытии: при записи сверяемся, не ушла ли
-  // она вперёд. Не ответил GitHub — сверки не будет, и об этом честно скажем.
-  // Только на опубликованном сайте: локально репозиторий не при чём.
-  if (location.hostname.endsWith('github.io'))
-    головыВеток(ЦЕЛИ).then(г => { S.головы = г; }).catch(() => { S.головы = null; });
 
   шаг('Текущие страницы…');
   await Promise.all(S.собрано.map(async ([путь]) => {
@@ -490,7 +496,40 @@ function нарисовать() {
   нарисоватьФорму();
 }
 
+/** Список файлов человеческим языком: разделы, а не пути. */
+const разделФайла = путь => {
+  if (путь === ФАЙЛ.site) return 'Студия';
+  const к = путь.match(/^_content\/catalog\/(.+)\.json$/);
+  if (к) return ИМЕНА[к[1]] || к[1];
+  if (путь.startsWith('_content/text/')) return 'Тексты';
+  if (путь.startsWith('_structure/')) return 'Устройство сайта';
+  if (путь.startsWith('_elements/')) return 'Элементы';
+  if (путь.startsWith('_theme/')) return 'Оформление';
+  return null;
+};
+
+function сводка(файлы) {
+  const разделы = [];
+  let страниц = 0;
+  for (const [путь] of файлы) {
+    const имя = разделФайла(путь);
+    if (имя === null) { страниц++; continue; }
+    if (!разделы.includes(имя)) разделы.push(имя);
+  }
+  if (страниц) разделы.push(`${страниц} ${склонение(страниц, ['страница', 'страницы', 'страниц'])}`);
+  return разделы.join(', ');
+}
+
+function отметитьСохранение() {
+  $('состояние').textContent = `Сохранено ${new Date().toTimeString().slice(0, 5)} · сайт обновится через минуту`;
+  $('состояние').dataset.вид = '';
+}
+
 function сохранить() {
+  if (!S.пишем) {
+    вход().then(() => { обновитьСостояние(); if (S.пишем) сохранить(); });
+    return;
+  }
   const файлы = изменения();
   const беды = проверить();
   const д = $('диалог');
@@ -498,7 +537,7 @@ function сохранить() {
   д.append(эл('h2', null, 'Сохранить правки'));
 
   if (беды.length) {
-    д.append(эл('p', null, 'Сначала нужно исправить проверки — иначе на сайт уедет то, что уже сломано:'));
+    д.append(эл('p', null, 'Сначала нужно исправить:'));
     const с = эл('div', 'ed-files');
     беды.slice(0, 20).forEach(б => с.append(эл('p', null, б)));
     д.append(с);
@@ -509,15 +548,42 @@ function сохранить() {
     return;
   }
 
-  д.append(эл('p', null, `Будет записано файлов: ${файлы.length}. Страницы уже собраны — сайт остаётся статическим.`));
-  const с = эл('div', 'ed-files');
-  файлы.forEach(([п]) => с.append(эл('p', null, п)));
-  д.append(с);
+  д.append(эл('p', null, 'Будет обновлено: ' + сводка(файлы)));
+
+  const подробно = эл('details');
+  подробно.append(эл('summary', null, 'Подробнее'));
+  const список = эл('div', 'ed-files');
+  файлы.forEach(([п]) => список.append(эл('p', null, п)));
+  подробно.append(список);
+  д.append(подробно);
 
   const отчёт = эл('p', 'ed-hint', '');
   const действия = эл('div', 'ed-actions');
 
-  if (естьДоступКПапке())
+  const главная = кнопка('Сохранить', async () => {
+    главная.disabled = true;
+    try {
+      отчёт.textContent = 'Запись…';
+      await записатьВGitHub(файлы, {
+        токен: S.токен,
+        сообщение: 'Правки из редактора',
+        цели: ЦЕЛИ,
+        основа: S.головы || {},
+      }, ш => { отчёт.textContent = ш; });
+      принять(файлы);
+      // Голова ушла вперёд нашим же коммитом: перечитываем, иначе вторая
+      // запись в этой же вкладке упрётся в сверку.
+      S.головы = await головыВеток(ЦЕЛИ, S.токен).catch(() => null);
+      д.close();
+      отметитьСохранение();
+    } catch (e) {
+      главная.disabled = false;
+      отчёт.textContent = 'Не записано: ' + e.message;
+    }
+  });
+  действия.append(главная);
+
+  if (локально() && естьДоступКПапке())
     действия.append(кнопка('В папку проекта', async () => {
       try {
         отчёт.textContent = 'Запись…';
@@ -526,39 +592,101 @@ function сохранить() {
       } catch (e) { отчёт.textContent = 'Не записано: ' + e.message; }
     }));
 
-  if (!S.головы || Object.values(S.головы).some(v => !v))
-    д.append(эл('p', 'ed-hint',
-      'GitHub не ответил при открытии редактора: сверить, не изменилась ли ветка с тех пор, не получится.'));
-
-  const токен = эл('input');
-  токен.type = 'password';
-  токен.placeholder = 'токен GitHub';
-  токен.value = sessionStorage.getItem('dom-token') || '';
-  действия.append(токен);
-  действия.append(кнопка('Проверить доступ', async () => {
-    try {
-      const р = await проверитьДоступ(токен.value.trim(), { owner: 'lyzlov', repo: 'Dom' });
-      отчёт.textContent = `Токен принят: ${р.пользователь}, запись ${р.запись ? 'разрешена' : 'запрещена'}.`;
-    } catch (e) { отчёт.textContent = e.message; }
-  }));
-  действия.append(кнопка('В GitHub', async () => {
-    if (!confirm('Записать правки коммитом в оба репозитория?')) return;
-    try {
-      sessionStorage.setItem('dom-token', токен.value.trim());
-      отчёт.textContent = 'Запись…';
-      отчёт.textContent = await записатьВGitHub(файлы, {
-        токен: токен.value.trim(),
-        сообщение: 'Правки из редактора',
-        цели: ЦЕЛИ,
-        основа: S.головы || {},
-      }, ш => { отчёт.textContent = ш; });
-      принять(файлы);
-    } catch (e) { отчёт.textContent = 'Не записано: ' + e.message; }
-  }));
   действия.append(кнопка('Отмена', () => д.close()));
-
   д.append(действия, отчёт);
   д.showModal();
+}
+
+/** Ключ доступа: проверяется один раз и хранится в браузере. */
+async function принятьКлюч(токен) {
+  try {
+    const р = await проверитьДоступ(токен, ЦЕЛИ[0]);
+    if (!р.запись) return { ок: false, причина: `Ключ ${р.пользователь}: права на запись нет.` };
+    S.токен = токен;
+    S.пишем = true;
+    S.головы = await головыВеток(ЦЕЛИ, токен).catch(() => null);
+    return { ок: true };
+  } catch (e) {
+    if (/GitHub 401/.test(e.message)) return { ок: false, причина: 'Ключ не подошёл — проверьте, что скопирован целиком.' };
+    if (/GitHub 40[34]/.test(e.message)) return { ок: false, причина: 'Ключ не даёт доступа к репозиторию сайта.' };
+    return { ок: false, причина: 'Не удалось проверить ключ: ' + e.message };
+  }
+}
+
+function вход() {
+  return new Promise(готово => {
+    const д = $('вход');
+    д.addEventListener('close', готово, { once: true });
+
+    const открыть = сообщение => {
+      д.textContent = '';
+      д.append(эл('h2', null, 'Редактор ДОМ'));
+
+      const строка = эл('div', 'ed-row');
+      const поле = эл('input');
+      поле.type = 'password';
+      поле.id = 'ключ-доступа';
+      поле.autocomplete = 'current-password';
+      const подпись = эл('label', 'ed-label', 'ключ доступа');
+      подпись.htmlFor = поле.id;
+      const обёртка = эл('div');
+      обёртка.append(поле);
+      строка.append(подпись, обёртка);
+      д.append(строка);
+
+      const помнить = эл('label', 'ed-inline');
+      const галка = эл('input');
+      галка.type = 'checkbox';
+      галка.checked = true;
+      помнить.append(галка, эл('span', 'ed-hint', 'запомнить на этом компьютере'));
+      д.append(помнить);
+
+      const отчёт = эл('p', 'ed-hint', сообщение || '');
+      const действия = эл('div', 'ed-actions');
+      const войти = кнопка('Войти', async () => {
+        const токен = поле.value.trim();
+        if (!токен) { отчёт.textContent = 'Введите ключ.'; return; }
+        войти.disabled = true;
+        отчёт.textContent = 'Проверка…';
+        const р = await принятьКлюч(токен);
+        войти.disabled = false;
+        if (!р.ок) { отчёт.textContent = р.причина; return; }
+        if (галка.checked) localStorage.setItem(КЛЮЧ, токен);
+        else localStorage.removeItem(КЛЮЧ);
+        д.close();
+      });
+      поле.addEventListener('keydown', е => { if (е.key === 'Enter') войти.click(); });
+      действия.append(войти, кнопка('Смотреть без сохранения', () => д.close()));
+      д.append(действия, отчёт);
+      д.showModal();
+      поле.focus();
+    };
+
+    const сохранённый = localStorage.getItem(КЛЮЧ);
+    if (!сохранённый) { открыть(''); return; }
+    принятьКлюч(сохранённый).then(р => {
+      if (р.ок) { готово(); return; }
+      localStorage.removeItem(КЛЮЧ);
+      открыть(р.причина);
+    });
+  });
+}
+
+function настроитьПревью() {
+  const кн = $('превью-вкл');
+  const показать = видно => {
+    document.querySelector('.ed-main').dataset.превью = видно ? 'да' : 'нет';
+    кн.setAttribute('aria-pressed', String(видно));
+    кн.title = видно ? 'Скрыть предпросмотр' : 'Показать предпросмотр';
+    кн.firstElementChild.src = `../_theme/icons/chevron-${видно ? 'right' : 'left'}.svg`;
+  };
+  let видно = localStorage.getItem(ПРЕВЬЮ) !== 'нет';
+  показать(видно);
+  кн.addEventListener('click', () => {
+    видно = !видно;
+    localStorage.setItem(ПРЕВЬЮ, видно ? 'да' : 'нет');
+    показать(видно);
+  });
 }
 
 const кнопка = (имя, действие) => {
@@ -581,8 +709,12 @@ function принять(файлы) {
 }
 
 (async () => {
+  настроитьПревью();
+  const загрузка = загрузить();
+  загрузка.catch(() => {});
+  await вход();
   try {
-    await загрузить();
+    await загрузка;
     нарисовать();
     нарисоватьВыборСтраницы();
     показать();

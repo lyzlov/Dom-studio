@@ -315,3 +315,46 @@ a:focus-visible {
   .ed-left { border-right: 0; border-bottom: 1px solid var(--color-border); }
   .ed-frame { min-height: 60vh; }
 }
+
+/* #region Иконочная кнопка и сворачивание предпросмотра */
+
+.ed-icon {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-micro);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  cursor: pointer;
+}
+
+.ed-icon img { display: block; width: 20px; height: 20px; }
+
+.ed-main[data-превью="нет"] { grid-template-columns: 1fr; }
+.ed-main[data-превью="нет"] .ed-right { display: none; }
+.ed-main[data-превью="нет"] .ed-left { border-right: 0; }
+
+/* #endregion */
+
+/* #region Диалоги: вход и сохранение */
+
+.ed-dialog .ed-row,
+.ed-dialog .ed-inline { margin-bottom: var(--space-inner); }
+
+.ed-dialog .ed-inline { flex: none; }
+
+.ed-dialog .ed-inline input[type="checkbox"] { width: auto; }
+
+.ed-dialog .ed-inline .ed-hint { margin-top: 0; }
+
+.ed-dialog details { margin-bottom: var(--space-inner); }
+
+.ed-dialog summary {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.ed-dialog details .ed-files { margin: var(--space-tight) 0 0; }
+
+/* #endregion */
