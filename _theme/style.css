@@ -979,7 +979,7 @@ body.is-locked { overflow: hidden; }
   padding: var(--space-3xs);
 }
 
-/* #region Лайтбокс галереи (Студия) — тот же паттерн, что и модалка записи выше */
+/* #region Лайтбокс галереи (Школа) — тот же паттерн, что и модалка записи выше */
 .lightbox[hidden] { display: none; }
 .lightbox {
   position: fixed;

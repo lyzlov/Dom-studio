@@ -2,8 +2,8 @@
   "$комментарий": "Единый источник фактов. Тексты и описания сюда не кладутся — они в ТЗ/*.md.",
   "org": {
     "title": "ДОМ",
-    "fullName": "ДОМ — студия архитектуры и искусства",
-    "slogan": "Студия архитектуры и искусства для детей",
+    "fullName": "ДОМ — школа архитектуры и искусства",
+    "slogan": "Школа архитектуры и искусства для детей",
     "legalEntity": null,
     "inn": null,
     "ogrn": null,
@@ -11,7 +11,7 @@
   },
   "contacts": {
     "address": "Красногорск, посёлок Ильинское-Усово, ул. Архангельская, 11",
-    "place": "Студия ДОМ, Ильинское-Усово",
+    "place": "Школа ДОМ, Ильинское-Усово",
     "phone": "+7 991 740 70 10",
     "social": [
       {
@@ -27,7 +27,7 @@
       37.235447
     ],
     "route": "https://yandex.ru/maps/-/CTwrrEzD",
-    "mapCaption": "Карта: студия ДОМ, улица Архангельская, 11"
+    "mapCaption": "Карта: школа ДОМ, улица Архангельская, 11"
   },
   "site": {
     "address": "https://lyzlov.github.io/Dom-studio/",
@@ -66,59 +66,59 @@
   "gallery": [
     {
       "base": "_content/media/space/studio-01",
-      "caption": "Фото студии, 1"
+      "caption": "Фото школы, 1"
     },
     {
       "base": "_content/media/space/studio-02",
-      "caption": "Фото студии, 2"
+      "caption": "Фото школы, 2"
     },
     {
       "base": "_content/media/space/studio-03",
-      "caption": "Фото студии, 3"
+      "caption": "Фото школы, 3"
     },
     {
       "base": "_content/media/space/studio-04",
-      "caption": "Фото студии, 4"
+      "caption": "Фото школы, 4"
     },
     {
       "base": "_content/media/space/studio-05",
-      "caption": "Фото студии, 5"
+      "caption": "Фото школы, 5"
     },
     {
       "base": "_content/media/space/studio-06",
-      "caption": "Фото студии, 6"
+      "caption": "Фото школы, 6"
     },
     {
       "base": "_content/media/space/studio-07",
-      "caption": "Фото студии, 7"
+      "caption": "Фото школы, 7"
     },
     {
       "base": "_content/media/space/studio-08",
-      "caption": "Фото студии, 8"
+      "caption": "Фото школы, 8"
     },
     {
       "base": "_content/media/space/studio-09",
-      "caption": "Фото студии, 9"
+      "caption": "Фото школы, 9"
     },
     {
       "base": "_content/media/space/studio-10",
-      "caption": "Фото студии, 10"
+      "caption": "Фото школы, 10"
     },
     {
       "base": "_content/media/space/studio-11",
-      "caption": "Фото студии, 11"
+      "caption": "Фото школы, 11"
     },
     {
       "base": "_content/media/space/studio-12",
-      "caption": "Фото студии, 12"
+      "caption": "Фото школы, 12"
     },
     {
       "base": "_content/media/space/studio-13",
-      "caption": "Фото студии, 13"
+      "caption": "Фото школы, 13"
     },
     {
       "base": "_content/media/space/studio-14",
-      "caption": "Фото студии, 14"
+      "caption": "Фото школы, 14"
     }
   ],
   "eventKinds": [

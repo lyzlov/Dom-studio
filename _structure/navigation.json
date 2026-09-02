@@ -37,7 +37,7 @@
       "group": "О нас",
       "items": [
         {
-          "name": "Студия",
+          "name": "Школа",
           "href": "about/studio/index.html"
         },
         {
@@ -73,7 +73,7 @@
       "href": "services/index.html"
     },
     {
-      "name": "Студия",
+      "name": "Школа",
       "href": "about/studio/index.html"
     }
   ]
