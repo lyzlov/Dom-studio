@@ -2,8 +2,11 @@
  * save.mjs — запись изменённых файлов: в папку проекта или коммитом в GitHub.
  */
 
-function base64(строка) {
-  const байты = new TextEncoder().encode(строка);
+/** Содержимое файла — текст или уже готовые байты (картинки). */
+function base64(содержимое) {
+  const байты = typeof содержимое === 'string'
+    ? new TextEncoder().encode(содержимое)
+    : содержимое;
   let s = '';
   for (let i = 0; i < байты.length; i += 0x8000)
     s += String.fromCharCode.apply(null, байты.subarray(i, i + 0x8000));
@@ -51,7 +54,7 @@ async function api(токен, путь, способ = 'GET', тело) {
 export async function проверитьДоступ(токен, { owner, repo }) {
   const я = await api(токен, '/user');
   const р = await api(токен, `/repos/${owner}/${repo}`);
-  return { пользователь: я.login, запись: !!(р.permissions && р.permissions.push) };
+  return { пользователь: я.login, commit: !!(р.permissions && р.permissions.push) };
 }
 
 /** Голова ветки: с ней сверяется запись, чтобы не затереть чужую правку. */
@@ -75,7 +78,7 @@ export async function записатьВGitHub(файлы, { токен, цел�
     const ссылка = await api(токен, `/repos/${ц.owner}/${ц.repo}/git/ref/heads/${ц.branch}`);
     const родитель = ссылка.object.sha;
     const ожидалось = основа[ключЦели(ц)];
-    // Ветка ушла вперёд с тех пор, как редактор прочитал сайт: наша запись
+    // Ветка ушла вперёд с тех пор, как редактор прочитал site: наша запись
     // затёрла бы чужую правку. Ничего не пишем, пока страница не перечитана.
     if (ожидалось && ожидалось !== родитель)
       throw new Error(`${ц.owner}/${ц.repo}: ветка изменилась с момента открытия редактора (${ожидалось.slice(0, 7)} → ${родитель.slice(0, 7)}). Перезагрузите страницу и повторите правку.`);
@@ -87,7 +90,7 @@ export async function записатьВGitHub(файлы, { токен, цел�
       наПрогресс(`${ц.owner}/${ц.repo}: файл ${++n} из ${файлы.length}`);
       const blob = await api(токен, `/repos/${ц.owner}/${ц.repo}/git/blobs`, 'POST',
         { content: base64(содержимое), encoding: 'base64' });
-      дерево.push({ path: (ц.приставка || '') + путь, mode: '100644', type: 'blob', sha: blob.sha });
+      дерево.push({ path: (ц.prefix || '') + путь, mode: '100644', type: 'blob', sha: blob.sha });
     }
 
     наПрогресс(`${ц.owner}/${ц.repo}: коммит`);

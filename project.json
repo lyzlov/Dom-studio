@@ -1,0 +1,290 @@
+{
+  "$комментарий": "Манифест проекта для редактора Enfilade: где лежат файлы, куда писать, как резать картинки, как сгруппированы токены. Имён проекта в коде редактора нет.",
+  "name": "ДОМ",
+  "contract": 1,
+  "files": {
+    "site": "_content/site.json",
+    "archive": "_content/archive.json",
+    "catalog": "_content/catalog/{name}.json",
+    "texts": "_content/text/",
+    "pages": "_structure/pages.json",
+    "templates": "_structure/templates.json",
+    "navigation": "_structure/navigation.json",
+    "form": "_structure/form.json",
+    "types": "_elements/types.json",
+    "markup": "_elements/markup.html",
+    "tokens": "_theme/tokens.css",
+    "typography": "_theme/typography.json",
+    "styles": "_theme/style.css"
+  },
+  "commit": {
+    "$комментарий": "Куда уходит коммит. Приставка — путь до корня сайта внутри репозитория.",
+    "targets": [
+      {
+        "owner": "lyzlov",
+        "repo": "Dom",
+        "branch": "main",
+        "prefix": "site/"
+      },
+      {
+        "owner": "lyzlov",
+        "repo": "Dom-studio",
+        "branch": "main",
+        "prefix": ""
+      }
+    ],
+    "message": "Правки из редактора"
+  },
+  "media": {
+    "folder": "_content/media/",
+    "widths": [
+      400,
+      800
+    ],
+    "quality": 82,
+    "folders": [
+      "courses",
+      "events",
+      "camp",
+      "team",
+      "space"
+    ],
+    "fallbackFolder": "space"
+  },
+  "theme": {
+    "$комментарий": "Группы и разделы оформления в порядке вывода. options — раздел, из которого берутся варианты для значений-ссылок. Подписи — в _editor/locale.",
+    "groups": [
+      {
+        "key": "color",
+        "sections": [
+          {
+            "key": "palette",
+            "pattern": "^--(mono|accent)-"
+          },
+          {
+            "key": "applied",
+            "pattern": "^--(role-|direction-|gradient-)",
+            "options": "palette"
+          }
+        ]
+      },
+      {
+        "key": "type",
+        "sections": [
+          {
+            "key": "fonts",
+            "pattern": "^--font-"
+          },
+          {
+            "key": "styles",
+            "pattern": "^--type-"
+          },
+          {
+            "key": "measure",
+            "pattern": "^--measure-"
+          },
+          {
+            "key": "typesetting",
+            "source": "typography"
+          }
+        ]
+      },
+      {
+        "key": "layout",
+        "sections": [
+          {
+            "key": "grid",
+            "pattern": "^--(grid|gallery)-"
+          },
+          {
+            "key": "spacing",
+            "pattern": "^--space-"
+          },
+          {
+            "key": "sizes",
+            "pattern": "^--size-"
+          },
+          {
+            "key": "markup",
+            "source": "markup",
+            "dev": true
+          }
+        ]
+      },
+      {
+        "key": "motion",
+        "sections": [
+          {
+            "key": "motion",
+            "pattern": "^--motion-"
+          }
+        ]
+      }
+    ],
+    "conditions": {
+      "(min-width: 600px)": "grid.tablet",
+      "(min-width: 1024px)": "grid.desktop",
+      "(prefers-reduced-motion: reduce)": "motion.reduced"
+    },
+    "typesetting": {
+      "abbreviations": [
+        "FAQ",
+        "ID",
+        "URL",
+        "SVG",
+        "CSS",
+        "HTML",
+        "SEO",
+        "JSON",
+        "UI"
+      ]
+    },
+    "names": {
+      "$comment": "Имена оформления на языке проекта: токены, написания, разделы. Ключ↔значение. Английского списка нет — по-английски вещь называется так, как называется её ключ.",
+      "ru": {
+        "caps.none": "Нет",
+        "caps.uppercase": "Да",
+        "design.applied": "Применение",
+        "design.color": "Цвет",
+        "design.directions": "Направления",
+        "design.fonts": "Гарнитуры",
+        "design.grid": "Сетка",
+        "design.layout": "Раскладка",
+        "design.markup": "Разметка элементов",
+        "design.measure": "Длина строки",
+        "design.motion": "Движение",
+        "design.palette": "Палитра",
+        "design.roles": "Роли",
+        "design.section-head": "Заголовок страницы",
+        "design.sizes": "Размеры",
+        "design.spacing": "Отступы",
+        "design.styles": "Написания",
+        "design.type": "Текст",
+        "design.typesetting": "Правила набора",
+        "design.usedIn": "Где используется",
+        "grid.desktop": "От 1024px",
+        "grid.mobile": "Мобильный",
+        "grid.tablet": "От 600px",
+        "motion.reduced": "Движение отключено",
+        "style.body-base": "Основной текст",
+        "style.body-lead": "Вводный абзац",
+        "style.body-small": "Мелкий текст",
+        "style.body-strong": "Выделенный текст",
+        "style.display-number": "Крупное число",
+        "style.heading-block": "Заголовок блока",
+        "style.heading-card": "Заголовок карточки",
+        "style.heading-modal": "Заголовок в окне",
+        "style.heading-page": "Заголовок страницы",
+        "style.hero-subtitle": "Первый экран, подзаголовок",
+        "style.hero-title": "Первый экран, название",
+        "style.mono-active": "Навигация, выбранное",
+        "style.mono-banner": "Баннер",
+        "style.mono-label": "Подпись поля",
+        "style.mono-meta": "Мета",
+        "style.mono-nav": "Навигация",
+        "style.mono-table": "Таблица",
+        "token.accent": "Акцент",
+        "token.accent-amber": "Янтарь",
+        "token.accent-amber-text": "Янтарь-Текст",
+        "token.accent-mint": "Мята",
+        "token.accent-mint-text": "Мята-Текст",
+        "token.accent-pink": "Малина",
+        "token.accent-pink-text": "Малина-Текст",
+        "token.direction": "Направление",
+        "token.direction-buro": "Бюро",
+        "token.direction-courses": "Авторские курсы",
+        "token.direction-subscription": "Занятия по абонементу",
+        "token.font": "Гарнитура",
+        "token.font-body": "Текстовая",
+        "token.font-display": "Заголовочная",
+        "token.font-mono": "Служебная",
+        "token.gallery": "Галерея",
+        "token.gallery-visible": "Кадров видно сразу",
+        "token.gradient": "Градиент",
+        "token.gradient-brand": "Фирменный градиент",
+        "token.grid": "Сетка",
+        "token.grid-columns": "Колонок",
+        "token.grid-editor": "Колонки редактора",
+        "token.grid-gutter": "Средник",
+        "token.grid-margin": "Поля",
+        "token.grid-max": "Ширина контейнера",
+        "token.grid-span-main": "Ширина правки",
+        "token.grid-span-nav": "Ширина навигатора",
+        "token.grid-span-side": "Ширина просмотра",
+        "token.measure": "Мера",
+        "token.measure-field": "Поле правки",
+        "token.measure-label": "Подпись поля",
+        "token.measure-mono": "Длина строки служебного слоя",
+        "token.measure-name": "Колонка имени",
+        "token.measure-pick": "Выбор в баре",
+        "token.measure-text": "Длина строки текста",
+        "token.mono": "Монохром",
+        "token.mono-black": "Чёрный",
+        "token.mono-grey": "Серый",
+        "token.mono-ink": "Тёмно-серый",
+        "token.mono-mist": "Туман",
+        "token.mono-silver": "Серебро",
+        "token.mono-smoke": "Дым",
+        "token.mono-white": "Белый",
+        "token.motion": "Движение",
+        "token.motion-block": "Длинное",
+        "token.motion-ease": "Кривая",
+        "token.motion-micro": "Короткое",
+        "token.role": "Роль",
+        "token.role-bg": "Фон сайта",
+        "token.role-bg-footer": "Фон подвала",
+        "token.role-border": "Рамки и линии",
+        "token.role-focus": "Кольцо фокуса",
+        "token.role-heading": "Заголовки",
+        "token.role-muted": "Второстепенный текст",
+        "token.role-on-footer": "Текст на подвале",
+        "token.role-on-footer-muted": "Второстепенный текст на подвале",
+        "token.role-primary": "Плашки и декор",
+        "token.role-primary-text": "Ссылки",
+        "token.role-surface": "Фон карточек",
+        "token.role-text": "Основной текст",
+        "token.size": "Размер",
+        "token.size-bar": "Бар",
+        "token.size-cell": "Ячейка значка",
+        "token.size-hair": "Линия",
+        "token.size-line": "Строка бара",
+        "token.size-lines": "Строк в поле",
+        "token.size-row": "Строка",
+        "token.size-scroll": "Высота перечня",
+        "token.size-swatch": "Образец цвета",
+        "token.size-text-lines": "Строк в тексте",
+        "token.size-thumb": "Миниатюра",
+        "token.space": "Отступ",
+        "token.space-2xs": "Строки внутри элемента",
+        "token.space-3xs": "Иконка и подпись",
+        "token.space-lg": "Заголовок и содержимое",
+        "token.space-md": "Подблоки в секции",
+        "token.space-sm": "Карточки между собой",
+        "token.space-xl": "Между секциями",
+        "token.space-xs": "Элементы в карточке",
+        "token.type": "Написание",
+        "type.caps": "Капс",
+        "type.font": "Гарнитура",
+        "type.leading": "Интерлиньяж",
+        "type.size": "Кегль",
+        "type.sizeDesktop": "Кегль на десктопе",
+        "type.tracking": "Трекинг",
+        "type.weight": "Вес"
+      }
+    }
+  },
+  "layouts": {
+    "$комментарий": "Схемы страниц со слоями по структуре: выгрузка и сверка.",
+    "folder": "layouts/",
+    "devices": [
+      {
+        "name": "mobile",
+        "width": 390
+      },
+      {
+        "name": "desktop",
+        "width": 1440
+      }
+    ]
+  }
+}

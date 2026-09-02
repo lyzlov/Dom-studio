@@ -24,53 +24,53 @@ export function корзиныВозраста(текст) {
   return КОРЗИНЫ.filter(([a, b]) => от <= b && до >= a).map(([, , имя]) => имя);
 }
 
-const картинка = ({ основа, подпись, ширина, высота, up, лениво = true, sizes = SIZES, класс = 'card-image' }) =>
-  Р('picture', { основа: up + основа, sizes, подпись, ширина, высота, лениво,
-                 классАтрибут: класс ? ` class="${класс}"` : '' });
+const picture = ({ base, caption, width, height, up, lazy = true, sizes = SIZES, class: cls = 'card-image' }) =>
+  Р('picture', { base: up + base, sizes, caption, width, height, lazy,
+                 classAttr: cls ? ` class="${cls}"` : '' });
 
-export function карточка({ ссылкаНа, заголовок, подписьСсылки, мета, подзаголовок, описание, примечание,
-                           изображение, подписьКадра, размеры, up, атрибуты = {}, действие, широкая }) {
-  const части = [];
-  const добавить = (вид, значение) => { if (значение) части.push({ [вид]: true, значение }); };
-  if (широкая) { добавить('мета', мета); добавить('заголовок', заголовок); }
-  else { добавить('заголовок', заголовок); добавить('мета', мета); }
-  добавить('подзаголовок', подзаголовок);
-  добавить('описание', описание);
-  добавить('примечание', примечание);
-  добавить('действие', действие);
+export function card({ linkTo, heading, linkLabel, meta, subheading, description, note,
+                           image, frameCaption, sizes, up, attrs = {}, action, wide }) {
+  const parts = [];
+  const add = (вид, value) => { if (value) parts.push({ [вид]: true, value }); };
+  if (wide) { add('meta', meta); add('heading', heading); }
+  else { add('heading', heading); add('meta', meta); }
+  add('subheading', subheading);
+  add('description', description);
+  add('note', note);
+  add('action', action);
   return Р('card', {
-    классы: ['card', широкая ? 'card-wide' : '', (!изображение && !широкая) ? 'card-text' : ''].filter(Boolean).join(' '),
-    атрибуты: Object.entries(атрибуты).filter(([, v]) => v).map(([k, v]) => ` data-${k}="${esc(v)}"`).join(''),
-    ссылкаНа, подписьСсылки: подписьСсылки || заголовок,
-    картинка: изображение
-      ? картинка({ основа: изображение, подпись: подписьКадра || заголовок, up,
-                   ...(размеры[изображение] || { ширина: 400, высота: 300 }) })
+    classes: ['card', wide ? 'card-wide' : '', (!image && !wide) ? 'card-text' : ''].filter(Boolean).join(' '),
+    attrs: Object.entries(attrs).filter(([, v]) => v).map(([k, v]) => ` data-${k}="${esc(v)}"`).join(''),
+    linkTo, linkLabel: linkLabel || heading,
+    picture: image
+      ? picture({ base: image, caption: frameCaption || heading, up,
+                   ...(sizes[image] || { width: 400, height: 300 }) })
       : '',
-    части,
+    parts,
   });
 }
 
 /* #region Время занятий */
-export function времяЗанятий(курс, { сЗалом }) {
-  const ручная = сЗалом ? курс.времяПодпись : курс.времяПодписьКарточка;
+export function времяЗанятий(курс, { withRoom, room = x => x }) {
+  const ручная = withRoom ? курс.timeLabel : курс.timeLabelCard;
   if (ручная) return ручная;
-  const залы = [...new Set(курс.занятия.map(з => з.зал))];
+  const залы = [...new Set(курс.lessons.map(з => room(з.room)))];
   if (залы.length > 1) {
-    return курс.занятия
-      .map(з => `${з.день} ${з.время} (${з.возраст}${сЗалом ? `, ${з.зал} зал` : ''})`)
+    return курс.lessons
+      .map(з => `${з.day} ${з.time} (${з.age}${withRoom ? `, ${room(з.room)} зал` : ''})`)
       .join(' / ');
   }
-  const хвост = сЗалом ? `, ${залы[0]} зал` : '';
-  const возрастыРазные = new Set(курс.занятия.map(з => з.возраст)).size > 1;
-  if (!возрастыРазные) return курс.занятия.map(з => `${з.день} ${з.время}`).join(' / ') + хвост;
+  const хвост = withRoom ? `, ${залы[0]} зал` : '';
+  const возрастыРазные = new Set(курс.lessons.map(з => з.age)).size > 1;
+  if (!возрастыРазные) return курс.lessons.map(з => `${з.day} ${з.time}`).join(' / ') + хвост;
   const поДням = [];
-  for (const з of курс.занятия) {
-    let г = поДням.find(x => x.день === з.день);
-    if (!г) { г = { день: з.день, слоты: [] }; поДням.push(г); }
+  for (const з of курс.lessons) {
+    let г = поДням.find(x => x.day === з.day);
+    if (!г) { г = { day: з.day, слоты: [] }; поДням.push(г); }
     г.слоты.push(з);
   }
   return поДням.map(г => г.слоты
-    .map((з, i) => `${i ? '' : г.день + ' '}${з.время}${сЗалом ? ` (${з.возраст})` : ''}`)
+    .map((з, i) => `${i ? '' : г.day + ' '}${з.time}${withRoom ? ` (${з.age})` : ''}`)
     .join(' / ')).join('; ') + хвост;
 }
 
@@ -78,190 +78,197 @@ export function времяЗанятий(курс, { сЗалом }) {
 const адрес = (папка, id) => `${папка}/${id}/index.html`;
 
 export const ВИДЫ = {
-  курс: (c, ctx) => карточка({
-    ссылкаНа: ссылка(ctx.путь, адрес('courses', c.id)), заголовок: c.название,
-    мета: [esc(c.направление), `Возраст: ${esc(c.возраст)}`, esc(времяЗанятий(c, { сЗалом: false })),
-           `Куратор: ${esc(c.куратор)}`].join('<br>'),
-    изображение: c.изображение, размеры: ctx.размеры, up: ctx.up,
-    атрибуты: { age: корзиныВозраста(c.возраст).join(' '),
-                day: [...new Set(c.занятия.map(з => з.день))].join(', '),
-                direction: c.направление },
-    действие: 'записаться',
+  course: (c, ctx) => card({
+    linkTo: ссылка(ctx.href, адрес('courses', c.id)), heading: c.title,
+    meta: [`<span class="type-${esc(c.direction)}">${esc(ctx.name('direction', c.direction))}</span>`,
+           `Возраст: ${esc(c.age)}`, esc(ctx.lessonTime(c, { withRoom: false })),
+           `Куратор: ${esc(c.curator)}`].join('<br>'),
+    image: c.image, sizes: ctx.sizes, up: ctx.up,
+    attrs: { age: корзиныВозраста(c.age).join(' '),
+                day: [...new Set(c.lessons.map(з => з.day))].join(', '),
+                direction: c.direction },
+    action: 'записаться',
   }),
-  событие: (e, ctx) => {
+  event: (e, ctx) => {
     const прошедшее = ctx.прошло(e);
-    return карточка({
-      ссылкаНа: ссылка(ctx.путь, адрес('events', e.id)), заголовок: e.название,
-      подписьСсылки: прошедшее ? e.название
-        : `${e.название}, ${e.дата.подпись.replace(/\s*\d{4}$/, '')}`,
-      мета: прошедшее
-        ? [`Возраст: ${esc(e.возраст)}`, `Дата: ${esc(e.дата.подпись)}`].filter(x => !/: $/.test(x)).join('<br>')
-        : [esc(e.дата.подпись), esc(e.место)].filter(Boolean).join(' · '),
-      описание: прошедшее ? null : e.описание,
-      изображение: e.изображение, размеры: ctx.размеры, up: ctx.up, широкая: ctx.широкая,
-      действие: прошедшее ? null : 'Записаться',
+    return card({
+      linkTo: ссылка(ctx.href, адрес('events', e.id)), heading: e.title,
+      linkLabel: прошедшее ? e.title
+        : `${e.title}, ${e.date.caption.replace(/\s*\d{4}$/, '')}`,
+      meta: прошедшее
+        ? [`Возраст: ${esc(e.age)}`, `Дата: ${esc(e.date.caption)}`].filter(x => !/: $/.test(x)).join('<br>')
+        : [esc(e.date.caption), esc(e.date.time), esc(e.place)].filter(Boolean).join(' · '),
+      description: прошедшее ? null : e.description,
+      image: e.image, sizes: ctx.sizes, up: ctx.up, wide: ctx.wide,
+      action: прошедшее ? null : 'Записаться',
     });
   },
-  смена: (s, ctx) => карточка({
-    ссылкаНа: ссылка(ctx.путь, адрес('camp', s.id)), заголовок: s.название,
-    подписьСсылки: `Смена «${s.название}», ${s.даты.подпись}`,
-    мета: `${esc(s.даты.подпись)} · ${esc(s.возраст)}`,
-    изображение: s.изображение, подписьКадра: `Афиша смены «${s.название}»`,
-    размеры: ctx.размеры, up: ctx.up,
+  session: (s, ctx) => card({
+    linkTo: ссылка(ctx.href, адрес('camp', s.id)), heading: s.title,
+    linkLabel: `Смена «${s.title}», ${s.dates.caption}`,
+    meta: [esc(s.dates.caption), esc(s.dates.time), esc(s.age)].filter(Boolean).join(' · '),
+    image: s.image, frameCaption: `Афиша смены «${s.title}»`,
+    sizes: ctx.sizes, up: ctx.up,
   }),
-  пост: (п, ctx) => карточка({
-    ссылкаНа: ссылка(ctx.путь, адрес('blog', п.id)), заголовок: п.заголовок,
-    мета: [esc(п.дата), esc(п.чтение)].join(' · '),
-    изображение: п.обложка, размеры: ctx.размеры, up: ctx.up,
+  post: (п, ctx) => card({
+    linkTo: ссылка(ctx.href, адрес('blog', п.id)), heading: п.heading,
+    meta: [esc(п.date), esc(п.readTime)].join(' · '),
+    image: п.cover, sizes: ctx.sizes, up: ctx.up,
   }),
-  услуга: (u, ctx) => карточка({ заголовок: u.название, описание: внутренние(u.описание, ctx.путь),
-    размеры: ctx.размеры, up: ctx.up }),
-  вуз: (v, ctx) => карточка({
-    заголовок: v.название, подзаголовок: esc(v.подзаголовок),
-    описание: v.описание, примечание: v.примечание,
-    размеры: ctx.размеры, up: ctx.up,
+  service: (u, ctx) => card({ heading: u.title, description: внутренние(u.description, ctx.href),
+    sizes: ctx.sizes, up: ctx.up }),
+  university: (v, ctx) => card({
+    heading: v.title, subheading: esc(v.subheading),
+    description: v.description, note: v.note,
+    sizes: ctx.sizes, up: ctx.up,
   }),
 };
 
 /* #region Наполнения блока */
-const текстБлока = (б, ctx) => внутренние(ctx.текст(б.текст), ctx.путь);
+const текстБлока = (б, ctx) => внутренние(ctx.text(б.text), ctx.href);
 
-const фильтрыБлока = (б, ctx, список) => {
+const фильтрыБлока = (б, ctx, list) => {
   const ПОДПИСИ = { age: 'Возраст', day: 'День', direction: 'Направление' };
   const ПОРЯДОК_ДНЕЙ = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  const значения = группа => {
+  const values = группа => {
     if (группа === 'age') return ['3–5', '6–10', '11–16'];
-    if (группа === 'day') return ПОРЯДОК_ДНЕЙ.filter(д => список.some(c => c.занятия.some(з => з.день === д)));
-    return [...new Set(список.map(c => c.направление))].sort((a, b) => a.localeCompare(b, 'ru'));
+    if (группа === 'day') return ПОРЯДОК_ДНЕЙ.filter(д => list.some(c => c.lessons.some(з => з.day === д)));
+    return [...new Set(list.map(c => c.direction))]
+      .map(id => ({ value: id, caption: ctx.name('direction', id) }))
+      .sort((a, b) => a.caption.localeCompare(b.caption, 'ru'));
   };
+  const pairs = сп => сп.map(з => (typeof з === 'string' ? { value: з, caption: з } : з));
   return Р('filters', {
-    фильтры: б.фильтры.map(г => ({ группа: г, подпись: ПОДПИСИ[г], значения: значения(г) })),
+    filters: б.filters.map(г => ({ group: г, caption: ПОДПИСИ[г], values: pairs(values(г)) })),
   });
 };
 
 const карточкиБлока = (б, ctx) => {
-  const список = ctx.выборка(б);
-  const вид = ВИДЫ[б.вид];
-  const карточки = список.map(x => вид(x, { ...ctx, широкая: б.широкая })).join('\n');
-  if (б.широкая && список.length === 1) return карточки;
+  const list = ctx.выборка(б);
+  const вид = ВИДЫ[б.kind];
+  const карточки = list.map(x => вид(x, { ...ctx, wide: б.wide })).join('\n');
+  if (б.wide && list.length === 1) return карточки;
   return Р('cards', {
-    фильтры: б.фильтры ? фильтрыБлока(б, ctx, список) + '\n' : '',
-    фильтруемая: !!б.фильтры, карточки,
+    filters: б.filters ? фильтрыБлока(б, ctx, list) + '\n' : '',
+    filterable: !!б.filters, cards: карточки,
   });
 };
 
 const командаБлока = (б, ctx) => Р('team', {
-  люди: ctx.выборка(б).map(т => ({
-    имя: т.имя, роль: т.роль, био: т.био || '',
-    кадр: т.фото
-      ? картинка({ основа: т.фото, подпись: т.имя, up: ctx.up, sizes: SIZES_TEAM, класс: null,
-                   ...(ctx.размеры[т.фото] || { ширина: 400, высота: 400 }) })
-      : Р('placeholder', { имя: т.имя }),
+  people: ctx.выборка(б).map(т => ({
+    name: т.name, role: т.role, bio: т.bio || '',
+    frame: т.photo
+      ? picture({ base: т.photo, caption: т.name, up: ctx.up, sizes: SIZES_TEAM, class: null,
+                   ...(ctx.sizes[т.photo] || { width: 400, height: 400 }) })
+      : Р('placeholder', { name: т.name }),
   })),
 });
 
 const вопросыБлока = (б, ctx) => Р('faq', {
-  вопросы: ctx.выборка(б).map(в => ({ вопрос: в.вопрос, ответ: внутренние(в.ответ, ctx.путь) })),
+  faq: ctx.выборка(б).map(в => ({ question: в.question, answer: внутренние(в.answer, ctx.href) })),
 });
 
 const расписаниеБлока = (б, ctx) => Р('schedule', {
-  rows: JSON.stringify(ctx.расписание()),
-  colgroup: Р('colgroup', { ширины: ['8.3333%', '8.3333%', '25.0000%', '16.6667%', '16.6667%', '8.3333%', '16.6667%'] }),
-  колонки: [['day', 'День'], ['time', 'Время'], ['course', 'Занятие'], ['age', 'Возраст'],
+  rows: JSON.stringify(ctx.schedule()),
+  colgroup: Р('colgroup', { widths: ['8.3333%', '8.3333%', '25.0000%', '16.6667%', '16.6667%', '8.3333%', '16.6667%'] }),
+  columns: [['day', 'День'], ['time', 'Время'], ['course', 'Занятие'], ['age', 'Возраст'],
             ['direction', 'Направление'], ['hall', 'Зал'], ['curator', 'Куратор']]
-    .map(([ключ, имя]) => ({ ключ, имя })),
+    .map(([key, name]) => ({ key, name })),
 });
 
 const таблицаБлока = (б, ctx) => {
-  if (б.вид !== 'простая') return расписаниеБлока(б, ctx);
-  const t = ctx.таблица(б);
-  return таблицаПростая(t) + (t.примечание ? '\n' + Р('note', { текст: t.примечание }) : '');
+  if (б.kind !== 'plain') return расписаниеБлока(б, ctx);
+  const t = ctx.table(б);
+  return таблицаПростая(t) + (t.note ? '\n' + Р('note', { text: t.note }) : '');
 };
 
 const галереяБлока = (б, ctx) => {
-  const html = галерея({ кадры: ctx.кадры(б), depth: ctx.depth, режим: б.режим,
-    первыйСрочный: false, полный: '-1400', sizes: '(min-width: 1024px) 25vw, 45vw', класс: null });
-  return б.свёрнута
-    ? Р('disclosure', { класс: 'disclosure-control', подпись: б.свёрнута, внутри: html })
+  const html = галерея({ frames: ctx.frames(б), depth: ctx.depth, mode: б.mode,
+    firstEager: false, full: '-1400', sizes: '(min-width: 1024px) 25vw, 45vw', class: null });
+  return б.collapsed
+    ? Р('disclosure', { class: 'disclosure-control', caption: б.collapsed, inner: html })
     : html;
 };
 
 const ссылкиБлока = (б, ctx) => Р('quicklinks', {
-  пункты: б.пункты.map(п => ({ имя: п.имя, ссылка: ссылка(ctx.путь, п.путь) })),
+  items: б.items.map(п => ({ name: п.name, link: ссылка(ctx.href, п.href) })),
 });
 ссылкиБлока.секция = 'quicklinks';
 
-const оценкаБлока = (б, ctx) => Р('rating', ctx.оценка());
+const оценкаБлока = (б, ctx) => Р('rating', ctx.rating());
 
 const контактыБлока = (б, ctx) => {
-  const к = ctx.контакты();
-  const телефон = Р('tel-link', { номер: к.телефон.replace(/[^\d+]/g, ''), телефон: к.телефон });
-  const telegram = Р('tg-link', { telegram: к.telegram });
-  const сетка = Р('contacts', {
-    абзацы: б.вид === 'абзацы', адрес: к.адрес, телефон, telegram,
-    строки: [{ подпись: 'Адрес', значение: esc(к.адрес) },
-             { подпись: 'Телефон', значение: телефон },
-             { подпись: 'Telegram', значение: telegram }],
+  const к = ctx.contacts();
+  const phone = Р('tel-link', { num: к.phone.replace(/[^\d+]/g, ''), phone: к.phone });
+  // Соцсетей может быть сколько угодно: каждая даёт свою строку в таблице
+  // контактов и своё звено в строчном варианте.
+  const соцсети = (к.social || []).map(с => ({ с, ссылка: Р('social-link', с) }));
+  const grid = Р('contacts', {
+    paragraphs: б.kind === 'paragraphs', address: к.address, phone,
+    socials: соцсети.map(x => x.ссылка).join(' · '),
+    rows: [{ caption: 'Адрес', value: esc(к.address) },
+             { caption: 'Телефон', value: phone },
+             ...соцсети.map(x => ({ caption: x.с.name, value: x.ссылка }))],
   });
-  if (!б.карта || б.карта === 'нет') return сетка;
-  const [широта, долгота] = к.координаты;
-  const карта = Р('map', { широта, долгота, подпись: к.подписьКарты, маршрут: к.маршрут });
-  return сетка + '\n' + (б.карта === 'свёрнута'
-    ? Р('disclosure', { класс: 'disclosure-control', подпись: 'Посмотреть на карте', внутри: карта })
+  if (!б.map || б.map === 'none') return grid;
+  const [lat, lng] = к.coords;
+  const карта = Р('map', { lat, lng, caption: к.mapCaption, route: к.route });
+  return grid + '\n' + (б.map === 'collapsed'
+    ? Р('disclosure', { class: 'disclosure-control', caption: 'Посмотреть на карте', inner: карта })
     : карта);
 };
 
-const формаБлока = (б, ctx) => ctx.форма();
+const формаБлока = (б, ctx) => ctx.form();
 
 const вкладкиБлока = (б, ctx) => Р('tabs', {
-  вкладки: б.вкладки.map((в, i) => ({
-    ключ: в.ключ, имя: в.имя, первая: i === 0,
-    панель: НАПОЛНЕНИЯ[в.наполнение.тип](в.наполнение, ctx),
+  tabs: б.tabs.map((в, i) => ({
+    key: в.key, name: в.name, first: i === 0,
+    bar: НАПОЛНЕНИЯ[в.blockType.type](в.blockType, ctx),
   })),
-  действие: б.действие ? '\n' + Р('tab-action', { ...б.действие, u: ctx.up }) : '',
+  action: б.action ? '\n' + Р('tab-action', { ...б.action, u: ctx.up }) : '',
 });
 
 export const НАПОЛНЕНИЯ = {
-  текст: текстБлока,
-  карточки: карточкиБлока,
-  команда: командаБлока,
-  вопросы: вопросыБлока,
-  таблица: таблицаБлока,
-  галерея: галереяБлока,
-  ссылки: ссылкиБлока,
-  оценка: оценкаБлока,
-  контакты: контактыБлока,
-  форма: формаБлока,
+  text: текстБлока,
+  cards: карточкиБлока,
+  team: командаБлока,
+  faq: вопросыБлока,
+  table: таблицаБлока,
+  gallery: галереяБлока,
+  links: ссылкиБлока,
+  rating: оценкаБлока,
+  contacts: контактыБлока,
+  form: формаБлока,
 };
 
 const первыйЭкран = (б, ctx) => {
-  const бн = ctx.баннер(б.баннер);
+  const b = ctx.banner(б.banner);
   return Р('hero', {
-    u: ctx.up, заголовок: б.заголовок, подзаголовок: б.подзаголовок,
-    слоган: б.слоган, факты: б.факты,
-    баннер: бн ? '\n' + Р('banner', {
-      ссылка: ссылка(ctx.путь, бн.ссылка), дата: бн.дата,
-      заголовок: бн.заголовок, подпись: бн.подпись,
+    u: ctx.up, heading: б.heading, subheading: б.subheading,
+    slogan: б.slogan, facts: б.facts,
+    banner: b ? '\n' + Р('banner', {
+      link: ссылка(ctx.href, b.link), date: b.date,
+      heading: b.heading, caption: b.caption,
     }) : '',
   });
 };
 
-export const СТРАНИЧНЫЕ = { вкладки: вкладкиБлока, 'первый экран': первыйЭкран };
+export const СТРАНИЧНЫЕ = { tabs: вкладкиБлока, 'hero': первыйЭкран };
 
 /* #region Сборка блока */
 export function собратьЭлемент(б, ctx) {
-  return СТРАНИЧНЫЕ[б.тип] ? СТРАНИЧНЫЕ[б.тип](б, ctx) : собратьБлок(б, ctx);
+  return СТРАНИЧНЫЕ[б.type] ? СТРАНИЧНЫЕ[б.type](б, ctx) : собратьБлок(б, ctx);
 }
 
 export function собратьБлок(б, ctx) {
-  const внутри = НАПОЛНЕНИЯ[б.тип];
-  if (!внутри) throw new Error(`неизвестное наполнение блока: «${б.тип}»`);
-  const тело = [
-    б.заголовок ? Р('block-title', { заголовок: б.заголовок, скрытый: !!б.скрытыйЗаголовок }) : '',
-    внутри(б, ctx),
+  const inner = НАПОЛНЕНИЯ[б.type];
+  if (!inner) throw new Error(`неизвестное наполнение блока: «${б.type}»`);
+  const body = [
+    б.heading ? Р('block-title', { heading: б.heading, sr: !!б.srHeading }) : '',
+    inner(б, ctx),
   ].filter(Boolean).join('\n');
   return Р('block', {
-    классы: [внутри.секция || 'block', б.класс].filter(Boolean).join(' '),
-    id: б.id, тело,
+    classes: [inner.секция || 'block', б.class].filter(Boolean).join(' '),
+    id: б.id, body,
   });
 }

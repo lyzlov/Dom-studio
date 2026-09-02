@@ -1,107 +1,280 @@
 /* ДОМ — дизайн-токены.
-   Значения проекта: Context/Dom_data.md, раздел 3.
-   Система и обоснования: вебдизайн.md, разделы 4–7.
-   Светлая тема по образцу референса (белый сайт, тёмный только подвал) —
-   Dom_data.md, раздел 3.2; каталог значений и имена для Figma — ТЗ/Дизайн-токены.md. Гарнитура и цвет — по образцу актуальных материалов
-   Ольги (расписание/цены/абонементы, `Материалы/Занятия и прочее (2026-08)/`):
-   Golos Text — заголовки и основной текст, Roboto Mono — служебный слой
-   (навигация, кнопки, лейблы, метаданные, таблицы). Фирменный градиент по
-   акцентным токенам, куратор занятия — цветовой код по преподавателю (см. ниже).
-   Каждый акцент существует в двух вариантах: фирменный (плашки, градиент,
-   декор) и -text (текст и иконки) — фирменные значения дают на белом
-   2.8–3.9:1 и для текста непригодны, -text держат ≥5:1 (WCAG AA).
-   Шрифты подключены через Google Fonts (см. *.html, <link> в <head>).
-   TODO перед публикацией: перейти на локальные woff2 в fonts/,
-   font-display: swap, preload — ТЗ, раздел 3, п.3. */
+   Имя токена содержит группу: --accent-mint → Accent/Mint в Figma, замена
+   первого дефиса на слэш. Второго словаря имён нет.
+   Значений мимо этого списка не бывает: роли ссылаются на палитру, а не
+   набирают цвет заново.
+   Написания названы по назначению, не по тегу. Размер — две ступени: базовая
+   и десктопная с 1024. Кегли в rem, всё остальное в пикселях.
+   Подписи для редактора — _editor/locale/*.json.
+   Шрифты подключены через Google Fonts (<link> в <head>).
+   TODO перед публикацией: локальные woff2 в fonts/, font-display: swap. */
 
 :root {
-  --white: #ffffff;      /* Mono/White */
-  --black: #000000;      /* Mono/Black */
-  --grey-dark: #3a3a3a;  /* Mono/Ink   */
-  --grey: #6b6b6b;       /* Mono/Grey  */
+  /* #region Палитра */
+  --mono-white: #ffffff;
+  --mono-black: #000000;
+  --mono-ink: #3a3a3a;
+  --mono-grey: #6b6b6b;
+  --mono-silver: #999999;
+  --mono-smoke: #e0e0e0;
+  --mono-mist: #f5f5f5;
 
-  --mint:  #1fae8e;      /* Fill/Mint  */
-  --pink:  #e2496b;      /* Fill/Pink  */
-  --amber: #c98a12;      /* Fill/Amber */
+  /* Акцент в двух светлотах: заливка и та же краска, затемнённая для текста
+     на белом. Прозрачных значений в палитре нет — прозрачность это свойство
+     элемента, а не цвет. */
+  --accent-mint: #1fae8e;
+  --accent-pink: #e2496b;
+  --accent-amber: #c98a12;
 
-  --mint-text:  #167d66; /* Text/Mint  */
-  --pink-text:  #d6224a; /* Text/Pink  */
-  --amber-text: #95660d; /* Text/Amber */
+  --accent-mint-text: #167d66;
+  --accent-pink-text: #d6224a;
+  --accent-amber-text: #95660d;
+  /* #endregion */
 
-  --color-bg: var(--white);         /* фон сайта */
-  --color-surface: rgba(0, 0, 0, 0.04);   /* карточки, выделенные блоки — тон чёрного, не новый цвет */
-  --color-bg-footer: var(--black);  /* фон подвала — единственное место с чёрным фоном */
-  --color-text: var(--black);       /* навигация, мелкие лейблы (ТЗ 3.3) */
-  --color-heading: var(--grey-dark); /* крупные заголовки (ТЗ 3.3) */
-  --color-muted: var(--grey);
-  --color-border: rgba(0, 0, 0, 0.12);
-  --color-on-footer: var(--white);
-  --color-on-footer-muted: rgba(255, 255, 255, 0.6);
+  /* #region Роли — вычисляются из палитры, отдельных значений не имеют */
+  --role-bg: var(--mono-white);
+  --role-surface: var(--mono-mist);
+  --role-bg-footer: var(--mono-black);
+  --role-text: var(--mono-black);
+  --role-heading: var(--mono-ink);
+  --role-muted: var(--mono-grey);
+  --role-border: var(--mono-smoke);
+  --role-on-footer: var(--mono-white);
+  --role-on-footer-muted: var(--mono-silver);
+  --role-primary: var(--accent-mint);
+  --role-primary-text: var(--accent-mint-text);
+  --role-focus: var(--accent-mint-text);
+  /* #endregion */
 
-  --color-primary: var(--mint);            /* плашки, декор */
-  --color-primary-text: var(--mint-text);  /* тот же акцент в тексте и ссылках */
-  --color-focus: var(--mint-text);         /* кольцо фокуса на светлом фоне */
+  /* #region Направления — цветовой код занятия */
+  --direction-courses: var(--accent-mint-text);
+  --direction-buro: var(--accent-pink-text);
+  --direction-subscription: var(--accent-amber-text);
+  /* #endregion */
 
-  --gradient-brand: linear-gradient(135deg, var(--mint) 0%, var(--amber) 55%, var(--pink) 100%);
+  --gradient-brand: linear-gradient(135deg, var(--accent-mint) 0%, var(--accent-amber) 55%, var(--accent-pink) 100%);
 
-  --type-courses: var(--mint-text);        /* Авторские курсы */
-  --type-buro: var(--pink-text);           /* Бюро */
-  --type-subscription: var(--amber-text);  /* Занятия по абонементу */
-
+  /* #region Гарнитуры */
   --font-display: "Golos Text", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Golos Text", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Roboto Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* #endregion */
 
-  --text-xs: 0.75rem;    /* 12 */
-  --text-sm: 0.875rem;   /* 14 */
-  --text-base: 1rem;     /* 16 */
-  --text-md: clamp(1.125rem, 1.05rem + 0.3vw, 1.25rem);   /* 18 → 20 */
-  --text-lg: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);      /* 20 → 24 */
-  --text-xl: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);         /* 24 → 32 */
-  --text-2xl: clamp(1.5rem, 0.7rem + 4vw, 2.5rem);        /* 24 → 40  подзаголовок первого экрана */
-  --text-3xl: clamp(1.75rem, 1.2rem + 2.6vw, 3rem);       /* 28 → 48  заголовок страницы */
-  --text-hero: clamp(2.5rem, 1rem + 7.5vw, 6.5rem);       /* 40 → 104 «ДОМ» */
+  /* #region Написания */
+  --type-hero-title-font: var(--font-display);
+  --type-hero-title-weight: 700;
+  --type-hero-title-size: 2.5rem;      /* 40 */
+  --type-hero-title-leading: 0.92;
+  --type-hero-title-tracking: -0.02em;
+  --type-hero-title-caps: uppercase;
 
-  --leading-hero: 0.92;
-  --leading-tight: 1.1;
-  --leading-snug: 1.2;
-  --leading-base: 1.5;
-  --leading-mono: 1.6;
+  --type-hero-subtitle-font: var(--font-display);
+  --type-hero-subtitle-weight: 500;
+  --type-hero-subtitle-size: 1.5rem;   /* 24 */
+  --type-hero-subtitle-leading: 1.1;
+  --type-hero-subtitle-tracking: -0.02em;
+  --type-hero-subtitle-caps: uppercase;
 
-  --tracking-tight: -0.02em;
-  --tracking-wide: 0.08em;
+  --type-display-number-font: var(--font-display);
+  --type-display-number-weight: 700;
+  --type-display-number-size: 1.5rem;  /* 24 */
+  --type-display-number-leading: 1.1;
+  --type-display-number-tracking: normal;
+  --type-display-number-caps: none;
 
-  --measure: 66ch;       /* предельная длина строки основного текста */
-  --measure-mono: 46ch;  /* то же для моноширинного слоя — знак шире, ch другой */
+  --type-heading-page-font: var(--font-display);
+  --type-heading-page-weight: 700;
+  --type-heading-page-size: 1.75rem;   /* 28 */
+  --type-heading-page-leading: 1.1;
+  --type-heading-page-tracking: -0.02em;
+  --type-heading-page-caps: none;
 
-  --space-micro: 4px;      /* внутри строки: подпись → значение, иконка → текст */
-  --space-tight: 8px;      /* внутри элемента: строки карточки, пункты меню */
-  --space-inner: 16px;     /* внутри группы: абзацы, поля формы */
-  --space-related: 24px;   /* заголовок → его содержимое; карточка ↔ карточка */
-  --space-block: 32px;     /* блок ↔ блок */
-  --space-section: 48px;   /* раздел ↔ раздел */
+  --type-heading-modal-font: var(--font-display);
+  --type-heading-modal-weight: 700;
+  --type-heading-modal-size: 1.5rem;   /* 24 */
+  --type-heading-modal-leading: 1.1;
+  --type-heading-modal-tracking: normal;
+  --type-heading-modal-caps: uppercase;
 
+  --type-heading-block-font: var(--font-display);
+  --type-heading-block-weight: 700;
+  --type-heading-block-size: 1.25rem;  /* 20 */
+  --type-heading-block-leading: 1.1;
+  --type-heading-block-tracking: normal;
+  --type-heading-block-caps: uppercase;
+
+  --type-heading-card-font: var(--font-display);
+  --type-heading-card-weight: 500;
+  --type-heading-card-size: 1.125rem;  /* 18 */
+  --type-heading-card-leading: 1.2;
+  --type-heading-card-tracking: normal;
+  --type-heading-card-caps: none;
+
+  --type-body-lead-font: var(--font-body);
+  --type-body-lead-weight: 400;
+  --type-body-lead-size: 1.125rem;     /* 18 */
+  --type-body-lead-leading: 1.5;
+  --type-body-lead-tracking: normal;
+  --type-body-lead-caps: none;
+
+  --type-body-base-font: var(--font-body);
+  --type-body-base-weight: 400;
+  --type-body-base-size: 1rem;         /* 16 */
+  --type-body-base-leading: 1.5;
+  --type-body-base-tracking: normal;
+  --type-body-base-caps: none;
+
+  --type-body-small-font: var(--font-body);
+  --type-body-small-weight: 400;
+  --type-body-small-size: 0.875rem;    /* 14 */
+  --type-body-small-leading: 1.5;
+  --type-body-small-tracking: normal;
+  --type-body-small-caps: none;
+
+  --type-body-strong-font: var(--font-body);
+  --type-body-strong-weight: 500;
+  --type-body-strong-size: 1rem;       /* 16 */
+  --type-body-strong-leading: 1.5;
+  --type-body-strong-tracking: normal;
+  --type-body-strong-caps: none;
+
+  --type-mono-nav-font: var(--font-mono);
+  --type-mono-nav-weight: 400;
+  --type-mono-nav-size: 0.875rem;      /* 14 */
+  --type-mono-nav-leading: 1.5;
+  --type-mono-nav-tracking: 0.08em;
+  --type-mono-nav-caps: uppercase;
+
+  --type-mono-active-font: var(--font-mono);
+  --type-mono-active-weight: 500;
+  --type-mono-active-size: 0.875rem;   /* 14 */
+  --type-mono-active-leading: 1.5;
+  --type-mono-active-tracking: 0.08em;
+  --type-mono-active-caps: uppercase;
+
+  --type-mono-banner-font: var(--font-mono);
+  --type-mono-banner-weight: 500;
+  --type-mono-banner-size: 1.25rem;    /* 20 */
+  --type-mono-banner-leading: 1.2;
+  --type-mono-banner-tracking: 0.08em;
+  --type-mono-banner-caps: uppercase;
+
+  --type-mono-label-font: var(--font-mono);
+  --type-mono-label-weight: 400;
+  --type-mono-label-size: 0.75rem;     /* 12 */
+  --type-mono-label-leading: 1.5;
+  --type-mono-label-tracking: 0.08em;
+  --type-mono-label-caps: uppercase;
+
+  --type-mono-meta-font: var(--font-mono);
+  --type-mono-meta-weight: 400;
+  --type-mono-meta-size: 0.75rem;      /* 12 */
+  --type-mono-meta-leading: 1.6;
+  --type-mono-meta-tracking: normal;
+  --type-mono-meta-caps: none;
+
+  --type-mono-table-font: var(--font-mono);
+  --type-mono-table-weight: 400;
+  --type-mono-table-size: 0.875rem;    /* 14 */
+  --type-mono-table-leading: 1.6;
+  --type-mono-table-tracking: normal;
+  --type-mono-table-caps: none;
+  /* #endregion */
+
+  /* #region Длина строки */
+  --measure-text: 66ch;
+  --measure-mono: 46ch;
+  --measure-name: 18rem;    /* колонка имени в списке */
+  --measure-label: 12rem;   /* колонка подписи поля в форме */
+  --measure-field: 46ch;    /* поле правки */
+  --measure-pick: 12rem;    /* выбор в баре */
+  /* #endregion */
+
+  /* #region Отступы */
+  --space-3xs: 4px;
+  --space-2xs: 8px;
+  --space-xs: 16px;
+  --space-sm: 24px;
+  --space-md: 32px;
+  --space-lg: 48px;
+  --space-xl: 64px;
+  /* #endregion */
+
+  /* #region Размеры
+     Высоты и толщины, из которых собран интерфейс. Одни и те же у сайта и у
+     редактора: «строка» — это строка списка везде, где список есть. */
+  --size-bar: 56px;        /* бар: заголовок и строка под ним */
+  --size-line: 18px;       /* строка внутри бара */
+  --size-row: 32px;        /* строка списка */
+  --size-cell: 16px;       /* место значка */
+  --size-hair: 1px;        /* линия-разделитель и рамка поля */
+  --size-swatch: 2.5rem;   /* образец цвета */
+  --size-thumb: 96px;      /* миниатюра кадра */
+  --size-scroll: 12em;     /* предел высоты прокручиваемого перечня */
+  --size-lines: 4;         /* строк в многострочном поле */
+  --size-text-lines: 20;   /* строк в поле длинного текста */
+  /* #endregion */
+
+  /* #region Сетка */
+  --grid-columns: 4;
   --grid-margin: 16px;
-  --container: 1280px;
+  --grid-gutter: 16px;
+  --grid-max: 1280px;
+  /* Сетка редактора — та же двенадцатиколоночная. repeat() с переменной
+     вместо числа не работает, поэтому набор колонок объявлен одним значением. */
+  --grid-editor: repeat(12, 1fr);
+  --grid-span-nav: 3;
+  --grid-span-main: 6;
+  --grid-span-side: 3;
+  --gallery-visible: 1;
+  /* #endregion */
 
-  --dur-micro: 150ms;
-  --dur-block: 300ms;
-  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  /* #region Движение */
+  --motion-micro: 150ms;
+  --motion-block: 300ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+  /* #endregion */
+
 }
 
-@media (min-width: 1200px) {
+/* Планшет: колонок вдвое больше, поля и средник шире. */
+@media (min-width: 600px) {
   :root {
-    --space-block: 40px;
-    --space-section: 64px;
+    --grid-columns: 8;
+    --grid-margin: 24px;
+    --grid-gutter: 24px;
+    --gallery-visible: 2;
   }
 }
 
-@media (min-width: 600px) { :root { --grid-margin: 24px; } }
-@media (min-width: 1024px) { :root { --grid-margin: 80px; } }
+/* Десктоп: вторая и последняя ступень размеров. Промежуточных нет намеренно —
+   формула на vw даёт дробные кегли и ломает кратность восьми. */
+@media (min-width: 1024px) {
+  :root {
+    --type-hero-title-size: 6.5rem;      /* 104 */
+    --type-hero-subtitle-size: 2.5rem;   /* 40 */
+    --type-display-number-size: 2.5rem;  /* 40 */
+    --type-heading-page-size: 3rem;      /* 48 */
+    --type-heading-modal-size: 2rem;     /* 32 */
+    --type-heading-block-size: 1.5rem;   /* 24 */
+    --type-heading-card-size: 1.25rem;   /* 20 */
+    --type-body-lead-size: 1.25rem;      /* 20 */
+    --type-mono-banner-size: 1.5rem;     /* 24 */
+
+    --space-md: 40px;
+    --space-lg: 64px;
+    --space-xl: 96px;
+
+    --grid-columns: 12;
+    --grid-margin: 80px;
+    --grid-gutter: 24px;
+    --gallery-visible: 4;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --dur-micro: 0ms;
-    --dur-block: 0ms;
+    --motion-micro: 0ms;
+    --motion-block: 0ms;
   }
 }

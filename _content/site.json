@@ -1,102 +1,180 @@
 {
   "$комментарий": "Единый источник фактов. Тексты и описания сюда не кладутся — они в ТЗ/*.md.",
-  "организация": {
-    "название": "ДОМ",
-    "полное": "ДОМ — студия архитектуры и искусства",
-    "слоган": "Студия архитектуры и искусства для детей",
-    "юрлицо": null,
-    "инн": null,
-    "огрн": null,
-    "юрадрес": null
+  "org": {
+    "title": "ДОМ",
+    "fullName": "ДОМ — студия архитектуры и искусства",
+    "slogan": "Студия архитектуры и искусства для детей",
+    "legalEntity": null,
+    "inn": null,
+    "ogrn": null,
+    "legalAddress": null
   },
-  "контакты": {
-    "адрес": "Красногорск, посёлок Ильинское-Усово, ул. Архангельская, 11",
-    "место": "Студия ДОМ, Ильинское-Усово",
-    "телефон": "+7 991 740 70 10",
-    "telegram": "t.me/layout_studio",
-    "почта": null,
-    "координаты": [
+  "contacts": {
+    "address": "Красногорск, посёлок Ильинское-Усово, ул. Архангельская, 11",
+    "place": "Студия ДОМ, Ильинское-Усово",
+    "phone": "+7 991 740 70 10",
+    "social": [
+      {
+        "name": "Telegram",
+        "icon": "telegram",
+        "label": "t.me/layout_studio",
+        "href": "https://t.me/layout_studio"
+      }
+    ],
+    "email": null,
+    "coords": [
       55.770482,
       37.235447
     ],
-    "маршрут": "https://yandex.ru/maps/-/CTwrrEzD",
-    "подписьКарты": "Карта: студия ДОМ, улица Архангельская, 11"
+    "route": "https://yandex.ru/maps/-/CTwrrEzD",
+    "mapCaption": "Карта: студия ДОМ, улица Архангельская, 11"
   },
-  "сайт": {
-    "адрес": "https://lyzlov.github.io/Dom-studio/",
-    "индексация": false
+  "site": {
+    "address": "https://lyzlov.github.io/Dom-studio/",
+    "indexing": false
   },
-  "залы": [
-    "Большой",
-    "Малый"
+  "rooms": [
+    {
+      "id": "big",
+      "title": "Большой"
+    },
+    {
+      "id": "small",
+      "title": "Малый"
+    }
   ],
-  "направления": [
-    "Авторские курсы",
-    "Бюро",
-    "Занятия по абонементу"
+  "directions": [
+    {
+      "id": "courses",
+      "title": "Авторские курсы"
+    },
+    {
+      "id": "buro",
+      "title": "Бюро"
+    },
+    {
+      "id": "subscription",
+      "title": "Занятия по абонементу"
+    }
   ],
-  "отзывы": {
-    "оценка": "5,0",
-    "подпись": "68 оценок и 53 отзыва на Яндекс.Картах",
-    "ссылка": "https://yandex.ru/maps/-/CTwrrEzD",
-    "кнопка": "Читать отзывы"
+  "reviews": {
+    "rating": "5,0",
+    "caption": "68 оценок и 53 отзыва на Яндекс.Картах",
+    "link": "https://yandex.ru/maps/-/CTwrrEzD",
+    "button": "Читать отзывы"
   },
-  "галерея": [
+  "gallery": [
     {
-      "основа": "_content/media/space/studio-01",
-      "подпись": "Фото студии, 1"
+      "base": "_content/media/space/studio-01",
+      "caption": "Фото студии, 1"
     },
     {
-      "основа": "_content/media/space/studio-02",
-      "подпись": "Фото студии, 2"
+      "base": "_content/media/space/studio-02",
+      "caption": "Фото студии, 2"
     },
     {
-      "основа": "_content/media/space/studio-03",
-      "подпись": "Фото студии, 3"
+      "base": "_content/media/space/studio-03",
+      "caption": "Фото студии, 3"
     },
     {
-      "основа": "_content/media/space/studio-04",
-      "подпись": "Фото студии, 4"
+      "base": "_content/media/space/studio-04",
+      "caption": "Фото студии, 4"
     },
     {
-      "основа": "_content/media/space/studio-05",
-      "подпись": "Фото студии, 5"
+      "base": "_content/media/space/studio-05",
+      "caption": "Фото студии, 5"
     },
     {
-      "основа": "_content/media/space/studio-06",
-      "подпись": "Фото студии, 6"
+      "base": "_content/media/space/studio-06",
+      "caption": "Фото студии, 6"
     },
     {
-      "основа": "_content/media/space/studio-07",
-      "подпись": "Фото студии, 7"
+      "base": "_content/media/space/studio-07",
+      "caption": "Фото студии, 7"
     },
     {
-      "основа": "_content/media/space/studio-08",
-      "подпись": "Фото студии, 8"
+      "base": "_content/media/space/studio-08",
+      "caption": "Фото студии, 8"
     },
     {
-      "основа": "_content/media/space/studio-09",
-      "подпись": "Фото студии, 9"
+      "base": "_content/media/space/studio-09",
+      "caption": "Фото студии, 9"
     },
     {
-      "основа": "_content/media/space/studio-10",
-      "подпись": "Фото студии, 10"
+      "base": "_content/media/space/studio-10",
+      "caption": "Фото студии, 10"
     },
     {
-      "основа": "_content/media/space/studio-11",
-      "подпись": "Фото студии, 11"
+      "base": "_content/media/space/studio-11",
+      "caption": "Фото студии, 11"
     },
     {
-      "основа": "_content/media/space/studio-12",
-      "подпись": "Фото студии, 12"
+      "base": "_content/media/space/studio-12",
+      "caption": "Фото студии, 12"
     },
     {
-      "основа": "_content/media/space/studio-13",
-      "подпись": "Фото студии, 13"
+      "base": "_content/media/space/studio-13",
+      "caption": "Фото студии, 13"
     },
     {
-      "основа": "_content/media/space/studio-14",
-      "подпись": "Фото студии, 14"
+      "base": "_content/media/space/studio-14",
+      "caption": "Фото студии, 14"
+    }
+  ],
+  "eventKinds": [
+    {
+      "id": "master-klass",
+      "title": "Мастер-класс"
+    },
+    {
+      "id": "otkrytoe-zanyatie",
+      "title": "Открытое занятие"
+    },
+    {
+      "id": "vstrecha-s-arhitektorom",
+      "title": "Встреча с архитектором"
+    },
+    {
+      "id": "ekskursiya",
+      "title": "Экскурсия"
+    },
+    {
+      "id": "pokaz-rabot",
+      "title": "Показ работ"
+    },
+    {
+      "id": "otkrytyy-den",
+      "title": "Открытый день"
+    }
+  ],
+  "sessionKinds": [
+    {
+      "id": "istoricheskaya-smena",
+      "title": "Историческая смена"
+    },
+    {
+      "id": "biologicheskaya-smena",
+      "title": "Биологическая смена"
+    },
+    {
+      "id": "smena-buduschego",
+      "title": "Смена будущего"
+    },
+    {
+      "id": "vkusnaya-smena",
+      "title": "Вкусная смена"
+    },
+    {
+      "id": "letopisnaya-smena",
+      "title": "Летописная смена"
+    },
+    {
+      "id": "fizicheskaya-smena",
+      "title": "Физическая смена"
+    },
+    {
+      "id": "inzhenernaya-smena",
+      "title": "Инженерная смена"
     }
   ]
 }

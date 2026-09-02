@@ -1,5 +1,5 @@
 /**
- * render.mjs — каркас страницы: голова, шапка, подвал, форма, галерея, заголовок раздела.
+ * render.mjs — shell страницы: голова, шапка, подвал, форма, галерея, заголовок раздела.
  */
 
 import { Р as рисовать, esc } from './template.mjs';
@@ -30,28 +30,31 @@ export const прошло = (поКакую, сегодня) => поКакую <
 
 /* #region Каркас: head, шапка, подвал, модальное окно */
 function head({ site, title, description, путь, depth, image }) {
-  const абс = p => site.сайт.адрес.replace(/\/$/, '') + '/' + p.replace(/(^|\/)index\.html$/, '$1');
+  const абс = p => site.site.address.replace(/\/$/, '') + '/' + p.replace(/(^|\/)index\.html$/, '$1');
   return Р('head', {
     u: up(depth), title, description,
-    канонический: абс(путь),
-    организация: site.организация.полное,
-    обложка: абс(image || '_content/media/og-cover.jpg'),
+    canonical: абс(путь),
+    org: site.org.fullName,
+    cover: абс(image || '_content/media/og-cover.jpg'),
   });
 }
 
-function шапка({ site, структура, depth, путь, активный, крошки }) {
+const скрыто = (структура, что) =>
+  !!(((структура.navigation || {}).parts || {})[что] || {}).hidden;
+
+function шапка({ site, структура, depth, путь, active, path }) {
   const L = цель => ссылка(путь, цель);
-  const пункт = p => ({ имя: p.имя, ссылка: L(p.путь), текущий: p.путь === активный });
-  const ссылки = крошки.slice(0, -1).map((к, i) => ({ имя: к.имя, ссылка: L(к.путь), непервая: i > 0 }));
+  const item = p => ({ name: p.name, link: L(p.href), current: p.href === active });
+  const ссылки = path.slice(0, -1).map((к, i) => ({ name: к.name, link: L(к.href), notFirst: i > 0 }));
   return Р('header', {
     u: up(depth),
-    организация: site.организация.полное,
-    telegram: site.контакты.telegram,
-    меню: структура.navigation.меню.map(г => г.группа
-      ? { группа: г.группа, пункты: г.пункты.map(пункт) }
-      : пункт(г)),
-    ссылки, естьСсылки: ссылки.length > 0,
-    последняя: крошки[крошки.length - 1].имя,
+    org: site.org.fullName,
+    social: site.contacts.social || [],
+    menu: скрыто(структура, 'menu') ? [] : структура.navigation.menu.map(г => г.group
+      ? { group: г.group, items: г.items.map(item) }
+      : item(г)),
+    refs: ссылки, hasLinks: ссылки.length > 0,
+    last: path[path.length - 1].name,
   });
 }
 
@@ -59,89 +62,91 @@ function подвал({ site, структура, depth, путь }) {
   const L = цель => ссылка(путь, цель);
   return Р('footer', {
     u: up(depth),
-    название: site.организация.название,
-    слоган: site.организация.слоган,
-    контакты: L('about/contacts/index.html'),
-    адрес: site.контакты.адрес,
-    тел: site.контакты.телефон.replace(/[^\d+]/g, ''),
-    телефон: site.контакты.телефон,
-    telegram: site.контакты.telegram,
-    разделы: структура.navigation.подвал.map(р => ({ имя: р.имя, ссылка: L(р.путь) })),
-    политика: L('about/privacy/index.html'),
-    оферта: L('about/offer/index.html'),
+    title: site.org.title,
+    slogan: site.org.slogan,
+    contacts: L('about/contacts/index.html'),
+    address: site.contacts.address,
+    telHref: site.contacts.phone.replace(/[^\d+]/g, ''),
+    phone: site.contacts.phone,
+    social: site.contacts.social || [],
+    sections: структура.navigation.footer.map(р => ({ name: р.name, link: L(р.href) })),
+    privacy: L('about/privacy/index.html'),
+    offer: L('about/offer/index.html'),
   });
 }
 
 export function форма(приставка, поля) {
   return Р('form', {
-    поля: поля.map(п => ({
-      id: `${приставка}-${п.имя}`,
-      подпись: п.подпись,
-      тип: п.тип,
+    fields: поля.map(п => ({
+      id: `${приставка}-${п.key}`,
+      caption: п.caption,
+      type: п.type,
       name: п.name,
-      required: !!п.обязательное,
-      textarea: !!п.многострочное,
-      широкая: !!п.широкая,
+      required: !!п.required,
+      textarea: !!п.multiline,
+      wide: !!п.wide,
     })),
   });
 }
 
-const модалка = поля => Р('modal', { форма: форма('modal', поля) });
+const modal = поля => Р('modal', { form: форма('modal', поля) });
 
 /* #region Галерея — один элемент на весь сайт, два режима */
 const SIZES = '(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw';
 
-export function галерея({ кадры, depth, режим, первыйСрочный = true, полный = '-800', sizes = SIZES, класс = 'card-image' }) {
-  if (!кадры.length) return '';
+export function галерея({ frames, depth, mode, firstEager = true, full = '-800', sizes = SIZES, class: cls = 'card-image' }) {
+  if (!frames.length) return '';
   const u = up(depth);
   return Р('gallery', {
-    u, режим, sizes,
-    лента: String((режим || 'strip') === 'strip'),
-    плитка: String(режим === 'grid'),
-    классАтрибут: класс ? ` class="${класс}"` : '',
-    кадры: кадры.map((к, i) => ({
-      основа: u + к.основа,
-      полный: `${u}${к.основа}${к.полный || полный}.jpg`,
-      подпись: к.подпись, ширина: к.ширина, высота: к.высота,
-      срочно: первыйСрочный && i === 0,
+    u, mode, sizes,
+    strip: String((mode || 'strip') === 'strip'),
+    grid: String(mode === 'grid'),
+    classAttr: cls ? ` class="${cls}"` : '',
+    frames: frames.map((к, i) => ({
+      base: u + к.base,
+      full: `${u}${к.base}${к.full || full}.jpg`,
+      caption: к.caption, width: к.width, height: к.height,
+      eager: firstEager && i === 0,
     })),
   });
 }
 
 /* #region Заголовок раздела */
-export function заголовокРаздела({ надзаголовок, h1, поля = [], кнопка, мета, лид = [], абзацы = [], дополнительно = '', галереяHtml }) {
-  const строки = мета || поля.filter(([, v]) => v != null && v !== '')
+export function заголовокРаздела({ eyebrow, h1, fields = [], button, meta, lead = [], paragraphs = [], extra = '', galleryHtml }) {
+  const rows = meta || fields.filter(([, v]) => v != null && v !== '')
     .map(([k, v]) => `<strong>${esc(k)}:</strong> ${v}`).join('<br>\n        ');
-  const внутри = Р('page-head-inner', { надзаголовок, h1, строки, лид, абзацы, кнопка, дополнительно });
+  const inner = Р('page-head-inner', { eyebrow, h1, rows, lead, paragraphs, button, extra });
   return Р('page-head', {
-    сИллюстрацией: !!галереяHtml,
-    внутри: pad(галереяHtml ? 8 : 6, внутри),
-    иллюстрация: галереяHtml ? pad(6, галереяHtml) : '',
+    withIllustration: !!galleryHtml,
+    inner: pad(galleryHtml ? 8 : 6, inner),
+    illustration: galleryHtml ? pad(6, galleryHtml) : '',
   });
 }
 
 /* #region Блоки */
-export const блок = (внутри, id) =>
-  Р('block', { классы: 'block', id, тело: внутри.replace(/\n$/, '') });
+export const блок = (inner, id) =>
+  Р('block', { classes: 'block', id, body: inner.replace(/\n$/, '') });
 
-export function таблицаПростая({ колонки, строки, ширины, шапкаБезScope }) {
+export function таблицаПростая({ columns, rows, widths, headNoScope }) {
   return Р('table', {
-    colgroup: (ширины ? Р('colgroup', { ширины }) : '') + (шапкаБезScope ? '' : '\n'),
-    колонки: колонки.map(и => ({ имя: и, scope: !шапкаБезScope })),
-    строки: строки.map(r => ({ ячейки: r.map((v, i) => ({ подпись: колонки[i], значение: v })) })),
+    colgroup: (widths ? Р('colgroup', { widths }) : '') + (headNoScope ? '' : '\n'),
+    columns: columns.map(и => ({ name: и, scope: !headNoScope })),
+    rows: rows.map(r => ({ cells: r.map((v, i) => ({ caption: columns[i], value: v })) })),
   });
 }
 
 /* #region Страница целиком */
-export function страница({ site, структура, title, description, путь, image, активный, крошки, тело }) {
+export function страница({ site, структура, title, description, путь, image, active, path, body }) {
   const depth = глубина(путь);
   return рисовать('page', {
     u: up(depth),
-    тело,
+    body,
     head: head({ site, title, description, путь, depth, image }),
-    header: шапка({ site, структура, depth, путь, активный, крошки }),
-    footer: подвал({ site, структура, depth, путь }),
-    modal: модалка(структура.form.поля),
+    // Шапку, меню и подвал можно спрятать целиком: признак лежит там же, где
+    // сама навигация, и читается сборкой, а не только редактором.
+    header: скрыто(структура, 'header') ? '' : шапка({ site, структура, depth, путь, active, path }),
+    footer: скрыто(структура, 'footer') ? '' : подвал({ site, структура, depth, путь }),
+    modal: modal(структура.form.fields),
   });
 }
 
@@ -150,75 +155,77 @@ export function страница({ site, структура, title, description,
 const подставить = (шаблон, знач) => String(шаблон).replace(/\{([^}]+)\}/g, (_, k) => знач[k] ?? '');
 
 export const ПОЛЯ_ЗАГОЛОВКА = {
-  курс: (c, ctx) => [
-    ['Возраст', esc(c.возраст)],
-    ['Время', esc(ctx.времяЗанятий(c, { сЗалом: true }))],
-    ['Куратор', esc(c.куратор)],
-    ['Оплата', esc(ctx.оплата(c))],
+  course: (c, ctx) => [
+    ['Возраст', esc(c.age)],
+    ['Время', esc(ctx.lessonTime(c, { withRoom: true }))],
+    ['Куратор', esc(c.curator)],
+    ['Оплата', esc(ctx.payment(c))],
   ],
-  событие: e => [
-    ['Дата', esc(e.дата.подпись)],
-    ['Время и возраст', esc(e.возраст)],
-    ['Место', esc(e.место)],
-    [e.кураторы.length > 1 ? 'Кураторы' : 'Куратор', esc(e.кураторы.join(', '))],
-    ['Цена', esc(e.цена)],
+  event: e => [
+    ['Дата', esc(e.date.caption)],
+    ['Время', esc(e.date.time)],
+    ['Возраст', esc(e.age)],
+    ['Место', esc(e.place)],
+    [e.curators.length > 1 ? 'Кураторы' : 'Куратор', esc(e.curators.join(', '))],
+    ['Цена', esc(e.price)],
   ],
-  пост: () => [],
-  смена: s => [
-    ['Даты', esc(s.даты.подпись)],
-    ['Возраст', esc(s.возраст)],
-    ['Место', esc(s.место)],
-    ['Куратор', esc(s.куратор)],
-    ['Цена', esc(s.цена)],
+  post: () => [],
+  session: s => [
+    ['Даты', esc(s.dates.caption)],
+    ['Время', esc(s.dates.time)],
+    ['Возраст', esc(s.age)],
+    ['Место', esc(s.place)],
+    ['Куратор', esc(s.curator)],
+    ['Цена', esc(s.price)],
   ],
 };
 
 const ПОДПИСЬ_КАДРА = {
-  курс: c => c.название,
-  событие: e => e.название,
-  пост: п => п.заголовок,
-  смена: s => `Афиша смены «${s.название}»`,
+  course: c => c.title,
+  event: e => e.title,
+  post: п => п.heading,
+  session: s => `Афиша смены «${s.title}»`,
 };
 
 export const строкаОплаты = тариф => [
-  тариф.пробное ? `Пробное — ${тариф.пробное} ₽` : 'Пробного нет',
-  тариф.разовое ? `разовое — ${тариф.разовое} ₽` : 'разового занятия нет',
+  тариф.trial ? `Пробное — ${тариф.trial} ₽` : 'Пробного нет',
+  тариф.single ? `разовое — ${тариф.single} ₽` : 'разового занятия нет',
 ].join(', ') + '. '
-  + тариф.пакеты.map((п, i) => `${i && п.краткое ? п.краткое : п.название} — ${п.цена} ₽`).join(', ') + '.';
+  + тариф.packages.map((п, i) => `${i && п.short ? п.short : п.title} — ${п.price} ₽`).join(', ') + '.';
 
-export function страницаСущности({ вид, сущность, шаблон, site, структура, ctx, блоки }) {
-  const путь = `${шаблон.папка}/${сущность.id}/index.html`;
+export function страницаСущности({ вид, сущность, шаблон, site, структура, ctx, blocks }) {
+  const путь = `${шаблон.folder}/${сущность.id}/index.html`;
   const depth = глубина(путь);
-  const прошедшее = шаблон.кнопка === 'пока не прошло' && ctx.прошло(сущность);
-  const кадры = сущность.изображение ? [{
-    основа: сущность.изображение, подпись: ПОДПИСЬ_КАДРА[вид](сущность),
-    ...(ctx.размеры[сущность.изображение] || { ширина: 400, высота: 300 }),
+  const прошедшее = шаблон.button === 'until-past' && ctx.прошло(сущность);
+  const frames = сущность.image ? [{
+    base: сущность.image, caption: ПОДПИСЬ_КАДРА[вид](сущность),
+    ...(ctx.sizes[сущность.image] || { width: 400, height: 300 }),
   }] : [];
-  const иллюстрация = кадры.length
-    ? галерея({ кадры, depth, режим: 'grid' })
-    : шаблон.кнопка === 'нет' && вид === 'пост' ? ''
+  const illustration = frames.length
+    ? галерея({ frames, depth, mode: 'grid' })
+    : шаблон.button === 'none' && вид === 'post' ? ''
     : '';
 
-  const тело = [
+  const body = [
     заголовокРаздела({
-      надзаголовок: подставить(шаблон.надзаголовок, ctx.значения),
-      h1: сущность.название || сущность.заголовок,
-      поля: ПОЛЯ_ЗАГОЛОВКА[вид](сущность, ctx),
-      кнопка: шаблон.кнопка === 'всегда' || (шаблон.кнопка !== 'нет' && !прошедшее),
-      мета: шаблон.мета && подставить(шаблон.мета, ctx.значения),
-      галереяHtml: иллюстрация,
+      eyebrow: подставить(шаблон.eyebrow, ctx.values),
+      h1: сущность.title || сущность.heading,
+      fields: ПОЛЯ_ЗАГОЛОВКА[вид](сущность, ctx),
+      button: шаблон.button === 'always' || (шаблон.button !== 'none' && !прошедшее),
+      meta: шаблон.meta && подставить(шаблон.meta, ctx.values),
+      galleryHtml: illustration,
     }),
-    ...блоки.map(b => '\n' + b),
+    ...blocks.map(b => '\n' + b),
   ].join('\n');
 
   return страница({
-    site, структура, depth, тело,
-    title: подставить(шаблон.title, ctx.значения),
-    description: подставить(шаблон.description, ctx.значения),
+    site, структура, depth, body,
+    title: подставить(шаблон.metaTitle, ctx.values),
+    description: подставить(шаблон.metaDescription, ctx.values),
     путь,
-    активный: шаблон.родитель,
-    крошки: [{ имя: 'Главная', путь: 'index.html' },
-             { имя: шаблон.раздел, путь: шаблон.родитель },
-             { имя: сущность.название || сущность.заголовок }],
+    active: шаблон.parent,
+    path: [{ name: 'Главная', href: 'index.html' },
+             { name: шаблон.section, href: шаблон.parent },
+             { name: сущность.title || сущность.heading }],
   });
 }

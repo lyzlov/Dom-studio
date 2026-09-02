@@ -1,73 +1,80 @@
 {
   "$комментарий": "Меню сайта и разделы подвала. Порядок и подписи — одни на весь сайт.",
-  "меню": [
+  "parts": {
+    "header": {},
+    "menu": {},
+    "footer": {}
+  },
+  "menu": [
     {
-      "группа": "Деятельность",
-      "пункты": [
+      "id": "activity",
+      "group": "Деятельность",
+      "items": [
         {
-          "имя": "Курсы",
-          "путь": "courses/index.html"
+          "name": "Курсы",
+          "href": "courses/index.html"
         },
         {
-          "имя": "События",
-          "путь": "events/index.html"
+          "name": "События",
+          "href": "events/index.html"
         },
         {
-          "имя": "Услуги",
-          "путь": "services/index.html"
+          "name": "Услуги",
+          "href": "services/index.html"
         },
         {
-          "имя": "Профориентация",
-          "путь": "services/admissions/index.html"
+          "name": "Профориентация",
+          "href": "services/admissions/index.html"
         },
         {
-          "имя": "Летний лагерь",
-          "путь": "camp/index.html"
+          "name": "Летний лагерь",
+          "href": "camp/index.html"
         }
       ]
     },
     {
-      "группа": "О нас",
-      "пункты": [
+      "id": "about",
+      "group": "О нас",
+      "items": [
         {
-          "имя": "Студия",
-          "путь": "about/studio/index.html"
+          "name": "Студия",
+          "href": "about/studio/index.html"
         },
         {
-          "имя": "Команда",
-          "путь": "about/team/index.html"
+          "name": "Команда",
+          "href": "about/team/index.html"
         },
         {
-          "имя": "Наши принципы",
-          "путь": "about/principles/index.html"
+          "name": "Наши принципы",
+          "href": "about/principles/index.html"
         }
       ]
     },
     {
-      "имя": "Блог",
-      "путь": "blog/index.html"
+      "name": "Блог",
+      "href": "blog/index.html"
     },
     {
-      "имя": "FAQ",
-      "путь": "about/faq/index.html"
+      "name": "FAQ",
+      "href": "about/faq/index.html"
     }
   ],
-  "подвал": [
+  "footer": [
     {
-      "имя": "Курсы",
-      "путь": "courses/index.html"
+      "name": "Курсы",
+      "href": "courses/index.html"
     },
     {
-      "имя": "События",
-      "путь": "events/index.html"
+      "name": "События",
+      "href": "events/index.html"
     },
     {
-      "имя": "Услуги",
-      "путь": "services/index.html"
+      "name": "Услуги",
+      "href": "services/index.html"
     },
     {
-      "имя": "Студия",
-      "путь": "about/studio/index.html"
+      "name": "Студия",
+      "href": "about/studio/index.html"
     }
   ]
 }

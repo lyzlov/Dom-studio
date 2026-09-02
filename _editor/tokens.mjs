@@ -13,7 +13,7 @@ function блоки(css) {
       else if (css[i] === '}') глубина--;
       i++;
     }
-    результат.push({ условие: m[1].trim(), от: m.index, до: i });
+    результат.push({ condition: m[1].trim(), from: m.index, to: i });
   }
   return результат;
 }
@@ -24,13 +24,17 @@ export function разобратьТокены(css) {
   const re = /(--[a-zA-Z0-9-]+)\s*:\s*([^;]*);/g;
   let m;
   while ((m = re.exec(css))) {
-    const внутри = медиа.filter(б => m.index > б.от && m.index < б.до).pop();
+    const внутри = медиа.filter(б => m.index > б.from && m.index < б.to).pop();
+    const конец = m.index + m[0].length;
+    const строка = css.slice(конец, css.indexOf('\n', конец) < 0 ? css.length : css.indexOf('\n', конец));
+    const хвост = строка.match(/\/\*\s*([^*]*?)\s*\*\//);
     токены.push({
-      имя: m[1],
-      значение: m[2].trim(),
-      где: внутри ? `@media ${внутри.условие}` : ':root',
-      от: m.index + m[0].indexOf(m[2], m[1].length),
-      до: m.index + m[0].length - 1,
+      name: m[1],
+      value: m[2].trim(),
+      caption: хвост ? хвост[1] : '',
+      where: внутри ? `@media ${внутри.condition}` : ':root',
+      from: m.index + m[0].indexOf(m[2], m[1].length),
+      to: конец - 1,
     });
   }
   return токены;
@@ -38,10 +42,10 @@ export function разобратьТокены(css) {
 
 export function заменитьТокены(css, токены, значения) {
   let итог = css;
-  [...токены].sort((a, b) => b.от - a.от).forEach(т => {
-    const новое = значения[т.имя + '@' + т.где];
-    if (новое == null || новое === т.значение) return;
-    итог = итог.slice(0, т.от) + новое + итог.slice(т.до);
+  [...токены].sort((a, b) => b.from - a.from).forEach(т => {
+    const новое = значения[т.name + '@' + т.where];
+    if (новое == null || новое === т.value) return;
+    итог = итог.slice(0, т.from) + новое + итог.slice(т.to);
   });
   return итог;
 }
