@@ -326,7 +326,7 @@
   "valueType.list: name, href": "Список: имя и путь",
   "valueType.list?": "Список, необязательно",
   "valueType.nearest | catalog | none": "Ближайшее событие, справочник или ничего",
-  "valueType.path: _content/text/": "Путь к файлу текста",
+  "valueType.path: data/text/": "Путь к файлу текста",
   "valueType.rule?": "Правило отбора, необязательно",
   "valueType.schedule | plain": "Расписание или простая таблица",
   "valueType.site.reviews": "Отзывы из общих данных",

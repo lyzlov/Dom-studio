@@ -1,0 +1,432 @@
+<!-- Разметка сайта. Каждый элемент — <template id="имя">.
+     {{field}} — значение, {{{field}}} — без экранирования, {{#list}}…{{/list}} — повтор,
+     {{^field}}…{{/field}} — обратное условие, {{>name}} — вставка другого шаблона. -->
+
+<!-- #region Каркас страницы -->
+<template id="page">
+{{{head}}}
+{{{header}}}
+  <main id="main">
+{{{body}}}
+  </main>
+
+{{{footer}}}
+{{{modal}}}
+  <script src="{{u}}code/script.js" defer></script>
+</body>
+</html>
+</template>
+<template id="head">
+<!DOCTYPE html>
+<html lang="{{ui.htmlLang}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <meta name="description" content="{{description}}">
+  <link rel="icon" href="{{u}}favicon.ico">
+  <link rel="preload" href="{{u}}assets/fonts/golos-text-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{u}}assets/fonts/roboto-mono-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{u}}assets/fonts.css">
+  <link rel="stylesheet" href="{{u}}assets/tokens.css">
+  <link rel="stylesheet" href="{{u}}assets/style.css">
+  <link rel="canonical" href="{{canonical}}">
+  <meta name="theme-color" content="#ffffff">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="{{ui.ogLocale}}">
+  <meta property="og:site_name" content="{{org}}">
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:url" content="{{canonical}}">
+  <meta property="og:image" content="{{cover}}">
+  <meta name="twitter:card" content="summary_large_image">
+</head>
+</template>
+<template id="header">
+<body>
+  <a class="skip-link" href="#main">{{ui.skipToContent}}</a>
+  <header class="site-header">
+    <div class="container bar">
+{{{barHtml}}}
+    </div>
+    <div class="container breadcrumbs-row">
+      <nav class="breadcrumbs" aria-label="{{ui.breadcrumbs}}">{{#refs}}{{#notFirst}} / {{/notFirst}}<a href="{{link}}">{{name}}</a>{{/refs}}<span class="current" aria-current="page">{{#hasLinks}} / {{/hasLinks}}{{last}}</span></nav>
+    </div>
+  </header>
+</template>
+<!-- Части шапки: состав и порядок берутся из данных, вид — из этих шаблонов. -->
+<template id="header-logo">
+      <a class="logo" href="{{u}}index.html"><img src="{{u}}assets/brand/logo-dark.svg" alt="{{org}}" width="533" height="300"></a>
+</template>
+<template id="header-menu">
+      <button type="button" class="nav-toggle" aria-label="{{ui.menu}}" aria-expanded="false" aria-controls="site-nav"><img src="{{u}}assets/icons/menu.svg" alt="" width="24" height="24"></button>
+      <nav class="site-nav" id="site-nav" aria-label="{{ui.mainNav}}">
+        <ul class="nav-list">
+{{#menu}}
+        {{>nav-item}}
+{{/menu}}
+        </ul>
+      </nav>
+</template>
+<template id="header-social">
+      <div class="header-actions">
+        <div class="social-icons" aria-label="{{ui.social}}">
+{{#social}}          <a href="{{href}}" aria-label="{{name}}" target="_blank" rel="noopener"><img src="{{u}}assets/icons/{{icon}}.svg" alt="" width="20" height="20"></a>
+{{/social}}
+        </div>
+      </div>
+</template>
+<template id="nav-item">
+{{#group}}
+<li class="nav-group">
+  <button type="button" class="nav-group-label" aria-expanded="false">{{group}}</button>
+  <div class="dropdown">
+    <ul class="dropdown-inner">
+{{#items}}
+    {{>nav-link}}
+{{/items}}
+    </ul>
+  </div>
+</li>
+{{/group}}
+{{^group}}
+{{>nav-link}}
+{{/group}}
+</template>
+<template id="nav-link">
+<li><a href="{{link}}"{{#current}} aria-current="page"{{/current}}>{{name}}</a></li>
+</template>
+<template id="footer">
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+{{{gridHtml}}}
+      </div>
+{{{rowHtml}}}
+    </div>
+  </footer>
+</template>
+<!-- Части подвала: состав и порядок берутся из данных, вид — из этих шаблонов.
+     Часть, которой нет в составе, не выводится. -->
+<template id="footer-brand">
+        <div>
+          <img class="footer-logo" src="{{u}}assets/brand/logo.svg" alt="{{title}}" width="533" height="300">
+          <p>{{slogan}}</p>
+        </div>
+</template>
+<template id="footer-contacts">
+        <div>
+          <h2>{{ui.contacts}}</h2>
+          <p><a href="{{contacts}}">{{address}}</a></p>
+          <p><a href="tel:{{telHref}}">{{phone}}</a></p>
+{{#social}}          <p><a href="{{href}}" target="_blank" rel="noopener">{{label}}</a></p>
+{{/social}}
+        </div>
+</template>
+<template id="footer-sections">
+        <div>
+          <h2>{{ui.sections}}</h2>
+{{#sections}}
+          <p><a href="{{link}}">{{name}}</a></p>
+{{/sections}}
+        </div>
+</template>
+<template id="footer-legal">
+      <div class="footer-legal">
+<!-- TODO: реквизиты не согласованы — ТЗ/Сводные вопросы (согласовать).md, группа 2 -->
+      <span>{{ui.legalName}}</span>
+      <a href="{{privacy}}">{{ui.privacy}}</a>
+      <a href="{{offer}}">{{ui.offer}}</a>
+      </div>
+</template>
+<template id="modal">
+  <div class="modal" id="signup-modal" data-modal hidden>
+    <div class="modal-backdrop" data-modal-close></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button type="button" class="modal-close" data-modal-close aria-label="{{ui.close}}">×</button>
+      <h2 id="modal-title">{{ui.enroll}}</h2>
+{{{form}}}
+    </div>
+  </div>
+</template>
+<template id="form">
+      <form class="signup-form" data-role="signup">
+      <!-- TODO: форма не отправляется — приём заявок на почту школы
+           не реализован, ДОМ - ТЗ на сайт.md, раздел 2, п.2 -->
+      <div class="form-fields">
+{{#fields}}
+        {{>form-row}}
+{{/fields}}
+      </div>
+      <div class="signup-context" data-signup-context hidden>
+        <span class="contact-label">{{ui.formLesson}}</span>
+        <p class="signup-context-title" data-signup-title></p>
+        <p class="signup-context-meta" data-signup-meta></p>
+      </div>
+      <input type="hidden" name="lesson" data-signup-value>
+      <label class="form-consent"><input type="checkbox" required> {{ui.formConsent}}</label>
+      <button type="submit" class="btn">{{ui.formSubmit}}</button>
+    </form>
+</template>
+<template id="form-row">
+<div class="form-row{{#wide}} form-row-wide{{/wide}}">
+  <label for="{{id}}">{{caption}}</label>
+  {{#textarea}}<textarea id="{{id}}" name="{{name}}" rows="3"></textarea>{{/textarea}}{{^textarea}}<input type="{{type}}" id="{{id}}" name="{{name}}"{{#required}} required{{/required}}>{{/textarea}}
+</div>
+</template>
+<!-- #endregion -->
+
+<!-- #region Заголовок раздела -->
+<template id="page-head">
+  <section class="page-head">
+{{#withIllustration}}
+    <div class="container hero-row">
+      <div>
+{{{inner}}}
+      </div>
+{{{illustration}}}
+    </div>
+{{/withIllustration}}
+{{^withIllustration}}
+    <div class="container">
+{{{inner}}}
+    </div>
+{{/withIllustration}}
+  </section>
+</template>
+<template id="page-head-inner">
+<p class="eyebrow">{{eyebrow}}</p>
+<h1>{{h1}}</h1>
+{{#rows}}
+<p class="meta-line">{{{rows}}}</p>
+{{/rows}}
+{{#lead}}
+<p class="lead">{{{.}}}</p>
+{{/lead}}
+{{#paragraphs}}
+<p>{{{.}}}</p>
+{{/paragraphs}}
+{{#button}}
+<p class="head-actions"><button type="button" class="btn" data-modal-open>{{ui.enroll}}</button></p>
+{{/button}}
+{{#extra}}
+{{{extra}}}
+{{/extra}}
+</template>
+<!-- #endregion -->
+
+<!-- #region Блок -->
+<template id="block">
+  <section class="{{classes}}"{{#id}} id="{{id}}"{{/id}}>
+    <div class="container">
+{{{body}}}
+    </div>
+  </section>
+</template>
+<template id="block-title">
+<h2{{#sr}} class="visually-hidden"{{/sr}}>{{heading}}</h2>
+</template>
+<!-- #endregion -->
+
+<!-- #region Карточки -->
+<template id="card">
+<div class="{{classes}}"{{{attrs}}}>{{#linkTo}}<a class="card-link" href="{{linkTo}}" aria-label="{{linkLabel}}"></a>{{/linkTo}}{{{picture}}}<div class="card-body">{{#parts}}{{#meta}}<span class="card-meta">{{{value}}}</span>{{/meta}}{{#heading}}<h3 class="card-title">{{value}}</h3>{{/heading}}{{#subheading}}<p class="card-meta">{{{value}}}</p>{{/subheading}}{{#description}}<p class="card-desc">{{{value}}}</p>{{/description}}{{#note}}<p class="card-meta">{{{value}}}</p>{{/note}}{{#action}}<div class="card-actions"><button type="button" class="btn" data-modal-open>{{value}}</button></div>{{/action}}{{/parts}}</div></div>
+</template>
+<template id="cards">
+{{{filters}}}<div class="card-grid"{{#filterable}} data-filterable{{/filterable}}>
+{{{cards}}}
+</div>
+</template>
+<template id="picture">
+<picture><source type="image/webp" srcset="{{base}}-400.webp 400w, {{base}}-800.webp 800w" sizes="{{sizes}}"><img src="{{base}}-400.jpg" srcset="{{base}}-400.jpg 400w, {{base}}-800.jpg 800w" sizes="{{sizes}}"{{{classAttr}}} alt="{{caption}}" width="{{width}}" height="{{height}}"{{#lazy}} loading="lazy" decoding="async"{{/lazy}}{{^lazy}} loading="eager" fetchpriority="high" decoding="async"{{/lazy}}></picture>
+</template>
+<template id="placeholder">
+<div class="placeholder">{{name}}</div>
+</template>
+<!-- #endregion -->
+
+<!-- #region Таблицы -->
+<template id="table">
+<table class="table-simple">
+{{{colgroup}}}<thead><tr>{{#columns}}<th{{#scope}} scope="col"{{/scope}}>{{name}}</th>{{/columns}}</tr></thead>
+<tbody>
+{{#rows}}
+<tr>{{#cells}}<td data-label="{{caption}}">{{value}}</td>{{/cells}}</tr>
+{{/rows}}
+</tbody>
+</table>
+</template>
+<template id="colgroup">
+<colgroup>{{#widths}}<col style="width:{{.}}">{{/widths}}</colgroup>
+</template>
+<template id="schedule">
+<div class="schedule-wrap">
+    <p class="visually-hidden" data-schedule-status role="status" aria-live="polite"></p>
+<div class="table-scroll">
+      <table class="schedule" id="schedule-table" data-rows='{{{rows}}}'>{{{colgroup}}}
+<thead>
+<tr>
+{{#columns}}
+<th data-sort-key="{{key}}">{{name}}</th>
+{{/columns}}
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div></div>
+</template>
+<template id="note">
+<p>{{text}}</p>
+</template>
+<!-- #endregion -->
+
+<!-- #region Списки и фильтры -->
+<template id="filters">
+<div class="filter-row" data-filter-bar>
+{{#filters}}
+{{>filter-tab}}
+{{/filters}}
+<p class="filter-status" data-filter-status role="status" aria-live="polite"></p>
+</div>
+</template>
+<template id="filter-tab">
+<div class="filter-tab" data-filter-group="{{group}}">
+<button type="button" class="filter-tab-label" data-filter-toggle><span class="filter-tab-title">{{caption}}</span><span class="filter-current" data-filter-current></span></button>
+<div class="dropdown filter-dropdown">
+<ul class="dropdown-inner">
+<li><button type="button" data-value="">{{ui.filterAll}}</button></li>
+{{#values}}
+<li><button type="button" data-value="{{value}}">{{caption}}</button></li>
+{{/values}}
+</ul>
+</div>
+</div>
+</template>
+<template id="faq">
+<div class="faq-list">{{#faq}}<details class="disclosure"><summary>{{question}}</summary><p>{{{answer}}}</p></details>{{/faq}}</div>
+</template>
+<template id="quicklinks">
+<p>{{#items}}<a href="{{link}}">{{name}}</a>{{/items}}</p>
+</template>
+<!-- #endregion -->
+
+<!-- #region Раскрывающиеся -->
+<template id="disclosure">
+<details class="disclosure {{class}}">
+<summary>{{caption}}</summary>
+{{{inner}}}
+</details>
+</template>
+<!-- #endregion -->
+
+<!-- #region Галерея и медиа -->
+<template id="gallery">
+<div class="gallery" data-gallery{{#mode}} data-default-mode="{{mode}}"{{/mode}}>
+  <div class="gallery-bar">
+    <div class="gallery-nav">
+      <button type="button" class="icon-btn" data-gallery-prev aria-label="{{ui.galleryPrev}}"><img src="{{u}}assets/icons/chevron-left.svg" alt="" width="20" height="20"></button>
+      <span class="gallery-counter" data-gallery-counter aria-live="polite"></span>
+      <button type="button" class="icon-btn" data-gallery-next aria-label="{{ui.galleryNext}}"><img src="{{u}}assets/icons/chevron-right.svg" alt="" width="20" height="20"></button>
+    </div>
+    <div class="gallery-modes" role="group" aria-label="{{ui.galleryModes}}">
+      <button type="button" class="icon-btn" data-mode="strip" aria-pressed="{{strip}}" aria-label="{{ui.galleryStrip}}"><img src="{{u}}assets/icons/view-strip.svg" alt="" width="20" height="20"></button>
+      <button type="button" class="icon-btn" data-mode="grid" aria-pressed="{{grid}}" aria-label="{{ui.galleryGrid}}"><img src="{{u}}assets/icons/view-grid.svg" alt="" width="20" height="20"></button>
+    </div>
+  </div>
+  <div class="gallery-view" data-gallery-view>{{#frames}}<button type="button" class="gallery-item" data-lightbox-open data-full="{{full}}" aria-label="{{caption}}"><picture><source type="image/webp" srcset="{{base}}-400.webp 400w, {{base}}-800.webp 800w" sizes="{{sizes}}"><img src="{{base}}-400.jpg" srcset="{{base}}-400.jpg 400w, {{base}}-800.jpg 800w" sizes="{{sizes}}" {{{classAttr}}} alt="{{caption}}" width="{{width}}" height="{{height}}"{{#eager}} loading="eager" fetchpriority="high" decoding="async"{{/eager}}{{^eager}} loading="lazy" decoding="async"{{/eager}}></picture></button>{{/frames}}</div>
+  <div class="lightbox" data-lightbox hidden>
+    <div class="lightbox-backdrop" data-lightbox-close></div>
+    <button type="button" class="icon-btn lightbox-close" data-lightbox-close aria-label="{{ui.close}}"><img src="{{u}}assets/icons/close.svg" alt="" width="20" height="20"></button>
+    <figure class="lightbox-figure"><img class="lightbox-img" data-lightbox-img alt=""></figure>
+  </div>
+</div>
+</template>
+<template id="map">
+<div class="map-block">
+<iframe src="https://yandex.ru/map-widget/v1/?ll={{lng}}%2C{{lat}}&amp;z=17&amp;pt={{lng}},{{lat}},pm2rdm" title="{{caption}}" loading="lazy" allowfullscreen></iframe>
+</div>
+<p class="map-actions"><a class="btn" href="{{{route}}}" target="_blank" rel="noopener" aria-label="{{ui.routeAria}}">{{ui.route}}</a></p>
+</template>
+<!-- #endregion -->
+
+<!-- #region Люди и контакты -->
+<template id="team">
+<div class="team-grid" data-team-grid>{{#people}}<div class="team-card" data-name="{{name}}" data-role="{{role}}" data-bio="{{bio}}"><button type="button" class="team-toggle" aria-expanded="false"><span>{{ui.openBio}} {{name}}</span></button>{{{frame}}}<h3 class="card-title">{{name}}</h3><p class="card-meta">{{role}}</p></div>{{/people}}<div class="team-bio" data-team-bio hidden><button type="button" class="team-bio-close" data-bio-close aria-label="{{ui.close}}">&times;</button><h3 data-bio-name></h3><p class="bio-role" data-bio-role></p><div data-bio-text></div></div></div>
+</template>
+<template id="contacts">
+{{#paragraphs}}
+<p><strong>{{ui.addressLabel}}</strong> {{address}}</p>
+<p><strong>{{ui.phoneLabel}}</strong> {{{phone}}} · {{{socials}}}</p>
+{{/paragraphs}}
+{{^paragraphs}}
+<div class="contact-grid">
+{{#rows}}
+<div class="contact-item"><span class="contact-label">{{caption}}</span>{{{value}}}</div>
+{{/rows}}
+</div>
+{{/paragraphs}}
+</template>
+<template id="tel-link">
+<a href="tel:{{num}}">{{phone}}</a>
+</template>
+<template id="social-link">
+<a href="{{href}}" target="_blank" rel="noopener" aria-label="{{schoolNewTab}}">{{label}}</a>
+</template>
+<template id="rating">
+<div class="rating">
+<span class="rating-value">{{rating}}</span>
+<span class="rating-meta">{{caption}}</span>
+</div>
+<p class="map-actions"><a class="btn" href="{{{link}}}" target="_blank" rel="noopener" aria-label="{{routeLabel}}">{{button}}</a></p>
+</template>
+<!-- #endregion -->
+
+<!-- #region Вкладки и первый экран -->
+<template id="tabs">
+  <section class="tabs">
+    <div class="container">
+{{#tabs}}
+      <input type="radio" name="tabs" id="tabs-{{key}}"{{#first}} checked{{/first}}>
+{{/tabs}}
+      <div class="tab-bar">
+<ul class="tab-labels">
+{{#tabs}}
+        <li><label for="tabs-{{key}}">{{name}}</label></li>
+{{/tabs}}
+      </ul>{{{action}}}
+      </div>
+      <div class="tab-panels">
+{{#tabs}}
+        <div class="tab-panel panel-{{key}}">{{{bar}}}</div>
+{{/tabs}}
+      </div>
+    </div>
+  </section>
+</template>
+<template id="tab-action">
+        <button type="button" class="icon-btn" {{{attr}}} aria-label="{{caption}}" title="{{caption}}"><img src="{{u}}assets/icons/{{icon}}.svg" alt="" width="20" height="20"></button>
+</template>
+<template id="hero">
+  <section class="hero">
+    <div class="container hero-row">
+      <div class="hero-copy">
+        <img class="hero-circle" src="{{u}}assets/brand/hero.svg" alt="" width="658" height="658" aria-hidden="true">
+        <div class="hero-title-group">
+          <h1 class="hero-title">{{heading}}</h1>
+          <p class="hero-subtitle">{{subheading}}</p>
+        </div>
+        <p class="hero-slogan">{{{slogan}}}</p>
+        <p class="hero-facts">{{facts}}</p>
+        <p class="head-actions"><button type="button" class="btn" data-modal-open>{{ui.enroll}}</button></p>
+      </div>{{{banner}}}
+    </div>
+  </section>
+</template>
+<template id="banner">
+      <a class="hero-banner" href="{{link}}">
+        <span class="banner-date">{{date}}</span>
+        <span class="banner-title">{{heading}}</span>
+        <span class="banner-meta">{{{caption}}}</span>
+      </a>
+</template>
+<!-- #endregion -->

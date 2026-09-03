@@ -4,20 +4,20 @@
   "lang": "ru",
   "contract": 1,
   "files": {
-    "site": "_content/site.json",
-    "archive": "_content/archive.json",
-    "catalog": "_content/catalog/{name}.json",
-    "texts": "_content/text/",
-    "pages": "_structure/pages.json",
-    "templates": "_structure/templates.json",
-    "navigation": "_structure/navigation.json",
-    "form": "_structure/form.json",
-    "types": "_elements/types.json",
-    "markup": "_elements/markup.html",
-    "tokens": "_theme/tokens.css",
-    "settings": "_theme/editor.css",
+    "site": "data/site.json",
+    "archive": "data/archive.json",
+    "catalog": "data/catalog/{name}.json",
+    "texts": "data/text/",
+    "pages": "data/pages.json",
+    "templates": "data/templates.json",
+    "navigation": "data/navigation.json",
+    "form": "data/form.json",
+    "types": "code/types.json",
+    "markup": "code/markup.html",
+    "tokens": "assets/tokens.css",
+    "settings": "assets/editor.css",
     "typography": "lang/{lang}/typography.json",
-    "styles": "_theme/style.css",
+    "styles": "assets/style.css",
     "words": "lang/{lang}/{name}.json"
   },
   "commit": {
@@ -38,7 +38,7 @@
     ]
   },
   "media": {
-    "folder": "_content/media/",
+    "folder": "assets/media/",
     "widths": [
       400,
       800

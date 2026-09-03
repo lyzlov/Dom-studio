@@ -1,0 +1,88 @@
+[
+  {
+    "id": "olga-zinyukova",
+    "name": "Ольга Зинюкова",
+    "role": "Основатель, архитектор, педагог",
+    "bio": "Образование: МАрхИ, 2004, факультет жилых и общественных зданий. Путь: архитектор-проектировщик посёлков таунхаусов (Новая Рига) → живопись, выставки в Европе → художник-иллюстратор (журнал Marie Claire Dubai, издательство Паулсен — детские книги о покорении Севера) → участие в детских проектах на станции Барнео с Дмитрием и Матвеем Шпаро, Галей Моррелл → автор апсайкл-бижутерии из радиодеталей (бренд radio) → шоу-рум мебели из индонезийских лодок → хранитель игры в лесном детском саду, затем педагог в детском саду при демократической школе Перемена (Новая Рига) → художественный руководитель, педагог ИЗО и проектной деятельности в частной школе СмартСкул Новая Рига, параллельно частная практика и авторские занятия в реджио-садах → сентябрь 2023 — открытие собственной школы.Дополнительное образование: сертифицированный педагог проектной деятельности сети школ СмартСкул; практический курс по арт-терапии; личная терапия (гештальт, КПТ). Работа иллюстратора выставлялась в мэрии Нуука (Гренландия).",
+    "photo": "assets/media/team/olga"
+  },
+  {
+    "id": "aleksandra-melnikova",
+    "name": "Александра Мельникова",
+    "role": "Скульптура, Рисовашки",
+    "bio": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "photo": null
+  },
+  {
+    "id": "svetlana-reymer",
+    "name": "Светлана Реймер",
+    "role": "Подготовка к школе",
+    "bio": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "photo": null
+  },
+  {
+    "id": "regina-nazarova",
+    "name": "Регина Назарова",
+    "role": "Администратор школы, книжный клуб",
+    "bio": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "photo": null
+  },
+  {
+    "id": "elena-yukina",
+    "name": "Елена Юкина",
+    "role": "Педагог-дефектолог, Арт-терапия для особенных деток",
+    "bio": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "photo": null
+  },
+  {
+    "id": "andrey-pavlenko",
+    "name": "Андрей Павленко",
+    "role": "Мастер на все руки школы",
+    "bio": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "photo": null
+  },
+  {
+    "id": "milana-chernyshova",
+    "name": "Милана Чернышова",
+    "role": "Куратор курса Архитектура игр (Авторские курсы), Архитектура и Рисовашки (абонемент)",
+    "bio": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "photo": null
+  },
+  {
+    "id": "varvara-golubchekova",
+    "name": "Варвара Голубчекова",
+    "role": "Живопись, Графика, Скульптура (абонемент)",
+    "bio": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "photo": null
+  },
+  {
+    "id": "anton-chepelyuk",
+    "name": "Антон Чепелюк",
+    "role": "Куратор курса Робототехника (Авторские курсы)",
+    "bio": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "photo": null
+  },
+  {
+    "id": "sofya-vinogradova",
+    "name": "Софья Виноградова",
+    "role": "Академический рисунок (абонемент)",
+    "bio": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>",
+    "photo": null
+  },
+  {
+    "id": "dayana-dergunova",
+    "name": "Даяна Дергунова",
+    "role": "",
+    "bio": "",
+    "photo": "",
+    "hidden": true
+  },
+  {
+    "id": "nikolay-belousov",
+    "name": "Николай Белоусов",
+    "role": "",
+    "bio": "",
+    "photo": "",
+    "hidden": true
+  }
+]
