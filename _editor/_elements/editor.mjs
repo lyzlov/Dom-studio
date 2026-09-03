@@ -246,7 +246,7 @@ function loadPages() {
 /** Скрипт страницы со словами из словаря языка — как его пишет сборка. */
 function buildScript() {
   if (!S.scriptSrc) return null;
-  const ветка = Object.fromEntries(Object.entries(S.names || {})
+  const ветка = Object.fromEntries(Object.entries(S.siteWords || {})
     .filter(([к]) => к.startsWith('ui.')).map(([к, з]) => [к.slice(3), з]));
   return S.scriptSrc.replace('__UI__', JSON.stringify(ветка, null, 2).replace(/\n/g, '\n  '));
 }
@@ -2819,17 +2819,20 @@ export const projectNames = () => setProjectNames(S.names || {});
  * словами, что и записанная страница.
  */
 async function loadNames() {
-  S.names = {};
-  const шаблон = FILES().lang;
-  if (шаблон) {
-    try {
-      S.names = JSON.parse(await pick(путьФайла('lang')));
-    } catch { S.names = {}; }
-  }
-  setLang(S.names);
+  // Два словаря на язык, и это разные вещи. Слова сайта уходят в сборку —
+  // предпросмотр обязан говорить теми же словами, что и записанная страница.
+  // Имена проекта показывает только редактор: на сайт они не попадают.
+  S.siteWords = await словарь('lang');
+  S.names = await словарь('names');
+  setLang(S.siteWords);
   projectNames();
 }
 
+/** Словарь по ключу манифеста; нет файла — пусто, а не поломка. */
+async function словарь(ключ) {
+  if (!FILES()[ключ]) return {};
+  try { return JSON.parse(await pick(путьФайла(ключ))); } catch { return {}; }
+}
 /** Язык сайта объявлен в манифесте; язык редактора — свой, он у locale.mjs. */
 export const siteLang = () => (S.project && S.project.lang) || 'ru';
 

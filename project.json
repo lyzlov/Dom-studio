@@ -19,7 +19,8 @@
     "settings": "_theme/editor.css",
     "typography": "_theme/typography.json",
     "styles": "_theme/style.css",
-    "lang": "_lang/{lang}.json"
+    "lang": "_lang/site.{lang}.json",
+    "names": "_lang/names.{lang}.json"
   },
   "commit": {
     "$comment": "Куда уходит коммит. Приставка — путь до корня сайта внутри репозитория.",
