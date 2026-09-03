@@ -66,10 +66,10 @@ export function sessionTime(курс, { withRoom, room = x => x }) {
   const поДням = [];
   for (const з of курс.lessons) {
     let г = поДням.find(x => x.day === з.day);
-    if (!г) { г = { day: з.day, слоты: [] }; поДням.push(г); }
-    г.слоты.push(з);
+    if (!г) { г = { day: з.day, slots: [] }; поДням.push(г); }
+    г.slots.push(з);
   }
-  return поДням.map(г => г.слоты
+  return поДням.map(г => г.slots
     .map((з, i) => `${i ? '' : день(г.day) + ' '}${з.time}${withRoom ? ` (${ageText(з.age)})` : ''}`)
     .join(' / ')).join('; ') + хвост;
 }
@@ -90,7 +90,7 @@ export const KINDS = {
     action: t('ui.enrollLower'),
   }),
   event: (e, ctx) => {
-    const прошедшее = ctx.прошло(e);
+    const прошедшее = ctx.past(e);
     return card({
       linkTo: linkHtml(ctx.href, href('events', e.id)), heading: e.title,
       linkLabel: прошедшее ? e.title
@@ -147,7 +147,7 @@ const filtersBlock = (б, ctx, list) => {
 };
 
 const blockCards = (б, ctx) => {
-  const list = ctx.выборка(б);
+  const list = ctx.select(б);
   const вид = KINDS[б.kind];
   const карточки = list.map(x => вид(x, { ...ctx, wide: б.wide })).join('\n');
   if (б.wide && list.length === 1) return карточки;
@@ -158,7 +158,7 @@ const blockCards = (б, ctx) => {
 };
 
 const teamBlock = (б, ctx) => R('team', {
-  people: ctx.выборка(б).map(т => ({
+  people: ctx.select(б).map(т => ({
     name: т.name, role: т.role, bio: т.bio || '',
     frame: т.photo
       ? picture({ base: т.photo, caption: т.name, root: ctx.assets, sizes: SIZES_TEAM, class: null,
@@ -168,7 +168,7 @@ const teamBlock = (б, ctx) => R('team', {
 });
 
 const faqBlock = (б, ctx) => R('faq', {
-  faq: ctx.выборка(б).map(в => ({ question: в.question, answer: innerBlocks(в.answer, ctx.href) })),
+  faq: ctx.select(б).map(в => ({ question: в.question, answer: innerBlocks(в.answer, ctx.href) })),
 });
 
 const scheduleBlock = (б, ctx) => R('schedule', {
@@ -198,7 +198,7 @@ const galleryBlock = (б, ctx) => {
 const linksBlock = (б, ctx) => R('quicklinks', {
   items: б.items.map(п => ({ name: п.name, link: linkHtml(ctx.href, п.href) })),
 });
-linksBlock.секция = 'quicklinks';
+linksBlock.section = 'quicklinks';
 
 const ratingBlock = (б, ctx) => {
   const о = ctx.rating();
@@ -211,14 +211,14 @@ const contactsBlock = (б, ctx) => {
   // Соцсетей может быть сколько угодно: каждая даёт свою строку в таблице
   // контактов и своё звено в строчном варианте.
   const соцсети = (к.social || []).map(с => ({
-    с, ссылка: R('social-link', { ...с, schoolNewTab: tf('ui.schoolNewTab', с) }),
+    social: с, link: R('social-link', { ...с, schoolNewTab: tf('ui.schoolNewTab', с) }),
   }));
   const grid = R('contacts', {
     paragraphs: б.kind === 'paragraphs', address: к.address, phone,
-    socials: соцсети.map(x => x.ссылка).join(' · '),
+    socials: соцсети.map(x => x.link).join(' · '),
     rows: [{ caption: t('ui.address'), value: esc(к.address) },
              { caption: t('ui.phone'), value: phone },
-             ...соцсети.map(x => ({ caption: x.с.name, value: x.ссылка }))],
+             ...соцсети.map(x => ({ caption: x.social.name, value: x.link }))],
   });
   if (!б.map || б.map === 'none') return grid;
   const [lat, lng] = к.coords;
@@ -278,7 +278,7 @@ export function buildBlock(б, ctx) {
     inner(б, ctx),
   ].filter(Boolean).join('\n');
   return R('block', {
-    classes: [inner.секция || 'block', б.class].filter(Boolean).join(' '),
+    classes: [inner.section || 'block', б.class].filter(Boolean).join(' '),
     id: б.id, body,
   });
 }

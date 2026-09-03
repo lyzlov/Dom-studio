@@ -76,7 +76,7 @@ export function splitCaptions(данные, поля) {
       delete владелец[ключ];
     });
   }
-  return { структура: копия, подписи };
+  return { structure: копия, captions: подписи };
 }
 
 /**

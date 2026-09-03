@@ -24,7 +24,7 @@ export const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ESC[c
 const ТЕГ = /\{\{([{&#^/>]?)\s*([^}]*?)\s*\}?\}\}/g;
 
 function parse(шаблон) {
-  const корень = { дети: [] };
+  const корень = { children: [] };
   const стек = [корень];
   let позиция = 0, m;
   ТЕГ.lastIndex = 0;
@@ -49,24 +49,24 @@ function parse(шаблон) {
       позиция = m.index + весь.length;
     }
 
-    if (текст) узел.дети.push({ вид: 'text', значение: текст });
+    if (текст) узел.children.push({ type: 'text', value: текст });
 
     if (знак === '#' || знак === '^') {
-      const секция = { вид: знак === '#' ? 'section' : 'inverted', имя, дети: [] };
-      узел.дети.push(секция);
+      const секция = { type: знак === '#' ? 'section' : 'inverted', name: имя, children: [] };
+      узел.children.push(секция);
       стек.push(секция);
     } else if (знак === '/') {
-      if (стек.length < 2 || стек[стек.length - 1].имя !== имя)
+      if (стек.length < 2 || стек[стек.length - 1].name !== имя)
         throw new Error(`closing {{/${имя}}} does not match the opening tag`);
       стек.pop();
     } else if (знак === '>') {
-      узел.дети.push({ вид: 'insert', имя, отступ: хвост });
+      узел.children.push({ type: 'insert', name: имя, indent: хвост });
     } else {
-      узел.дети.push({ вид: 'value', имя, сырое: знак === '{' || знак === '&' });
+      узел.children.push({ type: 'value', name: имя, raw: знак === '{' || знак === '&' });
     }
   }
-  if (позиция < шаблон.length) корень.дети.push({ вид: 'text', значение: шаблон.slice(позиция) });
-  if (стек.length !== 1) throw new Error(`section {{#${стек[стек.length - 1].имя}}} is not closed`);
+  if (позиция < шаблон.length) корень.children.push({ type: 'text', value: шаблон.slice(позиция) });
+  if (стек.length !== 1) throw new Error(`section {{#${стек[стек.length - 1].name}}} is not closed`);
   return корень;
 }
 
@@ -92,33 +92,33 @@ const empty = v => v == null || v === false || v === '' || (Array.isArray(v) && 
 function renderNodes(узлы, стек, шаблоны) {
   let итог = '';
   for (const у of узлы) {
-    if (у.вид === 'text') { итог += у.значение; continue; }
-    if (у.вид === 'value') {
-      const v = find(стек, у.имя);
-      итог += empty(v) && v !== 0 ? '' : (у.сырое ? String(v) : esc(v));
+    if (у.type === 'text') { итог += у.value; continue; }
+    if (у.type === 'value') {
+      const v = find(стек, у.name);
+      итог += empty(v) && v !== 0 ? '' : (у.raw ? String(v) : esc(v));
       continue;
     }
-    if (у.вид === 'insert') {
-      const ш = шаблоны[у.имя];
-      if (!ш) throw new Error(`no template “${у.имя}”`);
+    if (у.type === 'insert') {
+      const ш = шаблоны[у.name];
+      if (!ш) throw new Error(`no template “${у.name}”`);
       const текст = renderNodes(lookup(ш, шаблоны), стек, шаблоны);
-      итог += у.отступ
-        ? текст.split('\n').map(л => л ? у.отступ + л : л).join('\n')
+      итог += у.indent
+        ? текст.split('\n').map(л => л ? у.indent + л : л).join('\n')
         : текст;
       continue;
     }
-    const v = find(стек, у.имя);
-    if (у.вид === 'inverted') {
-      if (empty(v)) итог += renderNodes(у.дети, стек, шаблоны);
+    const v = find(стек, у.name);
+    if (у.type === 'inverted') {
+      if (empty(v)) итог += renderNodes(у.children, стек, шаблоны);
       continue;
     }
     if (empty(v)) continue;
     if (Array.isArray(v)) {
-      v.forEach(э => { итог += renderNodes(у.дети, [...стек, э], шаблоны); });
+      v.forEach(э => { итог += renderNodes(у.children, [...стек, э], шаблоны); });
     } else if (typeof v === 'object') {
-      итог += renderNodes(у.дети, [...стек, v], шаблоны);
+      итог += renderNodes(у.children, [...стек, v], шаблоны);
     } else {
-      итог += renderNodes(у.дети, стек, шаблоны);
+      итог += renderNodes(у.children, стек, шаблоны);
     }
   }
   return итог;
@@ -127,7 +127,7 @@ function renderNodes(узлы, стек, шаблоны) {
 const разобранные = new Map();
 function lookup(шаблон, шаблоны) {
   void шаблоны;
-  if (!разобранные.has(шаблон)) разобранные.set(шаблон, parse(шаблон).дети);
+  if (!разобранные.has(шаблон)) разобранные.set(шаблон, parse(шаблон).children);
   return разобранные.get(шаблон);
 }
 
@@ -145,12 +145,12 @@ export function parseSet(текст) {
     шаблоны[m[1]] = m[2];
     места[m[1]] = [m.index + m[0].indexOf('>\n') + 2, m.index + m[0].length - '</template>'.length];
   }
-  return { шаблоны, места, имена: Object.keys(шаблоны) };
+  return { templates: шаблоны, spans: места, names: Object.keys(шаблоны) };
 }
 
 /** Замена одного шаблона в тексте файла — остальное не трогается. */
 export function replaceTemplate(текст, имя, новое) {
-  const { места } = parseSet(текст);
+  const { spans: места } = parseSet(текст);
   const м = места[имя];
   if (!м) throw new Error(`no template “${имя}”`);
   return текст.slice(0, м[0]) + (новое.endsWith('\n') ? новое : новое + '\n') + текст.slice(м[1]);

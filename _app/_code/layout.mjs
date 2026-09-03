@@ -68,7 +68,7 @@ export function parseGradient(фон) {
     return { color: (мп ? num.slice(0, мп.index) : num).trim(),
              at: мп ? parseFloat(мп[1]) / 100 : i / Math.max(1, части.length - 1) };
   });
-  return остановки.length >= 2 ? { угол, остановки } : null;
+  return остановки.length >= 2 ? { corner: угол, stops: остановки } : null;
 }
 
 const toCorner = слова => ({ 'to top': 0, 'to right': 90, 'to bottom': 180, 'to left': 270 })[слова.trim()] ?? 180;
@@ -142,16 +142,16 @@ export async function captureLayout(документ, имена = []) {
     const заливка = !empty(с.backgroundColor);
     const обводка = толщина > 0 && !empty(с.borderTopColor);
     if (заливка || обводка)
-      итог.push({ вид: 'rect', ...к, z: глубь, opacity: сквозь,
+      итог.push({ type: 'rect', ...к, z: глубь, opacity: сквозь,
                   fill: заливка ? с.backgroundColor : null,
                   stroke: обводка ? с.borderTopColor : null, sw: толщина,
                   r: parseFloat(с.borderTopLeftRadius) || 0 });
     const фон = (с.backgroundImage.match(/url\("?([^")]+)"?\)/) || [])[1];
-    if (фон) итог.push({ вид: 'image', ...к, z: глубь, opacity: сквозь, href: фон });
+    if (фон) итог.push({ type: 'image', ...к, z: глубь, opacity: сквозь, href: фон });
     if (у.tagName === 'IMG' && у.currentSrc)
-      итог.push({ вид: 'image', ...к, z: глубь, opacity: сквозь, href: у.currentSrc });
+      итог.push({ type: 'image', ...к, z: глубь, opacity: сквозь, href: у.currentSrc });
     if (у.tagName.toLowerCase() === 'svg')
-      итог.push({ вид: 'svg', ...к, z: глубь, opacity: сквозь, markup: у.outerHTML });
+      итог.push({ type: 'svg', ...к, z: глубь, opacity: сквозь, markup: у.outerHTML });
     итог.push(...pseudo(у, глубь));
     return итог;
   }
@@ -174,7 +174,7 @@ export async function captureLayout(документ, имена = []) {
       if (!заливка && !градиент && !обводка) continue;
       const к = pseudoBox(у, с, место);
       if (!к || к.w <= 0 || к.h <= 0) continue;
-      итог.push({ вид: 'rect', ...к, z: глубь,
+      итог.push({ type: 'rect', ...к, z: глубь,
                   fill: заливка ? с.backgroundColor : null, gradient: градиент,
                   stroke: обводка ? с.borderTopColor : null, sw: толщина,
                   r: parseFloat(с.borderTopLeftRadius) || 0 });
@@ -236,7 +236,7 @@ export async function captureLayout(документ, имена = []) {
     for (const узел of у.childNodes) {
       if (узел.nodeType !== 3 || !узел.textContent.trim()) continue;
       for (const л of lines(узел)) итог.push({
-        вид: 'text', z: pathDepth(у), x: v(л.left - сдвиг.left), y: v(л.base - сдвиг.top),
+        type: 'text', z: pathDepth(у), x: v(л.left - сдвиг.left), y: v(л.base - сдвиг.top),
         text: convert(л.text, с.textTransform),
         font: с.fontFamily, size: parseFloat(с.fontSize) || 16,
         weight: с.fontWeight, fill: с.color,
@@ -294,7 +294,7 @@ export async function captureLayout(документ, имена = []) {
     const дети = [];
     const свои = [...paints(у, true), ...labels(у)];
     walk(у, имя, дети, свои);
-    слои.push({ name: имя, ...rect(у), ops: свои, дети });
+    слои.push({ name: имя, ...rect(у), ops: свои, children: дети });
   };
 
   // Шапка и подвал — такие же слои: без них файл не картинка страницы.
@@ -308,7 +308,7 @@ export async function captureLayout(документ, имена = []) {
   await embedImages(слои, документ);
 
   return { width: документ.documentElement.clientWidth,
-           height: Math.round(корень.getBoundingClientRect().height), слои };
+           height: Math.round(корень.getBoundingClientRect().height), layers: слои };
 }
 
 /**
@@ -319,15 +319,15 @@ async function embedImages(слои, документ) {
   const кэш = new Map();
   const все = [];
   const build = о => {
-    (о.ops || []).forEach(x => { if (x.вид === 'image') все.push(x); });
-    (о.дети || []).forEach(build);
+    (о.ops || []).forEach(x => { if (x.type === 'image') все.push(x); });
+    (о.children || []).forEach(build);
   };
   слои.forEach(build);
   for (const оп of все) {
     if (!кэш.has(оп.href)) кэш.set(оп.href, await pick(оп.href, документ).catch(() => null));
     const что = кэш.get(оп.href);
     if (!что) continue;
-    if (что.вид === 'svg') { оп.вид = 'svg'; оп.markup = что.markup; } else оп.data = что.data;
+    if (что.type === 'svg') { оп.type = 'svg'; оп.markup = что.markup; } else оп.data = что.data;
   }
 }
 
@@ -339,10 +339,10 @@ async function pick(адрес, документ) {
   if (/\.svg(\?|$)/i.test(адрес)) {
     const о = await fetch(адрес);
     if (!о.ok) throw new Error(адрес);
-    return { вид: 'svg', markup: await о.text() };
+    return { type: 'svg', markup: await о.text() };
   }
   const тип = /\.(png|webp|gif)(\?|$)/i.test(адрес) ? 'image/png' : 'image/jpeg';
-  return { вид: 'raster', data: await toData(адрес, документ, тип) };
+  return { type: 'raster', data: await toData(адрес, документ, тип) };
 }
 
 function toData(адрес, документ, тип) {
@@ -361,15 +361,15 @@ function toData(адрес, документ, тип) {
 }
 
 /** Слой = группа с именем; имя переживает Figma и Illustrator. */
-export function toSVG(макет, { страница, устройство }) {
+export function toSVG(макет, { page: страница, layout: устройство }) {
   const части = [];
   // Градиенты объявляются один раз в defs и зовутся по имени: одинаковая
   // полоска в трёх местах — одна заливка, а не три.
   const градиенты = new Map();
   const gradientName = г => {
     const ключ = JSON.stringify(г);
-    if (!градиенты.has(ключ)) градиенты.set(ключ, { имя: 'g' + (градиенты.size + 1), г });
-    return градиенты.get(ключ).имя;
+    if (!градиенты.has(ключ)) градиенты.set(ключ, { name: 'g' + (градиенты.size + 1), group: г });
+    return градиенты.get(ключ).name;
   };
   части.push('<svg xmlns="http://www.w3.org/2000/svg" '
     + 'xmlns:xlink="http://www.w3.org/1999/xlink" '
@@ -379,15 +379,15 @@ export function toSVG(макет, { страница, устройство }) {
   части.push(`<title>${esc(страница)} · ${esc(устройство)}</title>`);
   части.push(`<rect width="${макет.width}" height="${макет.height}" fill="#ffffff"/>`);
 
-  for (const с of макет.слои) {
+  for (const с of макет.layers) {
     части.push(`<g id="${esc(с.name)}">`);
     части.push(box(с));
     // Краски секции и её слои идут одним списком, упорядоченным по z-index:
     // так лежащее «под» на странице лежит под и в файле.
-    const всё = [...(с.ops || []), ...(с.дети || []).map(д => ({ вид: 'layer', ...д }))];
+    const всё = [...(с.ops || []), ...(с.children || []).map(д => ({ type: 'layer', ...д }))];
     всё.sort((a, b) => (a.z || 0) - (b.z || 0));
     for (const о of всё) {
-      if (о.вид !== 'layer') { части.push(draw(о, gradientName)); continue; }
+      if (о.type !== 'layer') { части.push(draw(о, gradientName)); continue; }
       части.push(`<g id="${esc(о.name)}">`);
       части.push(box(о));
       const внутри = [...(о.ops || [])].sort((a, b) => (a.z || 0) - (b.z || 0));
@@ -399,10 +399,10 @@ export function toSVG(макет, { страница, устройство }) {
   части.push('</svg>');
   if (градиенты.size) {
     const defs = ['<defs>'];
-    for (const { имя, г } of градиенты.values()) {
-      const к = gradientStops(г.угол);
+    for (const { name: имя, group: г } of градиенты.values()) {
+      const к = gradientStops(г.corner);
       defs.push(`<linearGradient id="${имя}" x1="${к.x1}" y1="${к.y1}" x2="${к.x2}" y2="${к.y2}">`);
-      г.остановки.forEach(о => defs.push(
+      г.stops.forEach(о => defs.push(
         `<stop offset="${v(о.at * 100)}%" stop-color="${colorOf(о.color)}"/>`));
       defs.push('</linearGradient>');
     }
@@ -422,7 +422,7 @@ const box = с => `<rect x="${с.x}" y="${с.y}" width="${с.w}" height="${с.h}
 const opacityAttr = о => (о.opacity != null && о.opacity < 1 ? ` opacity="${о.opacity}"` : '');
 
 function draw(о, gradientName) {
-  if (о.вид === 'rect') {
+  if (о.type === 'rect') {
     const атр = [`x="${о.x}"`, `y="${о.y}"`, `width="${о.w}"`, `height="${о.h}"`];
     if (о.r) атр.push(`rx="${v(о.r)}"`);
     if (о.gradient && gradientName) атр.push(`fill="url(#${gradientName(о.gradient)})"`);
@@ -432,11 +432,11 @@ function draw(о, gradientName) {
     if (о.stroke) атр.push(`stroke="${colorOf(о.stroke)}"`, `stroke-width="${v(о.sw)}"`);
     return `<rect ${атр.join(' ')}${opacityAttr(о)}/>`;
   }
-  if (о.вид === 'image')
+  if (о.type === 'image')
     return о.data ? `<image x="${о.x}" y="${о.y}" width="${о.w}" height="${о.h}" `
       + `preserveAspectRatio="xMidYMid slice"${opacityAttr(о)} xlink:href="${о.data}"/>` : '';
-  if (о.вид === 'svg') return nestedSVG(о);
-  if (о.вид === 'text') {
+  if (о.type === 'svg') return nestedSVG(о);
+  if (о.type === 'text') {
     const атр = [`x="${о.x}"`, `y="${о.y}"`, `font-family="${esc(о.font)}"`,
                  `font-size="${v(о.size)}"`, `font-weight="${о.weight}"`,
                  `fill="${colorOf(о.fill)}"`];
@@ -488,23 +488,23 @@ export function parseSVG(текст) {
   let m;
   while ((m = re.exec(текст)))
     слои.set(m[1], { x: +m[2], y: +m[3], w: +m[4], h: +m[5] });
-  return { слои };
+  return { layers: слои };
 }
 
 /** Что изменилось в макете относительно текущей страницы. */
 export function compare(текущий, изФайла) {
   const было = new Map();
-  текущий.слои.forEach(с => {
+  текущий.layers.forEach(с => {
     было.set(с.name, с);
-    с.дети.forEach(д => было.set(д.name, д));
+    с.children.forEach(д => было.set(д.name, д));
   });
   const различия = [];
   for (const имя of было.keys())
-    if (!изФайла.слои.has(имя)) различия.push({ kind: 'removed', name: имя });
-  for (const имя of изФайла.слои.keys())
+    if (!изФайла.layers.has(имя)) различия.push({ kind: 'removed', name: имя });
+  for (const имя of изФайла.layers.keys())
     if (!было.has(имя)) различия.push({ kind: 'added', name: имя });
   for (const [имя, было_] of было) {
-    const стало = изФайла.слои.get(имя);
+    const стало = изФайла.layers.get(имя);
     if (!стало) continue;
     if (Math.abs(стало.y - было_.y) >= 8)
       различия.push({ kind: 'moved', name: имя, from: было_.y, to: стало.y });

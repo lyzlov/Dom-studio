@@ -43,10 +43,10 @@ function writeToken(т, новое) {
 /** Дерево вкладки «Оформление»: группы и разделы из манифеста. */
 export function drawDesignTree(где) {
   const группы = S.project.theme.groups;
-  const обычные = группы.map(г => ({ г, свои: г.sections.filter(р => !р.dev) }));
-  const первый = обычные.find(x => x.свои.length);
+  const обычные = группы.map(г => ({ group: г, own: г.sections.filter(р => !р.dev) }));
+  const первый = обычные.find(x => x.own.length);
   if (!S.section || !S.section.startsWith('token:'))
-    S.section = 'token:' + первый.г.key + '.' + первый.свои[0].key;
+    S.section = 'token:' + первый.group.key + '.' + первый.own[0].key;
   // Список, в котором лежит открытый раздел, раскрыт: человек должен видеть,
   // где он находится, не открывая списки заново.
   const где_ = String(S.section).slice(6).split('.')[0];
@@ -54,7 +54,7 @@ export function drawDesignTree(где) {
 
   // Списки те же, что и во вкладке «Сайт»: заголовок раскрывается, строки
   // лежат в сетке. Второго вида списка в редакторе нет.
-  for (const { г, свои } of обычные) {
+  for (const { group: г, own: свои } of обычные) {
     if (!свои.length) continue;
     где.append(navList('design.' + г.key, г.key,
       свои.map(р => designItem(г, р))));
@@ -92,14 +92,14 @@ export function drawDesign(где) {
   // Справка стоит в той же группе «Для разработчика», что и разметка, и путь
   // до неё называется так же, как остальные: группа и раздел.
   if (СПРАВКИ[сек]) {
-    crumbs([{ имя: t('nav.dev') }, { имя: t('nav.' + сек) }], $('form-crumbs'), () => {});
+    crumbs([{ name: t('nav.dev') }, { name: t('nav.' + сек) }], $('form-crumbs'), () => {});
     return где.append(inGrid(СПРАВКИ[сек]()));
   }
   const group = (S.project.theme.groups || []).find(г => г.key === гр) || { sections: [] };
   const раздел = (group.sections || []).find(x => x.key === сек) || {};
   // Крошка называет то место, где раздел стоит в навигаторе. Разделы для
   // разработчика собраны в свой список, и путь до них — тот же список.
-  crumbs([{ имя: t(раздел.dev ? 'nav.dev' : 'design.' + гр) }, { имя: t('design.' + сек) }],
+  crumbs([{ name: t(раздел.dev ? 'nav.dev' : 'design.' + гр) }, { name: t('design.' + сек) }],
     $('form-crumbs'), () => {});
   if (раздел.source === 'typography') return где.append(inGrid(typesetForm()));
   if (раздел.source === 'markup') return где.append(inGrid(markupForm()));
@@ -140,17 +140,17 @@ function tokenTable(имена, вариантыСписка) {
   const колонки = steps(имена);
   const т = tableFrame(колонки.map(ruleCaption));
   имена.forEach(имя => tableRow(т, {
-    имя: tokenLabel(имя), id: имя, колонки,
-    ячейка: где => {
+    name: tokenLabel(имя), id: имя, columns: колонки,
+    cell: где => {
       const в = tokenOptions(имя).find(x => x.where === где);
       if (!в) return null;
       return /^(#|rgb|hsl|linear-gradient)/.test(tokenValue(в))
         ? colorField(в) : tokenField(в, вариантыСписка);
     },
-    токены: tokenOptions(имя),
-    ссылки: [имя],
-    растягивать: true,
-    переименовать: новое => renameToken(имя, новое),
+    tokens: tokenOptions(имя),
+    links: [имя],
+    stretch: true,
+    rename: новое => renameToken(имя, новое),
   }));
   return т;
 }
@@ -215,8 +215,8 @@ function tableFrame(подписи) {
  * Строка таблицы: шеврон раскрывает подробности, дальше имя, значения по
  * колонкам и кнопки. Значение, у которого ступень одна, занимает всю ширину.
  */
-function tableRow(таблица, { имя, id, колонки, ячейка, токены, ссылки, подробно,
-                                  растягивать = false, переименовать = null }) {
+function tableRow(таблица, { name: имя, id, columns: колонки, cell: ячейка, tokens: токены, links: ссылки, details: подробно,
+                                  stretch: растягивать = false, rename: переименовать = null }) {
   подробно = подробно || (linkCount(ссылки) ? (() => usedIn(ссылки)) : null);
   const row = el('div', 'ed-tr');
   const подробности = el('div', 'ed-tr-detail');
@@ -387,15 +387,15 @@ function wholeSpellings() {
   const т = tableFrame(колонки.map(ruleCaption));
   имена.forEach(имя => {
     const row = tableRow(т, {
-      имя: t('style.' + имя, имя), id: figmaName(имя), колонки,
-      ячейка: где => {
+      name: t('style.' + имя, имя), id: figmaName(имя), columns: колонки,
+      cell: где => {
         const в = tokenOptions(`--type-${имя}-size`).find(x => x.where === где);
         return в ? sizeField(в) : null;
       },
-      токены: СВОЙСТВА.map(([с]) => tokenOptions(`--type-${имя}-${с}`))
+      tokens: СВОЙСТВА.map(([с]) => tokenOptions(`--type-${имя}-${с}`))
         .flat().concat(tokenOptions(`--type-${имя}-size`)),
-      подробно: () => spellingProps(имя),
-      растягивать: true,
+      details: () => spellingProps(имя),
+      stretch: true,
     });
     return row;
   });
@@ -584,7 +584,7 @@ function markupForm() {
     apply(false);
   };
 
-  дерево.дети.forEach(у => drawMarkupNode(у, блок, 0, write));
+  дерево.children.forEach(у => drawMarkupNode(у, блок, 0, write));
   блок.append(fieldRow({ name: t('markup.source'), value: код }));
   return блок;
 }
@@ -597,41 +597,41 @@ function drawMarkupNode(у, куда, уровень, write) {
   if (!showNode(у)) return;
   const fieldName = к => S.dict.caption(String(к).split('.').pop());
   let имя = '', значение = null;
-  const ВИДЫ = { поле: 'value', повтор: 'repeat', иначе: 'otherwise' };
+  const ВИДЫ = { field: 'value', repeat: 'repeat', fallback: 'otherwise' };
 
-  if (у.вид === 'tag') {
-    имя = t('tag.' + у.тег, у.тег);
-    const свойства = humanAttributes(у.свойства, fieldName,
+  if (у.type === 'tag') {
+    имя = t('tag.' + у.tag, у.tag);
+    const свойства = humanAttributes(у.props, fieldName,
       имя => tf('markup.without', { name: имя }));
     if (свойства) значение = el('span', 'ed-hint', свойства);
-  } else if (у.вид === 'text') {
-    const части = /^(\s*)([\s\S]*?)(\s*)$/.exec(у.сырое);
+  } else if (у.type === 'text') {
+    const части = /^(\s*)([\s\S]*?)(\s*)$/.exec(у.raw);
     имя = t('markup.text');
     const поле = el('input');
     поле.type = 'text';
     поле.value = части[2];
     поле.setAttribute('aria-label', имя);
     поле.addEventListener('input', () => {
-      у.сырое = части[1] + поле.value + части[3];
+      у.raw = части[1] + поле.value + части[3];
       write();
     });
     значение = поле;
-  } else if (у.вид === 'note') {
+  } else if (у.type === 'note') {
     имя = t('markup.note');
-    значение = el('span', 'ed-hint', у.текст);
-  } else if (у.вид === 'insert') {
+    значение = el('span', 'ed-hint', у.text);
+  } else if (у.type === 'insert') {
     имя = t('markup.include');
-    const b = el('button', 'ed-check', у.имя);
+    const b = el('button', 'ed-check', у.name);
     b.type = 'button';
-    b.addEventListener('click', () => { S.template = у.имя; drawMain(); });
+    b.addEventListener('click', () => { S.template = у.name; drawMain(); });
     значение = b;
   } else {
-    имя = t('markup.' + (ВИДЫ[у.вид] || у.вид), у.вид);
-    значение = el('span', 'ed-hint', fieldName(у.имя));
+    имя = t('markup.' + (ВИДЫ[у.type] || у.type), у.type);
+    значение = el('span', 'ed-hint', fieldName(у.name));
   }
 
-  куда.append(fieldRow({ name: имя, id: у.имя || у.тег, value: значение, level: уровень }));
-  (у.дети || []).forEach(д => drawMarkupNode(д, куда, уровень + 1, write));
+  куда.append(fieldRow({ name: имя, id: у.name || у.tag, value: значение, level: уровень }));
+  (у.children || []).forEach(д => drawMarkupNode(д, куда, уровень + 1, write));
 }
 
 // #endregion

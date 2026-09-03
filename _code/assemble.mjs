@@ -23,11 +23,11 @@ export function imageBases({ site, catalog }) {
 /** Типографика применяется к тексту страницы; теги и attrs не затрагиваются. */
 export function typeset(html, правила) {
   if (!правила || !правила.length) return html;
-  const готовые = правила.map(п => ({ re: new RegExp(п.find, 'g'), на: п.replace }));
+  const готовые = правила.map(п => ({ re: new RegExp(п.find, 'g'), to: п.replace }));
   return html.replace(/(<[^>]*>)|([^<]+)/g, (всё, тег, текст) => {
     if (тег) return тег;
     let t = текст;
-    for (const п of готовые) t = t.replace(п.re, п.на);
+    for (const п of готовые) t = t.replace(п.re, п.to);
     return t;
   });
 }
@@ -143,7 +143,7 @@ export function buildSite({ data, sizes = {}, text = () => '', today,
     assets: '../'.repeat(путь.split('/').length - 1 + langDepth),
     langDepth, prefix, alternates,
     href: путь, sizes: sizes, values,
-    прошло: x => isPast((x.date || x.dates || {}).to || x, TODAY),
+    past: x => isPast((x.date || x.dates || {}).to || x, TODAY),
     name, dictionary: dict, person,
     lessonTime: (c, о) => sessionTime(c, { ...о, room: id => name('room', id) }),
     payment: c => priceLine(planBy(c.plan)),
@@ -177,8 +177,8 @@ export function buildSite({ data, sizes = {}, text = () => '', today,
       const путь = `${шаблон.folder}/${сущность.id}/index.html`;
       const ctx = context(сущность, values, путь);
       const блоки = шаблон.blocks.filter(б => !б.hidden).map(б => buildBlock({ ...б, text: б.text && substitute(б.text, values) }, ctx));
-      собрано.push([путь, entityPage({ вид, сущность, шаблон, site, структура,
-        элементы: types.pageElements, ctx, blocks: блоки })]);
+      собрано.push([путь, entityPage({ kind: вид, entity: сущность, template: шаблон, site, structure: структура,
+        elements: types.pageElements, ctx, blocks: блоки })]);
     }
   };
 
@@ -197,7 +197,7 @@ export function buildSite({ data, sizes = {}, text = () => '', today,
   for (const [путь, оп] of Object.entries(structure.pages)) {
     if (путь.startsWith('$') || оп.hidden) continue;
     const ctx = { ...context({ id: '' }, {}, путь),
-      выборка: б => {
+      select: б => {
         const list = СПРАВОЧНИКИ[б.source];
         if (!list) throw new Error(`unknown source “${б.source}” on ${путь}`);
         const видно = visibleRecords(list);
@@ -213,11 +213,11 @@ export function buildSite({ data, sizes = {}, text = () => '', today,
         if (!оп || оп.source === 'none') return null;
         let сущ = null, папка = null;
         if (оп.source === 'nearest') {
-          const все = [...visibleRecords(events).map(x => ({ x, п: 'events', д: x.date.to })),
-                       ...visibleRecords(camp.sessions).map(x => ({ x, п: 'camp', д: x.dates.to }))]
-            .filter(v => v.д >= TODAY).sort((a, b) => a.д.localeCompare(b.д));
+          const все = [...visibleRecords(events).map(x => ({ x, folder: 'events', till: x.date.to })),
+                       ...visibleRecords(camp.sessions).map(x => ({ x, folder: 'camp', till: x.dates.to }))]
+            .filter(v => v.till >= TODAY).sort((a, b) => a.till.localeCompare(b.till));
           if (!все.length) return оп.heading ? оп : null;
-          сущ = все[0].x; папка = все[0].п;
+          сущ = все[0].x; папка = все[0].folder;
         } else if (оп.source) {
           папка = оп.source;
           сущ = (СПРАВОЧНИКИ[оп.source] || []).find(x => x.id === оп.id);
@@ -227,7 +227,7 @@ export function buildSite({ data, sizes = {}, text = () => '', today,
           ? `${сущ.description}<br>${сущ.place || ''}` : (сущ ? сущ.place || '' : '');
         const из = сущ ? {
           heading: сущ.title, date: (сущ.date || сущ.dates).caption,
-          подпись, link: `${папка}/${сущ.id}/index.html`,
+          caption: подпись, link: `${папка}/${сущ.id}/index.html`,
         } : {};
         const итог = { ...из, ...Object.fromEntries(Object.entries(оп).filter(([k, v]) =>
           v != null && !['source', 'id'].includes(k))) };
@@ -254,8 +254,8 @@ export function buildSite({ data, sizes = {}, text = () => '', today,
       ...оп.blocks.filter(б => !б.hidden).map((б, i) => (шапкаСтраницы || i ? '\n' : '') + buildElement(б, ctx)),
     ].join('\n');
     if (оп.wrapper) body = `  <div class="${оп.wrapper}">\n${body}\n  </div>`;
-    собрано.push([путь, page({ site, структура, элементы: types.pageElements,
-      путь, body, title: оп.metaTitle, description: оп.metaDescription,
+    собрано.push([путь, page({ site, structure: структура, elements: types.pageElements,
+      href: путь, body, title: оп.metaTitle, description: оп.metaDescription,
       langDepth, prefix, alternates: alternates(путь),
       active: оп.active || путь,
       // Последнее звено крошек — сама страница: её имя берётся у неё же.
@@ -265,5 +265,5 @@ export function buildSite({ data, sizes = {}, text = () => '', today,
 
   const т = data.typography || {};
   const правила = т.enabled ? (т.rules || []) : [];
-  return { страницы: собрано.map(([п, html]) => [п, typeset(html, правила)]), замечания };
+  return { pages: собрано.map(([п, html]) => [п, typeset(html, правила)]), notes: замечания };
 }

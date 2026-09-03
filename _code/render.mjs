@@ -64,7 +64,7 @@ export function ageBuckets(промежутки) {
 }
 
 /* #region Каркас: head, шапка, подвал, модальное окно */
-function head({ site, title, description, путь, depth, root, prefix, alternates, image }) {
+function head({ site, title, description, href: путь, depth, root, prefix, alternates, image }) {
   const abs = p => site.site.url.replace(/\/$/, '') + '/' + p.replace(/(^|\/)index\.html$/, '$1');
   return R('head', {
     u: up(depth), root, title, description,
@@ -82,7 +82,7 @@ const hidden = (структура, что) =>
  * Шапка собирается из частей так же, как подвал: состав и порядок — в данных,
  * вид части — в её шаблоне. Меню — такая же часть, как логотип и соцсети.
  */
-function header({ site, структура, depth, root, путь, active, path, части, prefix = '', alternates = [] }) {
+function header({ site, structure: структура, depth, root, href: путь, active, path, parts: части, prefix = '', alternates = [] }) {
   const L = цель => linkHtml(путь, цель);
   // Та же страница на других языках. Пока язык один, версий нет — и части с
   // переключателем в шапке тоже.
@@ -103,7 +103,7 @@ function header({ site, структура, depth, root, путь, active, path,
     languages: языки,
   };
   const barHtml = partList(структура, 'header', части)
-    .map(({ имя, о }) => R(о.template || `header-${имя}`, значения).replace(/\n$/, ''))
+    .map(({ name: имя, part: о }) => R(о.template || `header-${имя}`, значения).replace(/\n$/, ''))
     .join('\n');
   return R('header', { ...значения, barHtml });
 }
@@ -113,7 +113,7 @@ function header({ site, структура, depth, root, путь, active, path,
  * данных (`navigation.layout.footer`), как выглядит часть — в её шаблоне, а в
  * какую зону она встаёт — в словаре. Скрытая часть просто не попадает в список.
  */
-function footer({ site, структура, depth, root, путь, части }) {
+function footer({ site, structure: структура, depth, root, href: путь, parts: части }) {
   const L = цель => linkHtml(путь, цель);
   const значения = {
     u: up(depth), root,
@@ -128,7 +128,7 @@ function footer({ site, структура, depth, root, путь, части })
     privacy: L('privacy/index.html'),
     offer: L('offer/index.html'),
   };
-  const собранные = partList(структура, 'footer', части).map(({ имя, о }) => ({
+  const собранные = partList(структура, 'footer', части).map(({ name: имя, part: о }) => ({
     zone: о.zone || 'grid',
     html: R(о.template || `footer-${имя}`, значения).replace(/\n$/, ''),
   }));
@@ -145,7 +145,7 @@ function partList(структура, где, объявленные) {
     || Object.keys(объявленные || {});
   return порядок
     .filter(имя => (объявленные || {})[имя] && !hidden(структура, `${где}.${имя}`))
-    .map(имя => ({ имя, о: объявленные[имя] }));
+    .map(имя => ({ name: имя, part: объявленные[имя] }));
 }
 
 export function form(приставка, поля) {
@@ -205,7 +205,7 @@ export function plainTable({ columns, rows, widths, headNoScope }) {
 }
 
 /* #region Страница целиком */
-export function page({ site, структура, элементы, title, description, путь, image, active, path, body,
+export function page({ site, structure: структура, elements: элементы, title, description, href: путь, image, active, path, body,
                        langDepth = 0, prefix = '', alternates = [] }) {
   const depth = pathDepth(путь);
   // Страницы лежат в папке языка, общие ресурсы — в корне сайта: у основного
@@ -214,13 +214,13 @@ export function page({ site, структура, элементы, title, descri
   return render('page', {
     u: up(depth),
     body,
-    head: head({ site, title, description, путь, depth, root, prefix, alternates, image }),
+    head: head({ site, title, description, href: путь, depth, root, prefix, alternates, image }),
     // Шапку, меню и подвал можно спрятать целиком: признак лежит там же, где
     // сама навигация, и читается сборкой, а не только редактором.
-    header: hidden(структура, 'header') ? '' : header({ site, структура, depth, root, путь, active, path,
-      prefix, alternates, части: ((элементы || {}).header || {}).parts }),
-    footer: hidden(структура, 'footer') ? '' : footer({ site, структура, depth, root, путь,
-      части: ((элементы || {}).footer || {}).parts }),
+    header: hidden(структура, 'header') ? '' : header({ site, structure: структура, depth, root, href: путь, active, path,
+      prefix, alternates, parts: ((элементы || {}).header || {}).parts }),
+    footer: hidden(структура, 'footer') ? '' : footer({ site, structure: структура, depth, root, href: путь,
+      parts: ((элементы || {}).footer || {}).parts }),
     modal: modal(структура.form.fields),
   });
 }
@@ -270,10 +270,10 @@ export const priceLine = тариф => [
 ].join(', ') + '. '
   + тариф.packages.map((п, i) => `${i && п.short ? п.short : п.title} — ${money(п.price)}`).join(', ') + '.';
 
-export function entityPage({ вид, сущность, шаблон, site, структура, элементы, ctx, blocks }) {
+export function entityPage({ kind: вид, entity: сущность, template: шаблон, site, structure: структура, elements: элементы, ctx, blocks }) {
   const путь = `${шаблон.folder}/${сущность.id}/index.html`;
   const depth = pathDepth(путь);
-  const прошедшее = шаблон.button === 'until-past' && ctx.прошло(сущность);
+  const прошедшее = шаблон.button === 'until-past' && ctx.past(сущность);
   const frames = сущность.image ? [{
     base: сущность.image, caption: ПОДПИСЬ_КАДРА[вид](сущность),
     ...(ctx.sizes[сущность.image] || { width: 400, height: 300 }),
@@ -296,10 +296,10 @@ export function entityPage({ вид, сущность, шаблон, site, ст�
   ].join('\n');
 
   return page({
-    site, структура, элементы, body,
+    site, structure: структура, elements: элементы, body,
     title: substitute(шаблон.metaTitle, ctx.values),
     description: substitute(шаблон.metaDescription, ctx.values),
-    путь, langDepth: ctx.langDepth, prefix: ctx.prefix, alternates: ctx.alternates(путь),
+    href: путь, langDepth: ctx.langDepth, prefix: ctx.prefix, alternates: ctx.alternates(путь),
     active: шаблон.parent,
     path: [{ name: t('ui.home'), href: 'index.html' },
              { name: шаблон.section, href: шаблон.parent },

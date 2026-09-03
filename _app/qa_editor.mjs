@@ -50,13 +50,13 @@ function checkCSS() {
 // молча портит шаблон, которого человек в глаза не видел.
 function checkMarkup() {
   const set = parseSet(readFileSync(join(здесь, '../_code/markup.html'), 'utf8'));
-  const count = (у, из = { тегов: 0 }) => {
-    if (у.вид === 'tag') из.тегов++;
-    (у.дети || []).forEach(д => count(д, из));
+  const count = (у, из = { tags: 0 }) => {
+    if (у.type === 'tag') из.tags++;
+    (у.children || []).forEach(д => count(д, из));
     return из;
   };
-  for (const имя of set.имена) {
-    const было = set.шаблоны[имя];
+  for (const имя of set.names) {
+    const было = set.templates[имя];
     if (serializeMarkup(parseMarkup(было)) !== было) {
       bad('разметка', `шаблон «${имя}» после разбора собирается иначе`);
       continue;
@@ -67,7 +67,7 @@ function checkMarkup() {
     // теге, а не отдельным узлом.
     const в = count(parseMarkup(было));
     const тегов = (было.match(/<[a-zA-Z][a-zA-Z0-9-]*/g) || []).length;
-    if (в.тегов !== тегов) bad('разметка', `шаблон «${имя}»: тегов ${тегов}, в дереве ${в.тегов}`);
+    if (в.tags !== тегов) bad('разметка', `шаблон «${имя}»: тегов ${тегов}, в дереве ${в.tags}`);
   }
 }
 
@@ -131,7 +131,7 @@ const ширины = await стр.evaluate(() => {
   const set = сел => [...new Set([...document.querySelectorAll(сел)]
     .filter(e => e.getClientRects().length)
     .map(e => Math.round(e.getBoundingClientRect().width)))];
-  return { выборСтраницы: set('.ed-pick') };
+  return { pagePicker: set('.ed-pick') };
 });
 for (const [что, ш] of Object.entries(ширины))
   if (ш.length > 1) bad('ширина', `${что}: ${ш.length} разных ширин — ${ш}`);
@@ -145,7 +145,7 @@ const афиша = await стр.evaluate(() => {
   const section = сел => [...д.querySelectorAll('section')].find(с => с.id === сел);
   const names = с => (с ? [...с.querySelectorAll('.card-title, h3, .card-link')]
     .map(э => э.textContent.trim()) : []);
-  return { было: !!section('afisha'), прошло: names(section('past')).length };
+  return { before: !!section('afisha'), past: names(section('past')).length };
 });
 
 // 1 и 2. Однотипные строки: одна вертикаль кнопок и одна высота.
@@ -160,13 +160,13 @@ const списки = await стр.evaluate(() => {
       const я = р.firstElementChild;
       if (я) h.add(Math.round(я.getBoundingClientRect().height));
     });
-    итог[имя] = { строк: строки.length, вертикалей: [...x], высот: [...h] };
+    итог[имя] = { rows: строки.length, columns: [...x], heights: [...h] };
   }
   return итог;
 });
 for (const [имя, с] of Object.entries(списки)) {
-  if (с.вертикалей.length > 1) bad('вертикаль', `${имя}: кнопки на ${с.вертикалей.length} вертикалях — ${с.вертикалей}`);
-  if (с.высот.length > 1) bad('высота', `${имя}: строки ${с.высот.length} разных высот — ${с.высот}`);
+  if (с.columns.length > 1) bad('вертикаль', `${имя}: кнопки на ${с.columns.length} вертикалях — ${с.columns}`);
+  if (с.heights.length > 1) bad('высота', `${имя}: строки ${с.heights.length} разных высот — ${с.heights}`);
 }
 
 /**
@@ -226,8 +226,8 @@ const обход = async ([раздел, где]) => {
 
   await развернуть();
   const план = строки().map(r => ({
-    ключ: r.dataset.key,
-    имя: ((r.querySelector('.ed-name') || {}).textContent || '').trim(),
+    key: r.dataset.key,
+    name: ((r.querySelector('.ed-name') || {}).textContent || '').trim(),
     x: Math.round(r.querySelector('.ed-name').getBoundingClientRect().left),
   }));
   if (!план.length) беды.push(['структура', где + ': пустая']);
@@ -242,7 +242,7 @@ const обход = async ([раздел, где]) => {
   });
 
   const пройдено = new Set();
-  for (const { ключ, имя } of план) {
+  for (const { key: ключ, name: имя } of план) {
     if (пройдено.has(ключ)) continue;
     пройдено.add(ключ);
     if (!имя || /^\d+$/.test(имя)) беды.push(['имя', где + ' ' + ключ + ': «' + имя + '»']);
@@ -292,11 +292,11 @@ const отбор = await стр.evaluate(() => {
   const cards = с => [...(с ? с.querySelectorAll('.card') : [])].length;
   const by = имя => cards([...д.querySelectorAll('section')]
     .find(с => (с.querySelector('h2') || {}).textContent === имя));
-  return { заголовки, афиша: by('Афиша'), прошедшие: by('Прошедшие') };
+  return { headings: заголовки, upcoming: by('Афиша'), past: by('Прошедшие') };
 });
-if (!отбор || !отбор.заголовки.includes('Прошедшие'))
+if (!отбор || !отбор.headings.includes('Прошедшие'))
   bad('отбор', 'на странице событий нет раздела «Прошедшие»');
-else if (!отбор.прошедшие)
+else if (!отбор.past)
   bad('отбор', 'раздел «Прошедшие» пуст — отбор по дате не сработал');
 
 await бр.close();

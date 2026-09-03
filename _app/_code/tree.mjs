@@ -22,8 +22,8 @@ const node = (key, name, о = {}) => ({
   key, name,
   kind: о.kind || 'part', depth: о.depth || 0,
   children: о.children || [], data: о.data || null, hidden: !!о.hidden,
-  поле: о.поле || null,
-  значение: 'значение' in о ? о.значение : null,
+  field: о.field || null,
+  value: "value" in о ? о.value : null,
 });
 
 export function createTree(S, t, помощь) {
@@ -53,7 +53,7 @@ export function createTree(S, t, помощь) {
       const список = byPath(о.data);
       const дети = Array.isArray(список) ? список.map((з, i) => node(`overlay:${к}#${i}`,
         ownName(з, i) || (з && з.caption) || t('new.record'), {
-          kind: 'record', depth: 1, data: з, hidden: !!(з && з.hidden), поле: nameInput(з),
+          kind: 'record', depth: 1, data: з, hidden: !!(з && з.hidden), field: nameInput(з),
         })) : [];
       return node('overlay:' + к, t(`overlay.${к}.name`, humanize(к)),
         { kind: 'markup', data: о, depth: 0, children: дети });
@@ -76,7 +76,7 @@ export function createTree(S, t, помощь) {
     for (const x of меню) {
       if (x.items) {
         дети.push(node('menu:' + x.id, own(x.id, x.group), {
-          kind: 'menu', data: x, поле: { владелец: x, ключ: 'group' },
+          kind: 'menu', data: x, field: { owner: x, key: 'group' },
           children: x.items.map(menuItemNode),
         }));
       } else if (x.href) дети.push(menuItemNode(x));
@@ -89,7 +89,7 @@ export function createTree(S, t, помощь) {
     return node('menuitem:' + пункт.href,
       own(pageKey(пункт.href), пункт.name || pageName(пункт.href)), {
         kind: 'menuitem', data: пункт, hidden: !!оп.hidden,
-        поле: { владелец: пункт, ключ: 'name' },
+        field: { owner: пункт, key: 'name' },
       });
   };
 
@@ -108,7 +108,7 @@ export function createTree(S, t, помощь) {
     // сайте: собственное имя у неё стоит только там, где отличается.
     const дети = Array.isArray(список) ? список.map((з, i) => node(`${ключУзла}#${i}`,
       ownName(з, i) || (з && з.href ? pageName(з.href) : t('new.record')), {
-        kind: 'record', data: з, hidden: !!(з && з.hidden), поле: nameInput(з),
+        kind: 'record', data: з, hidden: !!(з && з.hidden), field: nameInput(з),
       })) : [];
     // Имя части — из словаря имён проекта, как у всего остального: в словаре
     // устройства лежит, из чего часть состоит, а не как она называется.
@@ -144,7 +144,7 @@ export function createTree(S, t, помощь) {
     if (!Array.isArray(список)) return [];
     return список.map((з, i) => node(`card:${в.key}#${i}`,
       own(з && з.id, ownName(з, i)) || t('new.record'), {
-        kind: 'card', data: з, hidden: !!(з && з.hidden), поле: nameInput(з),
+        kind: 'card', data: з, hidden: !!(з && з.hidden), field: nameInput(з),
       }));
   }
 
@@ -154,7 +154,7 @@ export function createTree(S, t, помощь) {
     return блок.tabs.map((в, i) => node(`tab:${ключБлока}#${i}`,
       own(в && в.key, (в && (в.name || в.title)) || null), {
         kind: 'item', data: в, hidden: !!(в && в.hidden),
-        поле: в && в.name != null ? { владелец: в, ключ: 'name' } : null,
+        field: в && в.name != null ? { owner: в, key: 'name' } : null,
       }));
   }
 
@@ -187,7 +187,7 @@ export function createTree(S, t, помощь) {
   const nameInput = з => {
     if (!з || typeof з !== 'object') return null;
     for (const k of ['title', 'name', 'heading', 'question'])
-      if (k in з) return { владелец: з, ключ: k };
+      if (k in з) return { owner: з, key: k };
     return null;
   };
 
@@ -207,7 +207,7 @@ export function createTree(S, t, помощь) {
     const список = в && dict.list(в.key);
     if (!Array.isArray(список)) return null;
     const i = список.findIndex(з => з && з.id === части[части.length - 1]);
-    return i < 0 ? null : { вид: в.key, запись: список[i], i };
+    return i < 0 ? null : { kind: в.key, record: список[i], i };
   }
 
   function page(путь) {
@@ -215,9 +215,9 @@ export function createTree(S, t, помощь) {
     if (!оп) {
       const м = recordByPath(путь);
       if (!м) return [];
-      return [header(), node(`card:${м.вид}#${м.i}`,
-        own(м.запись.id, ownName(м.запись, м.i)), {
-          kind: 'card', data: м.запись, hidden: !!м.запись.hidden, поле: nameInput(м.запись),
+      return [header(), node(`card:${м.kind}#${м.i}`,
+        own(м.record.id, ownName(м.record, м.i)), {
+          kind: 'card', data: м.record, hidden: !!м.record.hidden, field: nameInput(м.record),
         }), footer()];
     }
     const итог = [header()];
@@ -243,8 +243,8 @@ export function createTree(S, t, помощь) {
    * внутри — его страницы. Два разных порядка означали бы два разных сайта.
    */
   function pages() {
-    return pageSections().map(р => pageNode(р.свои[0], 0,
-      р.свои.slice(1).map(п => pageNode(п, 1))));
+    return pageSections().map(р => pageNode(р.own[0], 0,
+      р.own.slice(1).map(п => pageNode(п, 1))));
   }
 
   const pageNode = (путь, depth, children = []) => {
@@ -252,7 +252,7 @@ export function createTree(S, t, помощь) {
     const крошка = оп.path && оп.path.length ? оп.path[оп.path.length - 1] : null;
     return node('page:' + путь, own(pageKey(путь), pageName(путь)), {
       kind: 'page', depth, data: оп, hidden: !!оп.hidden, children,
-      поле: крошка ? { владелец: крошка, ключ: 'name' } : null,
+      field: крошка ? { owner: крошка, key: 'name' } : null,
     });
   };
 
@@ -278,7 +278,7 @@ export function createTree(S, t, помощь) {
           ? список.map((з, i) => node(`kind:${в.key}#${i}`,
               own(з && з.id, ownName(з, i)) || t('new.record'), {
                 kind: 'record', depth: 1, data: з, hidden: !!(з && з.hidden),
-                поле: nameInput(з),
+                field: nameInput(з),
               }))
           : [],
       }));

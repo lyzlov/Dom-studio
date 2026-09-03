@@ -61,7 +61,7 @@ function hint(путь, владелец) {
     // нельзя, в данные она всё равно не попадёт. Простые подсказки остаются
     // подсказками — там значение и есть то, что видно.
     if (подсказки && подсказки.length)
-      return typeof подсказки[0] === 'object' ? { options: подсказки } : { подсказки };
+      return typeof подсказки[0] === 'object' ? { options: подсказки } : { hints: подсказки };
   }
 
   // Вид карточки — это вид записи: список берётся из словаря, а не из строки.
@@ -124,10 +124,10 @@ function special(владелец, ключ, путь) {
  * встречается в текстах сайта, — больше в разметке ничего и нет.
  */
 const ПРИЁМЫ = [
-  { ключ: 'rich.paragraph', дело: () => document.execCommand('formatBlock', false, 'p') },
-  { ключ: 'rich.heading', дело: () => document.execCommand('formatBlock', false, 'h2') },
-  { ключ: 'rich.list', дело: () => document.execCommand('insertUnorderedList') },
-  { ключ: 'rich.strong', дело: () => document.execCommand('bold') },
+  { key: 'rich.paragraph', job: () => document.execCommand('formatBlock', false, 'p') },
+  { key: 'rich.heading', job: () => document.execCommand('formatBlock', false, 'h2') },
+  { key: 'rich.list', job: () => document.execCommand('insertUnorderedList') },
+  { key: 'rich.strong', job: () => document.execCommand('bold') },
 ];
 
 function textField(файл, путь) {
@@ -153,7 +153,7 @@ function textField(файл, путь) {
     });
     return b;
   };
-  ПРИЁМЫ.forEach(п => панель.append(button(t(п.ключ), п.дело)));
+  ПРИЁМЫ.forEach(п => панель.append(button(t(п.key), п.job)));
   панель.append(button(t('rich.link'), () => askString(t('rich.link'), '', href => {
     поле.focus();
     if (href) document.execCommand('createLink', false, href);
@@ -288,10 +288,10 @@ export async function exportLayout(путь, блок = null, скачивать
     // подвал тоже слои, и место сдвинулось бы на них.
     if (блок != null) {
       const метка = String(блок + сдвиг + 1).padStart(2, '0') + '-';
-      макет.слои = макет.слои.filter(с => с.name.startsWith(метка));
+      макет.layers = макет.layers.filter(с => с.name.startsWith(метка));
     }
     const имя = layoutName(путь, у.name);
-    const svg = toSVG(макет, { страница: pageName(путь), устройство: у.name });
+    const svg = toSVG(макет, { page: pageName(путь), layout: у.name });
     S.layouts.set(имя, svg);
     if (скачивать) download(имя.split('/').pop(), svg);
     сделано.push(имя);
@@ -309,16 +309,16 @@ function showDiff(путь, отчёты) {
     д.append(el('p', null, t('layout.none')));
   } else {
     for (const о of отчёты) {
-      д.append(el('p', null, `${о.устройство}: ${о.различия.length
-        ? `${t('layout.diffs')}: ${о.различия.length}` : t('layout.same')}`));
-      if (!о.различия.length) continue;
+      д.append(el('p', null, `${о.layout}: ${о.diff.length
+        ? `${t('layout.diffs')}: ${о.diff.length}` : t('layout.same')}`));
+      if (!о.diff.length) continue;
       const с = el('div', 'ed-files');
-      о.различия.slice(0, 30).forEach(р => с.append(el('p', null,
+      о.diff.slice(0, 30).forEach(р => с.append(el('p', null,
         р.kind === 'moved' ? `${р.name}: ${t('layout.moved')} ${р.from} \u2192 ${р.to}`
           : `${р.name}: ${t('layout.' + р.kind)}`)));
       д.append(с);
     }
-    const убранные = [...new Set(отчёты.flatMap(о => о.различия
+    const убранные = [...new Set(отчёты.flatMap(о => о.diff
       .filter(р => р.kind === 'removed' && !р.name.includes('/'))
       .map(р => р.name)))];
     if (убранные.length) {
@@ -372,7 +372,7 @@ export function importLayout(путь) {
     const отчёты = [];
     for (const у of (свои.length ? свои : layouts().devices)) {
       const текущий = await inFrame(html, у.width, д => captureLayout(д, имена));
-      отчёты.push({ устройство: у.name, имя: файл.name, различия: compare(текущий, изФайла) });
+      отчёты.push({ layout: у.name, name: файл.name, diff: compare(текущий, изФайла) });
     }
     showDiff(путь, отчёты);
   });
@@ -411,8 +411,8 @@ function imageField(владелец, ключ) {
   const основа = String(владелец[ключ] || '');
 
   if (основа) сетка.append(frameTile({
-    основа, подпись: основа.replace(S.project.media.folder, ''),
-    убрать: () => { владелец[ключ] = ''; apply(true); },
+    base: основа, caption: основа.replace(S.project.media.folder, ''),
+    remove: () => { владелец[ключ] = ''; apply(true); },
   }));
 
   const accept = кадры => { владелец[ключ] = кадры[кадры.length - 1]; apply(true); };
@@ -428,7 +428,7 @@ function imageField(владелец, ключ) {
 }
 
 /** Плитка кадра: сама картинка, крестик и пометка обложки у первой. */
-export function frameTile({ основа, подпись, убрать, обложка = false, индекс = null }) {
+export function frameTile({ base: основа, caption: подпись, remove: убрать, cover: обложка = false, index: индекс = null }) {
   const плитка = el('div', 'ed-tile');
   if (индекс != null) плитка.dataset.index = String(индекс);
   const вид = el('img', 'ed-tile-img');
@@ -482,7 +482,7 @@ export async function acceptFrames(файлы, наКадр, наОтчёт = ()
     const ф = файлы[i];
     наОтчёт(`${t('media.slicing')} ${i + 1}/${файлы.length}`);
     const основа = freeBase(sectionFolder(), translit(ф.name.replace(/\.[^.]+$/, '')));
-    const { файлы: куски, размер } = await resize(ф, основа, S.project.media);
+    const { files: куски, size: размер } = await resize(ф, основа, S.project.media);
     for (const [п, байты] of куски) S.media.set(п, байты);
     S.sizes[основа] = размер;
     const первый = куски.get(`${основа}-${S.project.media.widths[0]}.jpg`);

@@ -90,7 +90,7 @@ export function fieldRow({ name, id, value, mark, tools, tag = 'div', level = 0 
  * Кнопка-значок с подсказкой. Подпись всегда есть: без неё значок — ребус.
  * Первый довод — имя значка из _assets/icons; строку он больше не принимает.
  */
-export function iconButton(name, подсказка, действие, { нажата = false } = {}) {
+export function iconButton(name, подсказка, действие, { pressed: нажата = false } = {}) {
   const b = el('button', 'ed-cell ed-icon-btn');
   b.append(icon(name));
   b.type = 'button';
@@ -142,18 +142,18 @@ const toMachine = т => {
 export function dateCaption(от, до, месяцы) {
   const parse = з => {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(з ?? ''));
-    return m ? { год: +m[1], месяц: +m[2] - 1, день: +m[3] } : null;
+    return m ? { year: +m[1], month: +m[2] - 1, day: +m[3] } : null;
   };
   const а = parse(от), б = parse(до) || parse(от);
   if (!а || !месяцы || месяцы.length !== 12) return null;
-  const name = д => месяцы[д.месяц];
-  if (!б || (а.год === б.год && а.месяц === б.месяц && а.день === б.день))
-    return `${а.день} ${name(а)} ${а.год}`;
-  if (а.год === б.год && а.месяц === б.месяц)
-    return `${а.день}–${б.день} ${name(а)} ${а.год}`;
-  if (а.год === б.год)
-    return `${а.день} ${name(а)} – ${б.день} ${name(б)} ${а.год}`;
-  return `${а.день} ${name(а)} ${а.год} – ${б.день} ${name(б)} ${б.год}`;
+  const name = д => месяцы[д.month];
+  if (!б || (а.year === б.year && а.month === б.month && а.day === б.day))
+    return `${а.day} ${name(а)} ${а.year}`;
+  if (а.year === б.year && а.month === б.month)
+    return `${а.day}–${б.day} ${name(а)} ${а.year}`;
+  if (а.year === б.year)
+    return `${а.day} ${name(а)} – ${б.day} ${name(б)} ${а.year}`;
+  return `${а.day} ${name(а)} ${а.year} – ${б.day} ${name(б)} ${б.year}`;
 }
 
 function blank(образец) {
@@ -202,7 +202,7 @@ function toLine(владелец, ключ, path, ctx) {
   ключи.forEach(k => {
     const я = el('label', 'ed-inline-field');
     я.append(el('span', 'ed-hint', ctx.caption(k)));
-    const { э } = field(о, k, [...path, k], ctx);
+    const { item: э } = field(о, k, [...path, k], ctx);
     поля[k] = э;
     я.append(э);
     ряд.append(я);
@@ -236,7 +236,7 @@ function field(владелец, ключ, path, ctx) {
   const значение = владелец[ключ];
   const п = ctx.hint(path, владелец) || {};
   const особое = ctx.special && ctx.special(владелец, ключ, path);
-  if (особое) return { э: особое, description: null };
+  if (особое) return { item: особое, description: null };
   let э;
 
   if (typeof значение === 'boolean') {
@@ -289,10 +289,10 @@ function field(владелец, ключ, path, ctx) {
     э.addEventListener('input', () => { владелец[ключ] = э.value; ctx.onChange(); });
     // Подсказка не запрещает своё value: возраст «7–9 и 10–12 лет» закрытым
     // списком не описать, но набирать его заново каждый раз незачем.
-    if (!длинное && п.подсказки && п.подсказки.length) {
+    if (!длинное && п.hints && п.hints.length) {
       const список = el('datalist');
       список.id = 'list-' + path.join('-').replace(/[^\w-]/g, '_');
-      п.подсказки.forEach(в => {
+      п.hints.forEach(в => {
         const o = el('option');
         o.value = в;
         список.append(o);
@@ -303,11 +303,11 @@ function field(владелец, ключ, path, ctx) {
   }
 
   э.id = 'field-' + path.join('-').replace(/[^\w-]/g, '_');
-  return { э, description: п.description };
+  return { item: э, description: п.description };
 }
 
 function simple(владелец, ключ, path, ctx) {
-  const { э, description } = field(владелец, ключ, path, ctx);
+  const { item: э, description } = field(владелец, ключ, path, ctx);
   const обёртка = el('div', 'ed-control');
   обёртка.append(э);
   // Описание поля из словаря («строка, необязательно») — язык разработчика.
@@ -329,9 +329,9 @@ function simple(владелец, ключ, path, ctx) {
  * Свёртываемая группа. Шапка — та же строка элемента, что и у поля: колонки
  * совпадают, поэтому вложенность видна отступом, а не другой вёрсткой.
  */
-function group(заголовок, внутри, { открыта = false, инструменты = null, класс = '',
-                                     id = null, значение = null, скрыто = false,
-                                     уровень = 0 } = {}) {
+function group(заголовок, внутри, { open: открыта = false, tools: инструменты = null, className: класс = '',
+                                     id = null, value: значение = null, hidden: скрыто = false,
+                                     level: уровень = 0 } = {}) {
   const g = el('details', ('ed-group ' + класс).trim());
   g.open = открыта;
   const шапка = fieldRow({
@@ -375,10 +375,10 @@ function object(владелец, ключ, path, ctx, безОбёртки = fa
     const внутри = el('div', 'ed-node');
     служебные.forEach(у => внутри.append(у));
     блок.append(group(t('ui.technical'), внутри,
-      { класс: 'ed-tech', уровень: pathLevel(path) + 1 }));
+      { className: 'ed-tech', level: pathLevel(path) + 1 }));
   }
   return безОбёртки ? блок
-    : group(ctx.caption(ключ), блок, { открыта: true, уровень: pathLevel(path) });
+    : group(ctx.caption(ключ), блок, { open: true, level: pathLevel(path) });
 }
 
 // #endregion
@@ -423,7 +423,7 @@ const simpleValues = список => список.length > 0
 function simpleList(список, path, ctx) {
   const тело = el('div', 'ed-values');
   список.forEach((_, i) => {
-    const { э } = field(список, i, [...path, i], ctx);
+    const { item: э } = field(список, i, [...path, i], ctx);
     э.setAttribute('aria-label', String(i + 1));
     const обёртка = el('div', 'ed-control');
     обёртка.append(э);
@@ -459,7 +459,7 @@ function array(владелец, ключ, path, ctx) {
   // счёт стоит в колонке значения, рядом с подписью.
   const счёт = el('span', 'ed-count', String(список.length));
   return group(ctx.caption(ключ), plainList(владелец, ключ, path, ctx),
-    { открыта: список.length <= 6, значение: счёт, уровень: pathLevel(path) });
+    { open: список.length <= 6, value: счёт, level: pathLevel(path) });
 }
 
 function table(список, path, ctx, колонки) {
@@ -473,7 +473,7 @@ function table(список, path, ctx, колонки) {
   список.forEach((з, i) => {
     const строка = el('div', 'ed-flat-row');
     колонки.forEach(k => {
-      const { э } = field(з, k, [...path, i, k], ctx);
+      const { item: э } = field(з, k, [...path, i, k], ctx);
       э.setAttribute('aria-label', ctx.caption(k));
       строка.append(э);
     });
@@ -496,7 +496,7 @@ function cards(список, path, ctx) {
     инструменты.append(deleteButton(список, i, ctx, з));
 
     const g = group(ctx.itemName ? ctx.itemName(з, i) : recordName(з, i), внутри, {
-      инструменты, скрыто: isHidden(з),
+      tools: инструменты, hidden: isHidden(з),
       id: з && typeof з === 'object' ? (з.type || з.id || null) : null,
     });
     if (isHidden(з)) g.dataset.hidden = 'true';
