@@ -177,8 +177,6 @@ export function createTree(S, t, помощь) {
     return t('design.' + б.type, humanize(б.type || 'block'));
   };
 
-  const kindName = в => (inEnglish() ? humanize(в.key) : (в.name || в.key));
-
   const typeParts = тип => ((S.data.types.blockTypes[тип] || {}).parts)
     || ((S.data.types.pageElements[тип] || {}).parts) || {};
 

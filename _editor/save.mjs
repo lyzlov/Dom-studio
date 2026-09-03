@@ -1,5 +1,5 @@
 /**
- * save.mjs — запись изменённых файлов: в папку проекта или коммитом в GitHub.
+ * save.mjs — запись изменённых файлов коммитом в GitHub.
  */
 
 /** Содержимое файла — текст или уже готовые байты (картинки). */
@@ -11,30 +11,6 @@ function base64(содержимое) {
   for (let i = 0; i < байты.length; i += 0x8000)
     s += String.fromCharCode.apply(null, байты.subarray(i, i + 0x8000));
   return btoa(s);
-}
-
-export const hasFolderAccess = () => typeof window.showDirectoryPicker === 'function';
-
-export async function writeToFolder(файлы, наПрогресс = () => {}) {
-  const корень = await window.showDirectoryPicker({ mode: 'readwrite', id: 'dom-site' });
-  try {
-    await корень.getDirectoryHandle('_content');
-    await корень.getDirectoryHandle('_theme');
-  } catch {
-    throw new Error('Выбрана не папка site: в ней нет _content и _theme.');
-  }
-  let n = 0;
-  for (const [путь, содержимое] of файлы) {
-    const части = путь.split('/');
-    let папка = корень;
-    for (const ч of части.slice(0, -1)) папка = await папка.getDirectoryHandle(ч, { create: true });
-    const файл = await папка.getFileHandle(части[части.length - 1], { create: true });
-    const поток = await файл.createWritable();
-    await поток.write(содержимое);
-    await поток.close();
-    наПрогресс(++n, файлы.length);
-  }
-  return `Записано файлов: ${файлы.length}.`;
 }
 
 async function api(токен, путь, способ = 'GET', тело) {

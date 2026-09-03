@@ -44,6 +44,8 @@ const S = {
   sources: new Map(),      // путь файла → текст, каким он лежит на сайте
   texts: new Map(),         // _content/text/**.html → содержимое
   pagesWere: new Map(),   // путь страницы → html, какой лежит на сайте
+  pagesReady: false,      // эталоны страниц догружены
+  pagesPromise: null,     // и обещание их догрузки — одно на все запросы
   media: new Map(),          // путь картинки → байты, ещё не записанные
   layouts: new Map(),         // layouts/**.svg → схема страницы, ещё не записанная
   mediaViews: new Map(),      // основа → адрес для миниатюры, пока не записана
@@ -183,10 +185,19 @@ async function load() {
   build();
   S.loaded = true;
 
-  step(t('load.pages', 'Current pages…'));
-  await Promise.all(S.built.map(async ([путь]) => {
+}
+
+/**
+ * Страницы, какие лежат на сайте: нужны только при записи — сравнить, что
+ * изменилось. Открытие их не ждёт, иначе полсотни запросов стоят перед первым
+ * деревом; они догружаются следом, и к записи готовы. Кто записывает раньше,
+ * чем они пришли, ждёт этот же обещанный ответ, а не второй заход.
+ */
+function loadPages() {
+  if (!S.pagesPromise) S.pagesPromise = Promise.all(S.built.map(async ([путь]) => {
     try { S.pagesWere.set(путь, await pick(путь)); } catch { /* новой страницы ещё нет */ }
-  }));
+  })).then(() => { S.pagesReady = true; });
+  return S.pagesPromise;
 }
 
 function build(повтор = false) {
@@ -395,8 +406,9 @@ function changes() {
   for (const [путь, содержимое] of S.texts) compare(путь, содержимое);
   for (const [путь, байты] of S.media) compare(путь, байты);
   for (const [путь, text] of S.layouts) compare(путь, text);
-  for (const [путь, html] of S.built)
-    if (S.pagesWere.get(путь) !== html) список.push([путь, html]);
+  if (S.pagesReady)
+    for (const [путь, html] of S.built)
+      if (S.pagesWere.get(путь) !== html) список.push([путь, html]);
   return список;
 }
 
@@ -1513,12 +1525,6 @@ function blockKind(б) {
   return S.dict.kinds().find(x => S.dict.sourceOf(x) === б.source && x.key === б.kind)
     || S.dict.kinds().find(x => S.dict.sourceOf(x) === б.source) || null;
 }
-
-const itemSection = href => {
-  for (const x of S.data.structure.navigation.menu || [])
-    if (x.items && x.items.some(y => y.href === href)) return x;
-  return null;
-};
 
 /** Новый раздел меню: пустой, имя правится сразу. */
 function newMenuSection() {
@@ -3390,26 +3396,6 @@ const scrollTo = (рамка, y) => {
   try { рамка.contentWindow.scrollTo(0, y); } catch { /* рамка ещё не наша */ }
 };
 
-/** Какая по счёту карточка на странице: скрытые записи не выводятся. */
-function cardPlace(вид, i) {
-  const список = S.dict.list(вид) || [];
-  let n = 0;
-  for (let k = 0; k < i && k < список.length; k++) if (!(список[k] || {}).hidden) n++;
-  return n;
-}
-
-/** Адрес страницы в том виде, в каком он стоит в ссылке на сайте. */
-const linkHref = путь => '/' + String(путь).replace(/index\.html$/, '');
-
-/** Номер секции в вёрстке: заголовок страницы стоит перед блоками. */
-function sectionNumber(путь, i) {
-  const оп = S.data.structure.pages[путь] || {};
-  const сдвиг = оп.heading ? 1 : 0;
-  const видимые = (оп.blocks || []).map((б, n) => ({ б, n })).filter(x => !x.б.hidden);
-  const место = видимые.findIndex(x => x.n === i);
-  return место < 0 ? -1 : место + сдвиг;
-}
-
 /**
  * Просмотр отвечает на два разных действия. Ссылка ведёт на свою страницу — то
  * же, что и на сайте. Клик мимо ссылки выбирает элемент, и выбирается
@@ -3645,7 +3631,14 @@ function markSaved() {
   $('status').dataset.kind = '';
 }
 
-function save() {
+async function save() {
+  // Что записывать, известно только со страницами, какие лежат на сайте: без
+  // них не с чем сравнивать. Обычно они уже пришли фоном.
+  if (!S.pagesReady) {
+    $('status').textContent = t('load.pages', 'Current pages…');
+    await loadPages();
+    updateState();
+  }
   // Сохранять нечего — так и говорим, вместо того чтобы гасить кнопку и
   // оставлять человека гадать, почему она не нажимается.
   if (!changes().length) return say(t('btn.save'), t('app.clean', 'No changes'));
@@ -4010,6 +4003,9 @@ const ЗНАЧКИ_РЕДАКТОРА = ['alert', 'key', 'save', 'settings', 'ex
   show();
   showChecks();
   updateState();
+  // Эталоны страниц идут следом за первой отрисовкой: они нужны записи, а не
+  // показу, и держать открытие ради них незачем.
+  loadPages().then(updateState);
   $('save').addEventListener('click', save);
   // Правки живут в памяти вкладки: закрыть её — потерять их. Браузер спросит
   // сам, но только если мы сказали, что терять есть что.

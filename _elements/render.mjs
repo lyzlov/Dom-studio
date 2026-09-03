@@ -22,8 +22,6 @@ export function linkHtml(откуда, куда) {
   return без === '' ? './' : без;
 }
 
-const opt = (v, fn) => (v == null || v === '' || (Array.isArray(v) && !v.length)) ? '' : fn(v);
-
 export const pad = (n, s) => s.split('\n').map(l => l ? ' '.repeat(n) + l : l).join('\n');
 
 export const isPast = (поКакую, сегодня) => поКакую < сегодня;
@@ -155,9 +153,6 @@ export function sectionHead({ eyebrow, h1, fields = [], button, meta, lead = [],
 }
 
 /* #region Блоки */
-export const blockHtml = (inner, id) =>
-  R('block', { classes: 'block', id, body: inner.replace(/\n$/, '') });
-
 export function plainTable({ columns, rows, widths, headNoScope }) {
   return R('table', {
     colgroup: (widths ? R('colgroup', { widths }) : '') + (headNoScope ? '' : '\n'),

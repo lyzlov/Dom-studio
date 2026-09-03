@@ -95,14 +95,7 @@ export function tokenLabel(имя) {
   return `${имяГруппы != null ? имяГруппы : humanize(группа)}/${имяЧлена}`;
 }
 
-/** Подпись поля данных: перевод, если он есть, иначе само имя ключа. */
-export function fieldLabel(ключ, изПроекта) {
-  if (изПроекта) return изПроекта;
-  return t('field.' + ключ);
-}
-
 export const lang = () => текущий;
-export const languages = () => ЯЗЫКИ.slice();
 
 /** Язык из хранилища, иначе русский: сайт русский, редактор открывает клиент. */
 export function preferredLang() {
