@@ -1,0 +1,316 @@
+/* ДОМ — дизайн-токены.
+   Имя токена содержит группу: --accent-mint → Accent/Mint в Figma, замена
+   первого дефиса на слэш. Второго словаря имён нет.
+   Значений мимо этого списка не бывает: роли ссылаются на палитру, а не
+   набирают цвет заново.
+   Написания названы по назначению, не по тегу. Размер — две ступени: базовая
+   и десктопная с 1024. Кегли в rem, всё остальное в пикселях.
+   Подписи для редактора — _app/locale/*.json.
+   Шрифты подключены через Google Fonts (<link> в <head>).
+   TODO перед публикацией: локальные woff2 в fonts/, font-display: swap. */
+
+:root {
+  /* #region Палитра */
+  --mono-white: #ffffff;
+  --mono-black: #000000;
+  --mono-ink: #3a3a3a;
+  --mono-grey: #6b6b6b;
+  --mono-silver: #999999;
+  --mono-smoke: #e0e0e0;
+  --mono-mist: #f5f5f5;
+
+  /* Акцент в двух светлотах: заливка и та же краска, затемнённая для текста
+     на белом. Прозрачных значений в палитре нет — прозрачность это свойство
+     элемента, а не цвет. */
+  --accent-mint: #1fae8e;
+  --accent-pink: #e2496b;
+  --accent-amber: #c98a12;
+
+  --accent-mint-text: #167d66;
+  --accent-pink-text: #d6224a;
+  --accent-amber-text: #95660d;
+  /* #endregion */
+
+  /* #region Роли — вычисляются из палитры, отдельных значений не имеют */
+  --role-bg: var(--mono-white);
+  --role-surface: var(--mono-mist);
+  --role-bg-footer: var(--mono-black);
+  --role-text: var(--mono-black);
+  --role-heading: var(--mono-ink);
+  --role-muted: var(--mono-grey);
+  --role-border: var(--mono-smoke);
+  --role-on-footer: var(--mono-white);
+  --role-on-footer-muted: var(--mono-silver);
+  --role-primary: var(--accent-mint);
+  --role-primary-text: var(--accent-mint-text);
+  --role-focus: var(--accent-mint-text);
+  /* #endregion */
+
+  /* #region Направления — цветовой код занятия */
+  --direction-courses: var(--accent-mint-text);
+  --direction-buro: var(--accent-pink-text);
+  --direction-subscription: var(--accent-amber-text);
+  /* #endregion */
+
+  --gradient-brand: linear-gradient(135deg, var(--accent-mint) 0%, var(--accent-amber) 55%, var(--accent-pink) 100%);
+
+  /* #region Гарнитуры */
+  --font-display: "Golos Text", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Golos Text", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* #endregion */
+
+  /* #region Написания */
+  --type-hero-title-font: var(--font-display);
+  --type-hero-title-weight: 700;
+  --type-hero-title-size: 2.5rem;      /* 40 */
+  --type-hero-title-leading: 0.92;
+  --type-hero-title-tracking: -0.02em;
+  --type-hero-title-caps: uppercase;
+
+  --type-hero-subtitle-font: var(--font-display);
+  --type-hero-subtitle-weight: 500;
+  --type-hero-subtitle-size: 1.5rem;   /* 24 */
+  --type-hero-subtitle-leading: 1.1;
+  --type-hero-subtitle-tracking: -0.02em;
+  --type-hero-subtitle-caps: uppercase;
+
+  --type-display-number-font: var(--font-display);
+  --type-display-number-weight: 700;
+  --type-display-number-size: 1.5rem;  /* 24 */
+  --type-display-number-leading: 1.1;
+  --type-display-number-tracking: normal;
+  --type-display-number-caps: none;
+
+  --type-heading-page-font: var(--font-display);
+  --type-heading-page-weight: 700;
+  --type-heading-page-size: 1.75rem;   /* 28 */
+  --type-heading-page-leading: 1.1;
+  --type-heading-page-tracking: -0.02em;
+  --type-heading-page-caps: none;
+
+  --type-heading-modal-font: var(--font-display);
+  --type-heading-modal-weight: 700;
+  --type-heading-modal-size: 1.5rem;   /* 24 */
+  --type-heading-modal-leading: 1.1;
+  --type-heading-modal-tracking: normal;
+  --type-heading-modal-caps: uppercase;
+
+  --type-heading-block-font: var(--font-display);
+  --type-heading-block-weight: 700;
+  --type-heading-block-size: 1.25rem;  /* 20 */
+  --type-heading-block-leading: 1.1;
+  --type-heading-block-tracking: normal;
+  --type-heading-block-caps: uppercase;
+
+  --type-heading-card-font: var(--font-display);
+  --type-heading-card-weight: 500;
+  --type-heading-card-size: 1.125rem;  /* 18 */
+  --type-heading-card-leading: 1.2;
+  --type-heading-card-tracking: normal;
+  --type-heading-card-caps: none;
+
+  --type-body-lead-font: var(--font-body);
+  --type-body-lead-weight: 400;
+  --type-body-lead-size: 1.125rem;     /* 18 */
+  --type-body-lead-leading: 1.5;
+  --type-body-lead-tracking: normal;
+  --type-body-lead-caps: none;
+
+  --type-body-base-font: var(--font-body);
+  --type-body-base-weight: 400;
+  --type-body-base-size: 1rem;         /* 16 */
+  --type-body-base-leading: 1.5;
+  --type-body-base-tracking: normal;
+  --type-body-base-caps: none;
+
+  --type-body-small-font: var(--font-body);
+  --type-body-small-weight: 400;
+  --type-body-small-size: 0.875rem;    /* 14 */
+  --type-body-small-leading: 1.5;
+  --type-body-small-tracking: normal;
+  --type-body-small-caps: none;
+
+  --type-body-strong-font: var(--font-body);
+  --type-body-strong-weight: 500;
+  --type-body-strong-size: 1rem;       /* 16 */
+  --type-body-strong-leading: 1.5;
+  --type-body-strong-tracking: normal;
+  --type-body-strong-caps: none;
+
+  --type-mono-nav-font: var(--font-mono);
+  --type-mono-nav-weight: 400;
+  --type-mono-nav-size: 0.875rem;      /* 14 */
+  --type-mono-nav-leading: 1.5;
+  --type-mono-nav-tracking: 0.08em;
+  --type-mono-nav-caps: uppercase;
+
+  --type-mono-active-font: var(--font-mono);
+  --type-mono-active-weight: 500;
+  --type-mono-active-size: 0.875rem;   /* 14 */
+  --type-mono-active-leading: 1.5;
+  --type-mono-active-tracking: 0.08em;
+  --type-mono-active-caps: uppercase;
+
+  --type-mono-banner-font: var(--font-mono);
+  --type-mono-banner-weight: 500;
+  --type-mono-banner-size: 1.25rem;    /* 20 */
+  --type-mono-banner-leading: 1.2;
+  --type-mono-banner-tracking: 0.08em;
+  --type-mono-banner-caps: uppercase;
+
+  --type-mono-label-font: var(--font-mono);
+  --type-mono-label-weight: 400;
+  --type-mono-label-size: 0.75rem;     /* 12 */
+  --type-mono-label-leading: 1.5;
+  --type-mono-label-tracking: 0.08em;
+  --type-mono-label-caps: uppercase;
+
+  --type-mono-meta-font: var(--font-mono);
+  --type-mono-meta-weight: 400;
+  --type-mono-meta-size: 0.75rem;      /* 12 */
+  --type-mono-meta-leading: 1.6;
+  --type-mono-meta-tracking: normal;
+  --type-mono-meta-caps: none;
+
+  --type-mono-table-font: var(--font-mono);
+  --type-mono-table-weight: 400;
+  --type-mono-table-size: 0.875rem;    /* 14 */
+  --type-mono-table-leading: 1.6;
+  --type-mono-table-tracking: normal;
+  --type-mono-table-caps: none;
+  /* #endregion */
+
+  /* #region Длина строки */
+  --measure-text: 66ch;
+  --measure-mono: 46ch;
+  /* #endregion */
+
+  /* #region Отступы */
+  --space-3xs: 4px;
+  --space-2xs: 8px;
+  --space-xs: 16px;
+  --space-sm: 24px;
+  --space-md: 32px;
+  --space-lg: 48px;
+  /* #endregion */
+
+  /* #region Слои
+     Лестница наложения. Значения не выбираются на месте: элемент говорит, на
+     каком он ярусе, а не какое у него число. */
+  --layer-under: -1;            /* подложка: фон, кольцо, тень под содержимым */
+  --layer-base: 1;              /* содержимое поверх подложки */
+  --layer-raised: 2;            /* то, что должно быть выше содержимого карточки */
+  --layer-popover: 15;          /* выпадающий список фильтра */
+  --layer-header: 20;           /* прилипшая шапка */
+  --layer-header-menu: 25;      /* меню шапки на узком экране */
+  --layer-header-popover: 30;   /* выпадающий раздел меню */
+  --layer-modal: 100;           /* окно записи */
+  --layer-lightbox: 110;        /* просмотр кадра */
+  --layer-skip: 200;            /* ссылка «к содержимому»: выше всего */
+  /* #endregion */
+
+  /* #region Положение
+     Меры, от которых зависит, где что стоит: высота прилипшей шапки и отступ
+     под ней. Их читают и вёрстка, и прокрутка к якорю. */
+  --pos-header: 60px;           /* высота шапки без строки крошек */
+  --pos-header-crumbs: 86px;    /* высота шапки со строкой крошек */
+  --pos-nav-pad: 12px;          /* отступ внутри меню */
+  /* #endregion */
+
+  /* #region Формы
+     Толщина линий, обводка фокуса и пропорции кадров. Скруглений на сайте нет,
+     и ноль здесь — решение, а не умолчание. */
+  --line-hair: 1px;             /* разделитель и рамка */
+  --line-focus: 2px;            /* обводка фокуса */
+  --line-focus-gap: 2px;        /* отступ обводки от элемента */
+  --line-focus-gap-wide: 3px;   /* тот же отступ там, где элемент прижат */
+  --radius-base: 0;             /* скругления нет ни у кнопки, ни у карточки */
+  --ratio-wide: 16 / 9;
+  --ratio-photo: 4 / 3;
+  --ratio-portrait: 3 / 4;
+  --ratio-square: 1;
+  --ratio-story: 9 / 16;
+  /* #endregion */
+
+  /* #region Меры сайта
+     Размеры вещей, из которых собран сайт: логотип, значки, полосы, поля. */
+  --site-logo: 44px;            /* высота логотипа в шапке */
+  --site-logo-footer: 32px;     /* высота логотипа в подвале */
+  --site-icon: 20px;            /* значок связи и кнопки */
+  --site-icon-toggle: 22px;     /* значок бургера */
+  --site-icon-small: 16px;      /* стрелка в списке */
+  --site-tap: 44px;             /* наименьшее место под палец */
+  --site-control: 32px;         /* кнопка-значок */
+  --site-rule: 4px;             /* цветная полоса под заголовком */
+  --site-rule-width: 96px;      /* её длина */
+  --site-hero-fade: 80px;       /* растушёвка под первым экраном */
+  --site-hero-min: 280px;       /* наименьшая высота подложки первого экрана */
+  --site-dropdown-min: 200px;   /* наименьшая ширина выпадающего списка */
+  --site-card-min: 260px;       /* наименьшая ширина карточки в сетке */
+  --site-form: 560px;           /* ширина формы */
+  --site-form-wide: 800px;      /* та же форма с пояснением рядом */
+  --site-form-aside: 200px;     /* колонка пояснения */
+  --site-modal: 640px;          /* ширина окна */
+  --site-modal-wide: 880px;     /* окно с пояснением */
+  --site-schedule-min: 720px;   /* наименьшая ширина расписания */
+  --site-corner: 12px;          /* уголок-указатель у выпадающего списка */
+  --site-card-title: 2.4em;     /* место под заголовок карточки: две строки */
+  --site-cell-pad: 3px;         /* поджатая ячейка расписания */
+  /* #endregion */
+
+  /* #region Сетка */
+  --grid-margin: 16px;
+  --grid-gutter: 16px;
+  --grid-max: 1280px;
+  /* Сетка редактора — та же двенадцатиколоночная. repeat() с переменной
+     вместо числа не работает, поэтому набор колонок объявлен одним значением. */
+  --gallery-visible: 1;
+  /* #endregion */
+
+  /* #region Движение */
+  --motion-micro: 150ms;
+  --motion-block: 300ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+  /* #endregion */
+
+}
+
+/* Планшет: колонок вдвое больше, поля и средник шире. */
+@media (min-width: 600px) {
+  :root {
+    --grid-margin: 24px;
+    --grid-gutter: 24px;
+    --gallery-visible: 2;
+  }
+}
+
+/* Десктоп: вторая и последняя ступень размеров. Промежуточных нет намеренно —
+   формула на vw даёт дробные кегли и ломает кратность восьми. */
+@media (min-width: 1024px) {
+  :root {
+    --type-hero-title-size: 6.5rem;      /* 104 */
+    --type-hero-subtitle-size: 2.5rem;   /* 40 */
+    --type-display-number-size: 2.5rem;  /* 40 */
+    --type-heading-page-size: 3rem;      /* 48 */
+    --type-heading-modal-size: 2rem;     /* 32 */
+    --type-heading-block-size: 1.5rem;   /* 24 */
+    --type-heading-card-size: 1.25rem;   /* 20 */
+    --type-body-lead-size: 1.25rem;      /* 20 */
+    --type-mono-banner-size: 1.5rem;     /* 24 */
+
+    --space-md: 40px;
+    --space-lg: 64px;
+
+    --grid-margin: 80px;
+    --grid-gutter: 24px;
+    --gallery-visible: 4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-micro: 0ms;
+    --motion-block: 0ms;
+  }
+}

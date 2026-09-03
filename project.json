@@ -1,24 +1,24 @@
 {
-  "$comment": "The project manifest for the Enfilade editor: where the files live, where to write, how to cut images, how the tokens are grouped. The project is addressed by id; the name shown to a human lives in its words, lang/<language>/project.json. No project names live in the editor's code.",
+  "$comment": "The project manifest for the Enfilade editor: where the files live, where to write, how to cut images, how the tokens are grouped. The project is addressed by id; the name shown to a human lives in its words, _lang/<language>/project.json. No project names live in the editor's code.",
   "id": "dom",
   "lang": "ru",
   "contract": 1,
   "files": {
-    "site": "data/site.json",
-    "archive": "data/archive.json",
-    "catalog": "data/catalog/{name}.json",
-    "texts": "data/text/",
-    "pages": "data/pages.json",
-    "templates": "data/templates.json",
-    "navigation": "data/navigation.json",
-    "form": "data/form.json",
-    "types": "code/types.json",
-    "markup": "code/markup.html",
-    "tokens": "assets/tokens.css",
-    "settings": "assets/editor.css",
-    "typography": "lang/{lang}/typography.json",
-    "styles": "assets/style.css",
-    "words": "lang/{lang}/{name}.json"
+    "site": "_data/site.json",
+    "archive": "_data/archive.json",
+    "catalog": "_data/catalog/{name}.json",
+    "texts": "_data/text/",
+    "pages": "_data/pages.json",
+    "templates": "_data/templates.json",
+    "navigation": "_data/navigation.json",
+    "form": "_data/form.json",
+    "types": "_code/types.json",
+    "markup": "_code/markup.html",
+    "tokens": "_assets/tokens.css",
+    "settings": "_assets/editor.css",
+    "typography": "_lang/{lang}/typography.json",
+    "styles": "_assets/style.css",
+    "words": "_lang/{lang}/{name}.json"
   },
   "commit": {
     "$comment": "Where a commit goes. The prefix is the path to the site root inside the repository.",
@@ -38,7 +38,7 @@
     ]
   },
   "media": {
-    "folder": "assets/media/",
+    "folder": "_assets/media/",
     "widths": [
       400,
       800
@@ -54,7 +54,7 @@
     "fallbackFolder": "space"
   },
   "theme": {
-    "$comment": "Design groups and sections in the order they are shown. options names the section a reference value picks from. The words are in lang/<language>/tokens.json.",
+    "$comment": "Design groups and sections in the order they are shown. options names the section a reference value picks from. The words are in _lang/<language>/tokens.json.",
     "groups": [
       {
         "key": "color",

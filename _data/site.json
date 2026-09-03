@@ -1,0 +1,180 @@
+{
+  "$comment": "The single source of facts. Prose and descriptions do not belong here.",
+  "org": {
+    "title": "ДОМ",
+    "fullName": "ДОМ — школа архитектуры и искусства",
+    "slogan": "Школа архитектуры и искусства для детей",
+    "legalEntity": null,
+    "inn": null,
+    "ogrn": null,
+    "legalAddress": null
+  },
+  "contacts": {
+    "address": "Красногорск, посёлок Ильинское-Усово, ул. Архангельская, 11",
+    "place": "Школа ДОМ, Ильинское-Усово",
+    "phone": "+7 991 740 70 10",
+    "social": [
+      {
+        "name": "Telegram",
+        "icon": "telegram",
+        "label": "t.me/layout_studio",
+        "href": "https://t.me/layout_studio"
+      }
+    ],
+    "email": null,
+    "coords": [
+      55.770482,
+      37.235447
+    ],
+    "route": "https://yandex.ru/maps/-/CTwrrEzD",
+    "mapCaption": "Карта: школа ДОМ, улица Архангельская, 11"
+  },
+  "site": {
+    "address": "https://lyzlov.github.io/Dom-studio/",
+    "indexing": false
+  },
+  "rooms": [
+    {
+      "id": "big",
+      "title": "Большой"
+    },
+    {
+      "id": "small",
+      "title": "Малый"
+    }
+  ],
+  "directions": [
+    {
+      "id": "courses",
+      "title": "Авторские курсы"
+    },
+    {
+      "id": "buro",
+      "title": "Бюро"
+    },
+    {
+      "id": "subscription",
+      "title": "Занятия по абонементу"
+    }
+  ],
+  "reviews": {
+    "rating": "5,0",
+    "caption": "68 оценок и 53 отзыва на Яндекс.Картах",
+    "link": "https://yandex.ru/maps/-/CTwrrEzD",
+    "button": "Читать отзывы"
+  },
+  "gallery": [
+    {
+      "base": "_assets/media/space/studio-01",
+      "caption": "Фото школы, 1"
+    },
+    {
+      "base": "_assets/media/space/studio-02",
+      "caption": "Фото школы, 2"
+    },
+    {
+      "base": "_assets/media/space/studio-03",
+      "caption": "Фото школы, 3"
+    },
+    {
+      "base": "_assets/media/space/studio-04",
+      "caption": "Фото школы, 4"
+    },
+    {
+      "base": "_assets/media/space/studio-05",
+      "caption": "Фото школы, 5"
+    },
+    {
+      "base": "_assets/media/space/studio-06",
+      "caption": "Фото школы, 6"
+    },
+    {
+      "base": "_assets/media/space/studio-07",
+      "caption": "Фото школы, 7"
+    },
+    {
+      "base": "_assets/media/space/studio-08",
+      "caption": "Фото школы, 8"
+    },
+    {
+      "base": "_assets/media/space/studio-09",
+      "caption": "Фото школы, 9"
+    },
+    {
+      "base": "_assets/media/space/studio-10",
+      "caption": "Фото школы, 10"
+    },
+    {
+      "base": "_assets/media/space/studio-11",
+      "caption": "Фото школы, 11"
+    },
+    {
+      "base": "_assets/media/space/studio-12",
+      "caption": "Фото школы, 12"
+    },
+    {
+      "base": "_assets/media/space/studio-13",
+      "caption": "Фото школы, 13"
+    },
+    {
+      "base": "_assets/media/space/studio-14",
+      "caption": "Фото школы, 14"
+    }
+  ],
+  "eventKinds": [
+    {
+      "id": "master-klass",
+      "title": "Мастер-класс"
+    },
+    {
+      "id": "otkrytoe-zanyatie",
+      "title": "Открытое занятие"
+    },
+    {
+      "id": "vstrecha-s-arhitektorom",
+      "title": "Встреча с архитектором"
+    },
+    {
+      "id": "ekskursiya",
+      "title": "Экскурсия"
+    },
+    {
+      "id": "pokaz-rabot",
+      "title": "Показ работ"
+    },
+    {
+      "id": "otkrytyy-den",
+      "title": "Открытый день"
+    }
+  ],
+  "sessionKinds": [
+    {
+      "id": "istoricheskaya-smena",
+      "title": "Историческая смена"
+    },
+    {
+      "id": "biologicheskaya-smena",
+      "title": "Биологическая смена"
+    },
+    {
+      "id": "smena-buduschego",
+      "title": "Смена будущего"
+    },
+    {
+      "id": "vkusnaya-smena",
+      "title": "Вкусная смена"
+    },
+    {
+      "id": "letopisnaya-smena",
+      "title": "Летописная смена"
+    },
+    {
+      "id": "fizicheskaya-smena",
+      "title": "Физическая смена"
+    },
+    {
+      "id": "inzhenernaya-smena",
+      "title": "Инженерная смена"
+    }
+  ]
+}
