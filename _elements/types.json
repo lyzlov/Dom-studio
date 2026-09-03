@@ -80,7 +80,8 @@
       },
       "parts": {
         "button": {
-          "opens": "form"
+          "opens": "form",
+          "word": "ui.enroll"
         }
       }
     }
@@ -97,7 +98,8 @@
       },
       "parts": {
         "button": {
-          "opens": "form"
+          "opens": "form",
+          "word": "ui.enroll"
         }
       }
     },

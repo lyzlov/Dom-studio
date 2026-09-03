@@ -6,7 +6,7 @@
 
 import { buildSite, imageBases } from '../../_elements/assemble.mjs';
 import { setMarkup, parseSet, replaceTemplate } from '../../_elements/template.mjs';
-import { setLang } from '../../_elements/lang.mjs';
+import { setLang, setWord } from '../../_elements/lang.mjs';
 import { splitCaptions, mergeCaptions, captionFields } from '../../_elements/captions.mjs';
 import { form, node, plainList, recordForm, recordName, dragHandle, eyeButton, deleteButton,
          eyeIcon, fieldRow, iconButton, chevron, TECHNICAL,
@@ -48,6 +48,7 @@ export const today = () => new Date().toISOString().slice(0, 10);
 export const S = {
   token: '', пишем: false, головы: null,
   project: null, dict: null,
+  projectWords: null,      // слова манифеста: имя проекта на языке сайта
   data: null,
   sources: new Map(),      // путь файла → текст, каким он лежит на сайте
   wordsComment: new Map(), // файл данных → пояснение в его словаре
@@ -142,7 +143,11 @@ async function loadManifest() {
   S.sources.set(МАНИФЕСТ, JSON.stringify(S.project, null, 2) + '\n');
   if (Number(S.project.contract) !== PRODUCT.contract)
     throw new Error(`${t('err.contract', 'The manifest is written for another contract version')}: ${S.project.contract} \u2260 ${PRODUCT.contract}`);
-  document.title = `${PRODUCT.name} — ${S.project.name}`;
+  // Имя проекта — слово: машина адресуется `id`, человеку показывается имя
+  // из словаря проекта. Словарь читается здесь же: заголовок ставится до
+  // загрузки данных.
+  S.projectWords = await словарь('project');
+  document.title = `${PRODUCT.name} — ${S.projectWords.name || S.project.id}`;
   // Правила набора приходят из манифеста: сокращения пишутся прописными.
   setAbbreviations(((S.project.theme || {}).typesetting || {}).abbreviations);
   projectNames();
@@ -472,6 +477,9 @@ function changes() {
     if (FILES()[ключ]) compare(путьФайла(ключ), pick());
   for (const [файл, слова] of Object.entries(разделитьСтруктуру().подписи))
     compare(путьСлов(файл), J(слова));
+  // Слова кода сайта: сверяются, только если словарь прочитан — иначе пустой
+  // словарь выглядел бы правкой, стирающей файл.
+  if (S.sources.has(путьСлов('ui'))) compare(путьСлов('ui'), J(S.siteWords));
   for (const имя of catalogNames(S.data.types))
     compare(FILES().catalog.replace('{name}', имя), J(S.data.catalog[имя]));
   compare(МАНИФЕСТ, J(S.project));
@@ -1350,7 +1358,7 @@ function formScreen(у) {
       поля.append(recordForm(м.список, м.i, ctx()));
       S.recordKind = null;
     } else поля.append(pageForm(путь));
-  } else if (у.data && (у.data.media || у.data.data)) {
+  } else if (partEditable(у.data)) {
     поля.append(...markupPartForm(у.data));
   } else if (у.kind === 'block' || у.kind === 'card' || у.kind === 'record') {
     const [владелец, i] = nodeOwner(у);
@@ -1373,7 +1381,7 @@ function formScreen(у) {
     // Шапка и подвал своих полей не имеют: они собраны из частей. Форма
     // целого показывает поля этих частей — по разделу на часть.
     у.children.forEach(д => {
-      const свои = д.data && (д.data.media || д.data.data) ? markupPartForm(д.data) : [];
+      const свои = partEditable(д.data) ? markupPartForm(д.data) : [];
       if (!свои.length) return;
       поля.append(el('p', 'ed-section-label', д.name));
       поля.append(...свои);
@@ -1400,12 +1408,32 @@ function nameField(у) {
   return об;
 }
 
+/** Есть ли у части разметки что править: слово, кадр или данные. */
+const partEditable = о => !!(о && (о.word || о.media || о.data));
+
 /**
- * Часть разметки, объявленная в types.json: свой файл и свои поля. Логотип —
- * это файл, «Контакты» — поля `site.contacts`, «Разделы» — список ссылок.
+ * Слово части, у которой своих данных нет: надпись лежит в словаре языка, и
+ * правится там же, где стоит. Слово общее: то же слово в другом месте
+ * разметки меняется вместе с этим, поэтому ключ стоит подписью строки.
+ */
+function wordRow(ключ) {
+  const поле = el('input');
+  поле.type = 'text';
+  поле.value = String((S.siteWords || {})[ключ] ?? '');
+  поле.setAttribute('aria-label', t('field.word', 'word'));
+  поле.addEventListener('input', () => { S.siteWords = setWord(ключ, поле.value); apply(false); });
+  поле.addEventListener('change', () => apply(true));
+  return fieldRow({ name: t('field.word', 'word'), id: ключ, value: поле });
+}
+
+/**
+ * Часть разметки, объявленная в types.json: своё слово, свой файл и свои поля.
+ * Логотип — это файл, «Контакты» — поля `site.contacts`, «Разделы» — список
+ * ссылок, кнопка первого экрана — слово из словаря.
  */
 function markupPartForm(о) {
   const итог = [];
+  if (о.word) итог.push(wordRow(о.word));
   if (о.media) итог.push(fieldRow({ name: t('media.file', 'file'), value: fileField(о.media) }));
   if (!о.data) return итог;
   const [владелец, ключ] = byPath(о.data);
@@ -1706,8 +1734,8 @@ function sourcesHelp() {
   // Слова показываются по файлам, а не образцом пути: человек ищет то, что
   // лежит на диске. Названы они своим предметом — тем же именем, что и файл
   // данных, слова которого в них лежат; какие именно это слова, говорит папка.
-  for (const имя of ФАЙЛЫ_СТРУКТУРЫ) строки.push([имя, путьСлов(имя), true, 'words']);
-  for (const имя of ['ui', 'types', 'tokens']) строки.push([имя, путьСлов(имя), false, 'words']);
+  for (const имя of [...ФАЙЛЫ_СТРУКТУРЫ, 'ui']) строки.push([имя, путьСлов(имя), true, 'words']);
+  for (const имя of ['project', 'types', 'tokens']) строки.push([имя, путьСлов(имя), false, 'words']);
   const м = S.project.media || {};
   if (м.folder) строки.push(['media', м.folder, true]);
   строки.push(['layouts', layouts().folder, true]);
@@ -1883,6 +1911,8 @@ function endEditing(у, отменить) {
 function captureState(у) {
   const место = nodePlace(у);
   if (место) return { ключ: у.key, вид: 'place', было: JSON.parse(JSON.stringify(место.массив[место.индекс] ?? null)) };
+  if (у.data && у.data.word)
+    return { ключ: у.key, вид: 'word', слово: у.data.word, было: S.siteWords[у.data.word] };
   if (у.поле) return { ключ: у.key, вид: 'field', было: у.поле.владелец[у.поле.ключ] };
   return null;
 }
@@ -1893,6 +1923,7 @@ function restoreState(у, снимок) {
     if (место) место.массив[место.индекс] = JSON.parse(JSON.stringify(снимок.было));
     return;
   }
+  if (снимок.вид === 'word') { S.siteWords = setWord(снимок.слово, снимок.было); return; }
   if (у.поле) у.поле.владелец[у.поле.ключ] = снимок.было;
 }
 
@@ -1900,9 +1931,9 @@ function restoreState(у, снимок) {
 // карточку, пункт меню, вкладку, часть разметки со своим файлом или данными.
 const hasForm = у => у.kind === 'page' || у.kind === 'block' || у.kind === 'card'
   || у.kind === 'record' || !!у.поле
-  || !!(у.data && (у.data.media || у.data.data))
+  || partEditable(у.data)
   || у.key === 'menu' || у.kind === 'menu'
-  || у.children.some(д => д.data && (д.data.media || д.data.data));
+  || у.children.some(д => partEditable(д.data));
 
 /** Глазик: скрытое не собирается и уходит из меню, подвала и карточек. */
 function nodeEye(у) {
@@ -2421,8 +2452,9 @@ function saveDraft() {
   try {
     localStorage.setItem(ЧЕРНОВИК, JSON.stringify({
       время: Date.now(),
-      сайт: S.project.name || '',
+      проект: S.project.id || '',
       data: S.data,
+      words: S.siteWords,
       project: S.project,
       markup: S.markup,
       theme: S.theme.css,
@@ -2437,7 +2469,7 @@ function saveDraft() {
 function readDraft() {
   try {
     const ч = JSON.parse(localStorage.getItem(ЧЕРНОВИК) || 'null');
-    return ч && ч.сайт === (S.project.name || '') ? ч : null;
+    return ч && ч.проект === (S.project.id || '') ? ч : null;
   } catch { return null; }
 }
 
@@ -2455,6 +2487,7 @@ function useDraft(ч) {
   S.templates = набор.шаблоны;
   setMarkup(S.templates);
   S.dict = createDict(S.data.types, S.data, (ключ, запасное) => t(ключ, humanize(запасное)));
+  if (ч.words) { S.siteWords = ч.words; setLang(S.siteWords); }
   S.theme.css = ч.theme;
   S.theme.tokens = parseTokens(S.theme.css);
   S.settings.css = ч.settings;
@@ -2664,7 +2697,7 @@ async function save() {
       отчёт.textContent = t('save.writing', 'Writing…');
       await writeToGitHub(файлы, {
         token: S.token,
-        message: S.project.commit.message || `${PRODUCT.name} ${PRODUCT.version}`,
+        message: t('save.commitMessage', `${PRODUCT.name} ${PRODUCT.version}`),
         targets: осталось,
         base: S.heads || {},
       }, (ключ, значения) => { отчёт.textContent = tf(ключ, '', значения); },
@@ -2847,7 +2880,9 @@ async function loadNames() {
 
 /** Словарь слов для файла данных; нет файла — пусто, а не поломка. */
 async function словарь(имя) {
-  try { return JSON.parse(await pick(путьСлов(имя))); } catch { return {}; }
+  // Через fetchJSON, а не pick: исходный текст словаря нужен для сверки —
+  // без него правка слова неотличима от его же неправленого вида.
+  try { return await fetchJSON(путьСлов(имя)); } catch { return {}; }
 }
 /** Язык сайта объявлен в манифесте; язык редактора — свой, он у locale.mjs. */
 export const siteLang = () => (S.project && S.project.lang) || 'ru';

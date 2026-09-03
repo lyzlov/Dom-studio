@@ -71,7 +71,11 @@ function checkMarkup() {
   }
 }
 
-const бр = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+// Где взять браузер: в песочнице он лежит отдельно от проекта и называется в
+// CHROME_PATH — так же, как у qa_site.mjs. Без переменной playwright находит
+// своё место сам, и проверка запускается на любой машине.
+const бр = await chromium.launch(process.env.CHROME_PATH
+  ? { executablePath: process.env.CHROME_PATH } : {});
 const стр = await бр.newPage({ viewport: { width: 1600, height: 1000 } });
 стр.on('pageerror', e => bad('js', e.message));
 await стр.goto(href);
