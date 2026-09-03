@@ -8,7 +8,7 @@ import { t, tf } from './lang.mjs';
 const R = (имя, данные) => render(имя, данные).replace(/\n$/, '');
 
 /** Сумма со знаком валюты: знак объявлен в словаре языка. */
-const money = сумма => `${сумма}${t('ui.currency', ' $')}`;
+const money = сумма => `${сумма}${t('ui.currency')}`;
 
 /* #region Вспомогательное */
 export { esc };
@@ -37,16 +37,16 @@ export const isPast = (поКакую, сегодня) => поКакую < се�
  * странице, и слова эти из словаря: «лет», «и», десятичный знак у каждого
  * языка свои.
  */
-const число = n => String(n).replace('.', t('ui.decimal', '.'));
+const число = n => String(n).replace('.', t('ui.decimal'));
 
 export function ageText(промежутки) {
   // Поля нет — сказать нечего; пустой список — сказано «любой», и это разное.
   if (!Array.isArray(промежутки)) return '';
-  if (!промежутки.length) return t('ui.ageAny', 'any age');
+  if (!промежутки.length) return t('ui.ageAny');
   const части = промежутки.map(({ min: от, max: до }) => (до == null
-    ? tf('ui.ageFrom', '{from}+', { from: число(от) })
+    ? tf('ui.ageFrom', { from: число(от) })
     : (от === до ? число(от) : `${число(от)}–${число(до)}`)));
-  return tf('ui.ageYears', '{ages} years', { ages: части.join(t('ui.ageJoin', ' and ')) });
+  return tf('ui.ageYears', { ages: части.join(t('ui.ageJoin')) });
 }
 
 const КОРЗИНЫ = [[3, 5, '3–5'], [6, 10, '6–10'], [11, 16, '11–16']];
@@ -247,14 +247,14 @@ const ПОДПИСЬ_КАДРА = {
   course: c => c.title,
   event: e => e.title,
   post: п => п.heading,
-  session: s => tf('ui.sessionPoster', 'Poster of session “{title}”', { title: s.title }),
+  session: s => tf('ui.sessionPoster', { title: s.title }),
 };
 
 export const priceLine = тариф => [
-  тариф.trial ? tf('ui.priceTrial', 'Trial — {price}', { price: money(тариф.trial) })
-              : t('ui.priceNoTrial', 'No trial'),
-  тариф.single ? tf('ui.priceSingle', 'single — {price}', { price: money(тариф.single) })
-               : t('ui.priceNoSingle', 'no single session'),
+  тариф.trial ? tf('ui.priceTrial', { price: money(тариф.trial) })
+              : t('ui.priceNoTrial'),
+  тариф.single ? tf('ui.priceSingle', { price: money(тариф.single) })
+               : t('ui.priceNoSingle'),
 ].join(', ') + '. '
   + тариф.packages.map((п, i) => `${i && п.short ? п.short : п.title} — ${money(п.price)}`).join(', ') + '.';
 

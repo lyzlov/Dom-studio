@@ -91,7 +91,7 @@ export const TARGETS = () => S.project.commit.targets;
 
 const pick = async путь => {
   const о = await fetch('../' + путь + '?t=' + Date.now());
-  if (!о.ok) throw new Error(`${t('err.unreadable', 'cannot read')} ${путь}: ${о.status}`);
+  if (!о.ok) throw new Error(`${t('err.unreadable')} ${путь}: ${о.status}`);
   return о.text();
 };
 const fetchJSON = async путь => {
@@ -142,7 +142,7 @@ async function loadManifest() {
   // выглядел бы изменённым из-за форматирования.
   S.sources.set(МАНИФЕСТ, JSON.stringify(S.project, null, 2) + '\n');
   if (Number(S.project.contract) !== PRODUCT.contract)
-    throw new Error(`${t('err.contract', 'The manifest is written for another contract version')}: ${S.project.contract} \u2260 ${PRODUCT.contract}`);
+    throw new Error(`${t('err.contract')}: ${S.project.contract} \u2260 ${PRODUCT.contract}`);
   // Имя проекта — слово: машина адресуется `id`, человеку показывается имя
   // из словаря проекта. Словарь читается здесь же: заголовок ставится до
   // загрузки данных.
@@ -156,11 +156,11 @@ async function loadManifest() {
 export async function load() {
   const step = т => { $('status').textContent = т; };
 
-  step(t('load.types', 'Dictionary…'));
+  step(t('load.types'));
   const types = await fetchJSON(FILES().types);
   await loadNames();
 
-  step(t('load.data', 'Data…'));
+  step(t('load.data'));
   const catalog = {};
   for (const имя of catalogNames(types))
     catalog[имя] = await fetchJSON(FILES().catalog.replace('{name}', имя));
@@ -181,7 +181,7 @@ export async function load() {
   S.tree = createTree(S, t, { pageKey, pageName, dict: S.dict, pageSections,
                               inEnglish: () => lang() === 'en', humanize });
 
-  step(t('load.markup', 'Markup…'));
+  step(t('load.markup'));
   S.markup = await pick(FILES().markup);
   S.sources.set(FILES().markup, S.markup);
   const набор = parseSet(S.markup);
@@ -192,7 +192,7 @@ export async function load() {
   // него подставляются из словаря языка, поэтому исходник нужен и здесь.
   S.scriptSrc = await pick(СКРИПТ_ИСХОДНИК).catch(() => '');
 
-  step(t('load.theme', 'Theme…'));
+  step(t('load.theme'));
   if (FILES().styles) {
     S.styles = await pick(FILES().styles);
     S.sources.set(FILES().styles, S.styles);
@@ -209,7 +209,7 @@ export async function load() {
     S.settings.tokens = parseTokens(S.settings.css);
   }
 
-  step(t('load.images', 'Image sizes…'));
+  step(t('load.images'));
   await Promise.all(imageBases(S.data).map(основа => new Promise(готово => {
     const и = new Image();
     и.onload = () => { S.sizes[основа] = { width: и.naturalWidth, height: и.naturalHeight }; готово(); };
@@ -217,13 +217,13 @@ export async function load() {
     и.src = '../' + основа + '-400.jpg';
   })));
 
-  step(t('load.texts', 'Texts…'));
+  step(t('load.texts'));
   build();
   const нужны = [...S.requested].filter(п => !S.texts.has(п));
   await Promise.all(нужны.map(async п => {
     const о = await fetch('../' + п + '?t=' + Date.now());
     if (о.status === 404) return;
-    if (!о.ok) throw new Error(`${t('err.unreadable', 'cannot read')} ${п}: ${о.status}`);
+    if (!о.ok) throw new Error(`${t('err.unreadable')} ${п}: ${о.status}`);
     const т = await о.text();
     S.texts.set(п, т);
     S.sources.set(п, т);
@@ -295,7 +295,7 @@ export const problem = (text, ключ = null) => ({ text, ключ });
 
 export function check() {
   const беды = [];
-  if (S.error) беды.push(problem(t('err.build', 'Build failed') + ': ' + S.error));
+  if (S.error) беды.push(problem(t('err.build') + ': ' + S.error));
   S.notes.forEach(з => беды.push(problem(з)));
   if (S.error) return беды;
 
@@ -310,9 +310,9 @@ export function check() {
     if (Array.isArray(о)) return о.forEach(x => walk(x, где, ключ));
     if (!о || typeof о !== 'object') return;
     if (о.type && !типы.has(о.type))
-      беды.push(problem(`${где}: ${t('err.blockType', 'unknown block kind')} ${о.type}`, ключ));
+      беды.push(problem(`${где}: ${t('err.blockType')} ${о.type}`, ключ));
     if (о.source && !источники.has(о.source))
-      беды.push(problem(`${где}: ${t('err.source', 'unknown source')} ${о.source}`, ключ));
+      беды.push(problem(`${где}: ${t('err.source')} ${о.source}`, ключ));
     Object.values(о).forEach(v => walk(v, где, ключ));
   };
   for (const [путь, оп] of Object.entries(S.data.structure.pages))
@@ -333,7 +333,7 @@ export function check() {
       if (v.endsWith('/')) v += 'index.html';
       if (!v.endsWith('.html')) continue;
       if (!адреса.has(resolve(каталог, v)))
-        беды.push(problem(`${pageCaption(путь)}: ${t('err.deadLink', 'link leads nowhere')} ${m[1]}`,
+        беды.push(problem(`${pageCaption(путь)}: ${t('err.deadLink')} ${m[1]}`,
                        'page:' + путь));
     }
   }
@@ -353,10 +353,10 @@ const checkIds = (список, в, беды) => {
   список.forEach((з, i) => {
     if (!з || typeof з !== 'object') return;
     if (!/^[a-z0-9-]+$/.test(з.id || ''))
-      беды.push(problem(`${в.plural} ${recordName(з, i)}: ${t('err.idChars', 'address may hold only latin letters, digits and a hyphen')} ${з.id}`,
+      беды.push(problem(`${в.plural} ${recordName(з, i)}: ${t('err.idChars')} ${з.id}`,
                      recordKey(в, i)));
     if (было.has(з.id))
-      беды.push(problem(`${в.plural} ${recordName(з, i)}: ${t('err.idTwice', 'address is used twice')} ${з.id}`,
+      беды.push(problem(`${в.plural} ${recordName(з, i)}: ${t('err.idTwice')} ${з.id}`,
                      recordKey(в, i)));
     было.add(з.id);
   });
@@ -377,7 +377,7 @@ function checkDates(беды) {
         if (!о || typeof о !== 'object' || Array.isArray(о)) continue;
         const от = date(о.from), до = date(о.to);
         if (от && до && до < от)
-          беды.push(problem(`${в.name} ${recordName(з, i)}: ${t('err.dateOrder', 'the end comes before the start')}`,
+          беды.push(problem(`${в.name} ${recordName(з, i)}: ${t('err.dateOrder')}`,
                          recordKey(в, i)));
       }
     });
@@ -397,7 +397,7 @@ function checkLinks(беды) {
         if (!(поле in о) || !о[поле]) continue;
         const цель = S.dict.list(видСловаря) || [];
         if (!цель.some(x => x && x.id === о[поле]))
-          беды.push(problem(`${в.name} ${имяЗап}: ${S.dict.caption(поле)} ${о[поле]} \u2014 ${t('err.notFound', 'not found')}`,
+          беды.push(problem(`${в.name} ${имяЗап}: ${S.dict.caption(поле)} ${о[поле]} \u2014 ${t('err.notFound')}`,
                          ключ));
       }
       Object.values(о).forEach(v => walk(v, имяЗап, ключ));
@@ -710,7 +710,7 @@ function linkToOverlay(у) {
   if (!что) return null;
   const ключ = 'overlay:' + что;
   const имя = t(`overlay.${что}.name`, humanize(что));
-  return iconButton('external', `${t('btn.opens', 'opens')}: ${имя}`, () => {
+  return iconButton('external', `${t('btn.opens')}: ${имя}`, () => {
     S.lists.add('overlay');
     S.section = ключ;
     draw();
@@ -1013,34 +1013,34 @@ function nodePlus(у) {
  * в блоке с карточками — запись. У листа плюса нет, как нет и шеврона.
  */
 function nodeCreate(у) {
-  if (у.key === 'menu') return { подпись: t('new.group', 'new menu group'), сделать: newMenuSection };
-  if (у.kind === 'menu') return { подпись: t('new.item', 'new page in the menu'), сделать: () => newItem(у.data) };
-  if (у.kind === 'page') return { подпись: t('new.block', 'new block'), сделать: () => newBlock(у.key.slice(5)) };
+  if (у.key === 'menu') return { подпись: t('new.group'), сделать: newMenuSection };
+  if (у.kind === 'menu') return { подпись: t('new.item'), сделать: () => newItem(у.data) };
+  if (у.kind === 'page') return { подпись: t('new.block'), сделать: () => newBlock(у.key.slice(5)) };
   // Блок, который показывает записи, принимает новую запись: карточка сама
   // внутрь себя ничего не берёт, поэтому плюса у неё нет.
   if (у.kind === 'block' && у.data && у.data.source) {
     const список = blockRecords(у.data);
     const в = blockKind(у.data);
-    if (список) return { подпись: t('new.record', 'new entry'),
+    if (список) return { подпись: t('new.record'),
                          сделать: () => newRecordIn(список, 0, в ? `card:${в.key}#0` : null) };
   }
   const список = childArray(у);
   if (у.key.startsWith('kind:') && Array.isArray(список))
-    return { подпись: t('new.record', 'new entry'),
+    return { подпись: t('new.record'),
              сделать: () => newRecordIn(список, 0, `${у.key}#0`) };
   // Правило одно: плюс стоит там, где список детей можно пополнить. Вкладки
   // блока, записи части шапки или подвала — всё это списки в данных.
   if (у.kind === 'block' && Array.isArray((у.data || {}).tabs))
-    return { подпись: t('new.tab', 'new tab'),
+    return { подпись: t('new.tab'),
              сделать: () => newRecordIn(у.data.tabs, у.data.tabs.length, null) };
   if (у.kind === 'markup' && Array.isArray(список))
-    return { подпись: t('new.record', 'new entry'),
+    return { подпись: t('new.record'),
              сделать: () => newRecordIn(список, 0, `${у.key}#0`) };
   // Шапка и подвал состоят из частей, и состав их — данные: часть, объявленную
   // в словаре, но не поставленную на страницу, можно добавить.
   const недостающие = missingParts(у.key);
   if (недостающие.length)
-    return { подпись: t('new.part', 'new part'), сделать: () => addPart(у.key, недостающие) };
+    return { подпись: t('new.part'), сделать: () => addPart(у.key, недостающие) };
   return null;
 }
 
@@ -1066,7 +1066,7 @@ function addPart(где, недостающие) {
   if (недостающие.length === 1) return select_(недостающие[0]);
   const д = $('dialog');
   д.textContent = '';
-  д.append(el('h2', null, t('new.part', 'new part')));
+  д.append(el('h2', null, t('new.part')));
   const действия = el('div', 'ed-actions');
   недостающие.forEach(имя => действия.append(
     button(t(`part.${где}.${имя}.name`, humanize(имя)), () => { д.close(); select_(имя); })));
@@ -1094,7 +1094,7 @@ function newMenuSection() {
   const меню = S.data.structure.navigation.menu;
   let n = 1;
   while (меню.some(x => x.id === `group-${n}`)) n++;
-  const г = { id: `group-${n}`, group: t('new.group', 'new menu group'), items: [] };
+  const г = { id: `group-${n}`, group: t('new.group'), items: [] };
   меню.push(г);
   S.open.add('header');
   S.open.add('menu');
@@ -1132,8 +1132,8 @@ function newPage() {
     if (k.startsWith('$') || k === 'hidden' || k === 'blocks' || k === 'path') continue;
     новая[k] = reset(образец[k]);
   }
-  новая.title = t('new.page', 'New page');
-  if (новая.heading && typeof новая.heading === 'object') новая.heading.title = t('new.page', 'New page');
+  новая.title = t('new.page');
+  if (новая.heading && typeof новая.heading === 'object') новая.heading.title = t('new.page');
   новая.blocks = [];
   страницы[путь] = новая;
   return путь;
@@ -1177,7 +1177,7 @@ function newBlock(путь) {
 function chooseType(готово) {
   const д = $('dialog');
   д.textContent = '';
-  д.append(el('h2', null, t('new.block', 'new block')));
+  д.append(el('h2', null, t('new.block')));
   const список = el('div', 'ed-fields');
   S.dict.blockTypes().forEach(т => {
     const кн = el('button', 'ed-item');
@@ -1249,7 +1249,7 @@ export function drawMain() {
     || S.tree.pathTo(S.tree.common(), S.section);
 
   if (!путь) {
-    crumbs([{ имя: t('app.pickElement', 'Pick an element on the left.') }], $('form-crumbs'), () => {});
+    crumbs([{ имя: t('app.pickElement') }], $('form-crumbs'), () => {});
     return;
   }
   const цель = путь[путь.length - 1];
@@ -1373,7 +1373,7 @@ function formScreen(у) {
     // полями, а не одним именем: у вкладки внутри лежит ещё и её наполнение.
     поля.append(...fieldByField(у.data));
   } else if (у.поле) {
-    поля.append(fieldRow({ name: t('field.name', 'name'), value: nameField(у) }));
+    поля.append(fieldRow({ name: t('field.name'), value: nameField(у) }));
   } else if (у.key === 'menu' || у.kind === 'menu') {
     // Меню — это его пункты: правится список, а не абстрактное «меню».
     поля.append(node(S.data.structure.navigation, 'menu', ['menu'], ctx()));
@@ -1420,10 +1420,10 @@ function wordRow(ключ) {
   const поле = el('input');
   поле.type = 'text';
   поле.value = String((S.siteWords || {})[ключ] ?? '');
-  поле.setAttribute('aria-label', t('field.word', 'word'));
+  поле.setAttribute('aria-label', t('field.word'));
   поле.addEventListener('input', () => { S.siteWords = setWord(ключ, поле.value); apply(false); });
   поле.addEventListener('change', () => apply(true));
-  return fieldRow({ name: t('field.word', 'word'), id: ключ, value: поле });
+  return fieldRow({ name: t('field.word'), id: ключ, value: поле });
 }
 
 /**
@@ -1434,7 +1434,7 @@ function wordRow(ключ) {
 function markupPartForm(о) {
   const итог = [];
   if (о.word) итог.push(wordRow(о.word));
-  if (о.media) итог.push(fieldRow({ name: t('media.file', 'file'), value: fileField(о.media) }));
+  if (о.media) итог.push(fieldRow({ name: t('media.file'), value: fileField(о.media) }));
   if (!о.data) return итог;
   const [владелец, ключ] = byPath(о.data);
   if (!владелец) return итог;
@@ -1466,11 +1466,11 @@ function galleryField(список) {
     основа => список.push({ base: основа, caption: '' }),
     т => { отчёт.textContent = т; })
     .then(() => apply(true))
-    .catch(e => { отчёт.textContent = t('app.failed', 'Failed') + ': ' + e.message; }));
+    .catch(e => { отчёт.textContent = t('app.failed') + ': ' + e.message; }));
 
   сетка.append(
-    actionTile('import', t('media.upload', 'upload a frame'), () => поле.click()),
-    actionTile('view-grid', t('media.pick', 'choose a frame'),
+    actionTile('import', t('media.upload'), () => поле.click()),
+    actionTile('view-grid', t('media.pick'),
       () => frameChoice(основа => { список.push({ base: основа, caption: '' }); apply(true); })));
 
   tileDragging(сетка, список);
@@ -1640,7 +1640,7 @@ function typesHelp() {
     // Список полный и по нему ходят: увидев, где тип стоит, туда и идут. Но
     // «на всех страницах» короче четырнадцати кнопок и говорит ровно то же.
     if (место.filter(м => м.путь).length >= всегоСтраниц)
-      значение.append(el('span', 'ed-hint', t('type.everywhere', 'on every page')));
+      значение.append(el('span', 'ed-hint', t('type.everywhere')));
     else if (место.length) {
       значение.append(el('span', 'ed-hint', t('design.usedIn') + ':'));
       // Между местами точка, а не пробел: «Летний лагерь» — одно место, и по
@@ -1649,7 +1649,7 @@ function typesHelp() {
         if (i) значение.append(el('span', 'ed-hint', '\u00b7'));
         значение.append(placeLink(м));
       });
-    } else значение.append(el('span', 'ed-hint', t('type.unused', 'nowhere yet')));
+    } else значение.append(el('span', 'ed-hint', t('type.unused')));
     блок.append(fieldRow({ name: имя, id: ключ, value: значение }));
     // Из чего тип состоит — там же, где он описан. Обозначения полей в
     // types.json машинные; человеческое имя обозначения даёт словарь имён.
@@ -1759,7 +1759,7 @@ function sourcesHelp() {
       // Пометка стоит сразу за путём, а не в конце строки: иначе её место
       // зависит от длины описания и она гуляет по строке.
       if (!пишется)
-        место.append(el('span', 'ed-hint', t('source.readonly', 'read only')));
+        место.append(el('span', 'ed-hint', t('source.readonly')));
       место.append(el('span', 'ed-hint', t('about.' + (оЧём || ключ), '')));
       блок.append(fieldRow({ name: t('source.' + ключ, ключ), id: п + '/' + ключ, value: место }));
     }
@@ -1941,7 +1941,7 @@ function nodeEye(у) {
   if (!видимость) return null;
   const скрыт = видимость.скрыт();
   return iconButton(скрыт ? 'eye-off' : 'eye',
-    скрыт ? t('eye.hidden', 'Hidden — show') : t('eye.shown', 'Visible — hide'), () => {
+    скрыт ? t('eye.hidden') : t('eye.shown'), () => {
       видимость.переключить();
       apply(true);
     });
@@ -2122,7 +2122,7 @@ const nodeExport = у => {
   const b = iconButton('export', t('btn.exportLayout'), () => {
     exportLayout(цель.путь, цель.блок, true)
       .then(updateState)
-      .catch(e => { $('status').textContent = t('app.failed', 'Failed') + ': ' + e.message; });
+      .catch(e => { $('status').textContent = t('app.failed') + ': ' + e.message; });
   });
   return b;
 };
@@ -2167,7 +2167,7 @@ export function say(заголовок, text) {
   д.textContent = '';
   д.append(el('h2', null, заголовок), el('p', null, text));
   const действия = el('div', 'ed-actions');
-  действия.append(button(t('layout.close', 'Close'), () => д.close()));
+  действия.append(button(t('layout.close'), () => д.close()));
   д.append(действия);
   д.showModal();
 }
@@ -2188,7 +2188,7 @@ export function ask(вопрос, подпись, сделать) {
 function archiveForm() {
   const блок = el('div', 'ed-fields');
   const строки = archive().items;
-  if (!строки.length) { блок.append(el('p', 'ed-hint', t('nav.archiveEmpty', 'The archive is empty.'))); return блок; }
+  if (!строки.length) { блок.append(el('p', 'ed-hint', t('nav.archiveEmpty'))); return блок; }
   строки.forEach((с, i) => {
     блок.append(fieldRow({
       name: с.name || recordName(с.record, i),
@@ -2569,12 +2569,12 @@ export function updateState() {
   // черновика не оставляет, иначе редактор предложит вернуть пустоту.
   if (S.loaded) (сп.length ? saveDraft : dropDraft)();
   const беды = check();
-  $('status').textContent = беды.length ? `${t('app.problems', 'Problems')}: ${беды.length}` : '';
+  $('status').textContent = беды.length ? `${t('app.problems')}: ${беды.length}` : '';
   $('status').dataset.kind = беды.length ? 'error' : '';
   const знак = $('dirty');
   знак.hidden = false;
   знак.dataset.on = String(!!сп.length);
-  знак.title = сп.length ? t('app.unsaved', 'Unsaved changes') : t('app.clean', 'No changes');
+  знак.title = сп.length ? t('app.unsaved') : t('app.clean');
   // Пока данные грузятся, записывать нечего; дальше кнопка доступна всегда.
   $('save').disabled = false;
 }
@@ -2614,7 +2614,7 @@ function fileSection(путь) {
   if (путь.startsWith(FILES().texts)) return t('files.texts');
   if (путь.startsWith(S.project.media.folder)) return t('files.images');
   if (путь.startsWith(layouts().folder)) return t('files.layouts');
-  if (путь.startsWith('_data/')) return t('files.structure', 'Site structure');
+  if (путь.startsWith('_data/')) return t('files.structure');
   if (путь.startsWith('_code/')) return t('files.elements');
   if (путь.startsWith('_assets/')) return t('files.design');
   return null;
@@ -2633,7 +2633,7 @@ function summary(файлы) {
 }
 
 function markSaved() {
-  $('status').textContent = `${t('save.done', 'Saved at')} ${new Date().toTimeString().slice(0, 5)}`;
+  $('status').textContent = `${t('save.done')} ${new Date().toTimeString().slice(0, 5)}`;
   $('status').dataset.kind = '';
 }
 
@@ -2641,13 +2641,13 @@ async function save() {
   // Что записывать, известно только со страницами, какие лежат на сайте: без
   // них не с чем сравнивать. Обычно они уже пришли фоном.
   if (!S.pagesReady) {
-    $('status').textContent = t('load.pages', 'Current pages…');
+    $('status').textContent = t('load.pages');
     await loadPages();
     updateState();
   }
   // Сохранять нечего — так и говорим, вместо того чтобы гасить кнопку и
   // оставлять человека гадать, почему она не нажимается.
-  if (!changes().length) return say(t('btn.save'), t('app.clean', 'No changes'));
+  if (!changes().length) return say(t('btn.save'), t('app.clean'));
   if (!S.canWrite) {
     login().then(() => { updateState(); if (S.canWrite) save(); });
     return;
@@ -2659,18 +2659,18 @@ async function save() {
   д.append(el('h2', null, t('btn.save')));
 
   if (беды.length) {
-    д.append(el('p', null, t('save.fixFirst', 'Fix this first:')));
+    д.append(el('p', null, t('save.fixFirst')));
     const с = el('div', 'ed-files');
     беды.slice(0, 20).forEach(б => с.append(el('p', null, б.текст)));
     д.append(с);
     const действия = el('div', 'ed-actions');
-    действия.append(button(t('layout.close', 'Close'), () => д.close()));
+    действия.append(button(t('layout.close'), () => д.close()));
     д.append(действия);
     д.showModal();
     return;
   }
 
-  д.append(el('p', null, t('save.willUpdate', 'Will update') + ': ' + summary(файлы)));
+  д.append(el('p', null, t('save.willUpdate') + ': ' + summary(файлы)));
 
   const подробно = el('details');
   подробно.append(el('summary', null, t('btn.more')));
@@ -2682,7 +2682,7 @@ async function save() {
   const отчёт = el('p', 'ed-hint', '');
   const действия = el('div', 'ed-actions');
 
-  действия.append(button(t('btn.discard', 'Discard changes'), () => location.reload()));
+  действия.append(button(t('btn.discard'), () => location.reload()));
   const отмена = button(t('btn.cancel'), () => д.close());
   действия.append(отмена);
 
@@ -2694,7 +2694,7 @@ async function save() {
     главная.disabled = true;
     const записаны = [];
     try {
-      отчёт.textContent = t('save.writing', 'Writing…');
+      отчёт.textContent = t('save.writing');
       await writeToGitHub(файлы, {
         token: S.token,
         message: t('save.commitMessage', `${PRODUCT.name} ${PRODUCT.version}`),
@@ -2717,9 +2717,9 @@ async function save() {
       // Модуль записи бросает ошибку кодом, а не фразой: словами её делает
       // тот, кто показывает, — и на языке редактора.
       const почему = e.code ? tf(e.code, '', e.values || {}) : e.message;
-      отчёт.textContent = t('save.failed', 'Not written') + ': ' + почему
-        + (где ? ` \u2014 ${t('save.written', 'already written')}: ${где}; `
-                 + t('save.retryRest', 'press Save again to write the rest') : '');
+      отчёт.textContent = t('save.failed') + ': ' + почему
+        + (где ? ` \u2014 ${t('save.written')}: ${где}; `
+                 + t('save.retryRest') : '');
     }
   });
   действия.append(главная);
@@ -2755,15 +2755,15 @@ export function accept(файлы) {
 async function acceptKey(токен) {
   try {
     const р = await checkAccess(токен, TARGETS()[0]);
-    if (!р.commit) return { ок: false, причина: `${р.user}: ${t('login.noWrite', 'this key cannot write to the repository')}` };
+    if (!р.commit) return { ок: false, причина: `${р.user}: ${t('login.noWrite')}` };
     S.token = токен;
     S.canWrite = true;
     S.heads = await branchHeads(TARGETS(), токен).catch(() => null);
     return { ок: true };
   } catch (e) {
-    if (/GitHub 401/.test(e.message)) return { ок: false, причина: t('login.badKey', 'The key was not accepted — check it was copied in full.') };
-    if (/GitHub 40[34]/.test(e.message)) return { ок: false, причина: t('login.noAccess', 'The key gives no access to the site repository.') };
-    return { ок: false, причина: t('login.failed', 'Could not check the key') + ': ' + e.message };
+    if (/GitHub 401/.test(e.message)) return { ок: false, причина: t('login.badKey') };
+    if (/GitHub 40[34]/.test(e.message)) return { ок: false, причина: t('login.noAccess') };
+    return { ок: false, причина: t('login.failed') + ': ' + e.message };
   }
 }
 
@@ -2786,22 +2786,22 @@ export function login({ show = false } = {}) {
       поле.id = 'access-key';
       поле.autocomplete = 'current-password';
       поле.value = localStorage.getItem(КЛЮЧ) || '';
-      д.append(row(t('login.key', 'Access key'), поле));
+      д.append(row(t('login.key'), поле));
 
       const помнить = el('label', 'ed-inline');
       const галка = el('input');
       галка.type = 'checkbox';
       галка.checked = !!localStorage.getItem(КЛЮЧ) || !поле.value;
-      помнить.append(галка, el('span', 'ed-hint', t('login.remember', 'remember on this computer')));
+      помнить.append(галка, el('span', 'ed-hint', t('login.remember')));
       д.append(помнить);
 
       const отчёт = el('p', 'ed-hint', сообщение || '');
       const действия = el('div', 'ed-actions');
       const войти = button(t('btn.login'), async () => {
         const токен = поле.value.trim();
-        if (!токен) { отчёт.textContent = t('login.enterKey', 'Enter the key.'); return; }
+        if (!токен) { отчёт.textContent = t('login.enterKey'); return; }
         войти.disabled = true;
-        отчёт.textContent = t('login.checking', 'Checking…');
+        отчёт.textContent = t('login.checking');
         const р = await acceptKey(токен);
         войти.disabled = false;
         if (!р.ок) { отчёт.textContent = р.причина; return; }
@@ -2810,7 +2810,7 @@ export function login({ show = false } = {}) {
         д.close();
       });
       поле.addEventListener('keydown', е => { if (е.key === 'Enter') войти.click(); });
-      действия.append(войти, button(show ? t('btn.cancel') : t('btn.readOnly', 'View without saving'),
+      действия.append(войти, button(show ? t('btn.cancel') : t('btn.readOnly'),
         () => д.close()));
       д.append(действия, отчёт);
       д.showModal();
@@ -2844,7 +2844,7 @@ function labelColumns() {
   for (const [id, ключ] of [['label-nav', 'navigator'],
                             ['label-form', 'editor'], ['label-preview', 'preview']])
     if ($(id)) $(id).textContent = t('column.' + ключ);
-  $('open-page').title = t('btn.openPage', 'Open separately');
+  $('open-page').title = t('btn.openPage');
   $('open-page').setAttribute('aria-label', $('open-page').title);
   $('tree').setAttribute('aria-label', t('column.navigator'));
   $('frame').title = t('column.preview');
@@ -2895,7 +2895,7 @@ export const siteLang = () => (S.project && S.project.lang) || 'ru';
 function editorSettings() {
   const д = $('dialog');
   д.textContent = '';
-  д.append(el('h2', null, t('nav.settings', 'Settings')));
+  д.append(el('h2', null, t('nav.settings')));
   const поля = el('div', 'ed-fields');
   S.settings.tokens.forEach(т => {
     const href = т.name + '@' + т.where;
@@ -2917,7 +2917,7 @@ function editorSettings() {
   });
   д.append(поля);
   const действия = el('div', 'ed-actions');
-  действия.append(button(t('layout.close', 'Close'), () => д.close()));
+  действия.append(button(t('layout.close'), () => д.close()));
   д.append(действия);
   д.showModal();
 }
@@ -2934,8 +2934,8 @@ function setupLanguage() {
   if (!кн) return;
   const show = () => {
     кн.textContent = lang().toUpperCase();
-    кн.title = t('lang.switch', 'Interface language');
-    кн.setAttribute('aria-label', t('lang.switch', 'Interface language'));
+    кн.title = t('lang.switch');
+    кн.setAttribute('aria-label', t('lang.switch'));
   };
   show();
   кн.addEventListener('click', async () => {
@@ -3006,7 +3006,7 @@ const ЗНАЧКИ_РЕДАКТОРА = ['alert', 'key', 'save', 'settings', 'ex
   try {
     await loadManifest();
   } catch (e) {
-    $('status').textContent = t('app.noManifest', 'Cannot read the project manifest') + ': ' + e.message;
+    $('status').textContent = t('app.noManifest') + ': ' + e.message;
     $('status').dataset.kind = 'error';
     return;
   }
@@ -3017,7 +3017,7 @@ const ЗНАЧКИ_РЕДАКТОРА = ['alert', 'key', 'save', 'settings', 'ex
   try {
     await загрузка;
   } catch (e) {
-    $('status').textContent = t('app.error', 'Error') + ': ' + e.message;
+    $('status').textContent = t('app.error') + ': ' + e.message;
     $('status').dataset.kind = 'error';
     return;
   }
@@ -3041,8 +3041,8 @@ const ЗНАЧКИ_РЕДАКТОРА = ['alert', 'key', 'save', 'settings', 'ex
   const ч = S.draft;
   if (ч) {
     const когда = new Date(ч.время).toTimeString().slice(0, 5);
-    ask(`${t('draft.found', 'Unsaved edits from a previous tab')} (${когда})`,
-        t('draft.restore', 'Restore'),
+    ask(`${t('draft.found')} (${когда})`,
+        t('draft.restore'),
         () => { S.draftUsed = true; useDraft(ч); draw(); followSection(); show(); showChecks(); updateState(); });
     $('dialog').addEventListener('close', () => { if (!S.draftUsed) dropDraft(); }, { once: true });
   }

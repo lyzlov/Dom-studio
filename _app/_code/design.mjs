@@ -15,7 +15,7 @@ import { ctx } from './fields.mjs';
 
 
 /** Подпись условия («от 1024px») берётся из манифеста и переводится словарём. */
-const ruleCaption = где => (где === ':root' ? t('grid.mobile', 'Mobile')
+const ruleCaption = где => (где === ':root' ? t('grid.mobile')
   : t(S.project.theme.conditions[где.replace('@media ', '')] || '', где.replace('@media ', '')));
 
 const isTechnicalToken = т => /^--type-/.test(т.name);
@@ -585,7 +585,7 @@ function markupForm() {
   };
 
   дерево.дети.forEach(у => drawMarkupNode(у, блок, 0, write));
-  блок.append(fieldRow({ name: t('markup.source', 'Source'), value: код }));
+  блок.append(fieldRow({ name: t('markup.source'), value: код }));
   return блок;
 }
 
@@ -602,11 +602,11 @@ function drawMarkupNode(у, куда, уровень, write) {
   if (у.вид === 'tag') {
     имя = t('tag.' + у.тег, у.тег);
     const свойства = humanAttributes(у.свойства, fieldName,
-      имя => tf('markup.without', 'without “{name}”:', { name: имя }));
+      имя => tf('markup.without', { name: имя }));
     if (свойства) значение = el('span', 'ed-hint', свойства);
   } else if (у.вид === 'text') {
     const части = /^(\s*)([\s\S]*?)(\s*)$/.exec(у.сырое);
-    имя = t('markup.text', 'Text');
+    имя = t('markup.text');
     const поле = el('input');
     поле.type = 'text';
     поле.value = части[2];
@@ -617,10 +617,10 @@ function drawMarkupNode(у, куда, уровень, write) {
     });
     значение = поле;
   } else if (у.вид === 'note') {
-    имя = t('markup.note', 'Note');
+    имя = t('markup.note');
     значение = el('span', 'ed-hint', у.текст);
   } else if (у.вид === 'insert') {
-    имя = t('markup.include', 'Include');
+    имя = t('markup.include');
     const b = el('button', 'ed-check', у.имя);
     b.type = 'button';
     b.addEventListener('click', () => { S.template = у.имя; drawMain(); });

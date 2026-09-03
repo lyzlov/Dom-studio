@@ -274,7 +274,7 @@ function field(владелец, ключ, path, ctx) {
     э = el('input');
     э.type = 'text';
     // Образец даты — тоже слово: у другого языка порядок частей свой.
-    э.placeholder = t('form.datePattern', 'dd.mm.yyyy');
+    э.placeholder = t('form.datePattern');
     э.value = localized(значение);
     э.addEventListener('input', () => {
       владелец[ключ] = toMachine(э.value);
@@ -529,7 +529,7 @@ export function eyeButton(з, ctx) {
   const b = el('button', 'ed-cell ed-icon-btn');
   b.append(eyeIcon(isHidden(з)));
   b.type = 'button';
-  b.title = isHidden(з) ? t('eye.hidden', 'Hidden — show') : t('eye.shown', 'Visible — hide');
+  b.title = isHidden(з) ? t('eye.hidden') : t('eye.shown');
   b.setAttribute('aria-label', b.title);
   b.addEventListener('click', е => {
     е.preventDefault();

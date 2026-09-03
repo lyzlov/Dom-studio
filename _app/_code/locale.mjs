@@ -32,13 +32,14 @@ export function setProjectNames(о) {
 /** Ключ вида 'form.save' ищется и как вложенный путь, и как плоский ключ. */
 function pick(о, ключ) {
   if (о == null) return undefined;
-  if (Object.prototype.hasOwnProperty.call(о, ключ)) return о[ключ];
+  // Пустое значение — «ещё не переведено»: подпись берётся дальше по цепочке.
+  if (Object.prototype.hasOwnProperty.call(о, ключ)) return о[ключ] === '' ? undefined : о[ключ];
   let узел = о;
   for (const часть of ключ.split('.')) {
     if (узел == null || typeof узел !== 'object') return undefined;
     узел = узел[часть];
   }
-  return typeof узел === 'string' ? узел : undefined;
+  return typeof узел === 'string' && узел !== '' ? узел : undefined;
 }
 
 /**
@@ -55,11 +56,11 @@ export function t(ключ, запасной) {
 }
 
 /**
- * Подпись с подстановками: `tf('save.file', '', { n, of })`. Имена в фигурных
+ * Подпись с подстановками: `tf('save.file', { n, of })`. Имена в фигурных
  * скобках те же, что в словаре, — переводчик видит, что подставится.
  */
-export function tf(ключ, запасной, значения = {}) {
-  return String(t(ключ, запасной))
+export function tf(ключ, значения = {}) {
+  return String(t(ключ))
     .replace(/\{([^}]+)\}/g, (_, к) => (значения[к] == null ? '' : String(значения[к])));
 }
 

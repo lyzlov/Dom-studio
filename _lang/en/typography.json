@@ -1,0 +1,41 @@
+{
+  "$comment": "English typesetting rules: what is replaced when page text is assembled. Markup and tag attributes are untouched. A non-breaking space is written as &nbsp; so it stays visible in the source. Another language has its own rules.",
+  "enabled": true,
+  "rules": [
+    {
+      "name": "Ellipsis",
+      "find": "\\.\\.\\.",
+      "replace": "…"
+    },
+    {
+      "name": "Curly quotes",
+      "find": "\"([^\"\\n]+)\"",
+      "replace": "“$1”"
+    },
+    {
+      "name": "Em dash between words",
+      "find": " - ",
+      "replace": " — "
+    },
+    {
+      "name": "En dash in a number range",
+      "find": "(\\d)[ ]*-[ ]*(\\d)",
+      "replace": "$1–$2"
+    },
+    {
+      "name": "Non-breaking space inside a phone number",
+      "find": "(\\+7)[ ](\\d{3})[ ](\\d{3})[ ](\\d{2})[ ](\\d{2})",
+      "replace": "$1&nbsp;$2&nbsp;$3&nbsp;$4&nbsp;$5"
+    },
+    {
+      "name": "Non-breaking space before a unit",
+      "find": "(\\d)[ ]+(years|year|min|h|km|m)\\b",
+      "replace": "$1&nbsp;$2"
+    },
+    {
+      "name": "Non-breaking space before an em dash",
+      "find": "[ ]+—",
+      "replace": "&nbsp;—"
+    }
+  ]
+}

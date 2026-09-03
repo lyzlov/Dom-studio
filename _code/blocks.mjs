@@ -49,10 +49,10 @@ export function sessionTime(курс, { withRoom, room = x => x }) {
   const залы = [...new Set(курс.lessons.map(з => room(з.room)))];
   if (залы.length > 1) {
     return курс.lessons
-      .map(з => `${з.day} ${з.time} (${ageText(з.age)}${withRoom ? tf('ui.hallOf', ', {room} hall', { room: room(з.room) }) : ''})`)
+      .map(з => `${з.day} ${з.time} (${ageText(з.age)}${withRoom ? tf('ui.hallOf', { room: room(з.room) }) : ''})`)
       .join(' / ');
   }
-  const хвост = withRoom ? tf('ui.hallOf', ', {room} hall', { room: залы[0] }) : '';
+  const хвост = withRoom ? tf('ui.hallOf', { room: залы[0] }) : '';
   const возрастыРазные = new Set(курс.lessons.map(з => JSON.stringify(з.age))).size > 1;
   if (!возрастыРазные) return курс.lessons.map(з => `${з.day} ${з.time}`).join(' / ') + хвост;
   const поДням = [];
@@ -79,7 +79,7 @@ export const KINDS = {
     attrs: { age: ageBuckets(c.age).join(' '),
                 day: [...new Set(c.lessons.map(з => з.day))].join(', '),
                 direction: c.direction },
-    action: t('ui.enrollLower', 'sign up'),
+    action: t('ui.enrollLower'),
   }),
   event: (e, ctx) => {
     const прошедшее = ctx.прошло(e);
@@ -97,9 +97,9 @@ export const KINDS = {
   },
   session: (s, ctx) => card({
     linkTo: linkHtml(ctx.href, href('camp', s.id)), heading: s.title,
-    linkLabel: tf('ui.sessionLink', 'Session “{title}”, {dates}', { title: s.title, dates: s.dates.caption }),
+    linkLabel: tf('ui.sessionLink', { title: s.title, dates: s.dates.caption }),
     meta: [esc(s.dates.caption), esc(s.dates.time), esc(ageText(s.age))].filter(Boolean).join(' · '),
-    image: s.image, frameCaption: tf('ui.sessionPoster', 'Poster of session “{title}”', { title: s.title }),
+    image: s.image, frameCaption: tf('ui.sessionPoster', { title: s.title }),
     sizes: ctx.sizes, up: ctx.up,
   }),
   post: (п, ctx) => card({
@@ -124,13 +124,13 @@ const filtersBlock = (б, ctx, list) => {
                          direction: t('ui.direction') });
   // Порядок дней приходит из словаря языка: сами дни лежат в данных, а их
   // череда — свойство языка, а не расписания.
-  const ПОРЯДОК_ДНЕЙ = () => t('ui.weekdayOrder', 'Mon, Tue, Wed, Thu, Fri, Sat, Sun').split(',').map(д => д.trim());
+  const ПОРЯДОК_ДНЕЙ = () => t('ui.weekdayOrder').split(',').map(д => д.trim());
   const values = группа => {
     if (группа === 'age') return ['3–5', '6–10', '11–16'];
     if (группа === 'day') return ПОРЯДОК_ДНЕЙ().filter(д => list.some(c => c.lessons.some(з => з.day === д)));
     return [...new Set(list.map(c => c.direction))]
       .map(id => ({ value: id, caption: ctx.name('direction', id) }))
-      .sort((a, b) => a.caption.localeCompare(b.caption, t('ui.collator', 'en')));
+      .sort((a, b) => a.caption.localeCompare(b.caption, t('ui.collator')));
   };
   const pairs = сп => сп.map(з => (typeof з === 'string' ? { value: з, caption: з } : з));
   return R('filters', {
@@ -194,7 +194,7 @@ linksBlock.секция = 'quicklinks';
 
 const ratingBlock = (б, ctx) => {
   const о = ctx.rating();
-  return R('rating', { ...о, routeLabel: tf('ui.newTab', '{name}, opens in a new tab', { name: о.button }) });
+  return R('rating', { ...о, routeLabel: tf('ui.newTab', { name: о.button }) });
 };
 
 const contactsBlock = (б, ctx) => {
@@ -203,7 +203,7 @@ const contactsBlock = (б, ctx) => {
   // Соцсетей может быть сколько угодно: каждая даёт свою строку в таблице
   // контактов и своё звено в строчном варианте.
   const соцсети = (к.social || []).map(с => ({
-    с, ссылка: R('social-link', { ...с, schoolNewTab: tf('ui.schoolNewTab', '{name} of the school, opens in a new tab', с) }),
+    с, ссылка: R('social-link', { ...с, schoolNewTab: tf('ui.schoolNewTab', с) }),
   }));
   const grid = R('contacts', {
     paragraphs: б.kind === 'paragraphs', address: к.address, phone,
@@ -216,7 +216,7 @@ const contactsBlock = (б, ctx) => {
   const [lat, lng] = к.coords;
   const карта = R('map', { lat, lng, caption: к.mapCaption, route: к.route });
   return grid + '\n' + (б.map === 'collapsed'
-    ? R('disclosure', { class: 'disclosure-control', caption: t('ui.mapOpen', 'Open on the map'), inner: карта })
+    ? R('disclosure', { class: 'disclosure-control', caption: t('ui.mapOpen'), inner: карта })
     : карта);
 };
 

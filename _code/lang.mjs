@@ -61,17 +61,18 @@ export function humanize(имя) {
  */
 export function t(ключ, запасной) {
   const v = словарь[ключ];
-  if (typeof v === 'string') return v;
+  // Пустое значение — «ещё не переведено»: слово берётся дальше по цепочке.
+  if (typeof v === 'string' && v !== '') return v;
   if (запасной != null) return запасной;
   return humanize(String(ключ).split('.').pop());
 }
 
 /**
- * Слово с подстановками: `tf('ui.sessionLink', 'Session “{title}”, {dates}', …)`. Имена
+ * Слово с подстановками: `tf('ui.sessionLink', …)`. Имена
  * в фигурных скобках — те же, что в словаре, поэтому переводчик видит, что
  * подставится, и может переставить местами.
  */
-export function tf(ключ, запасной, значения = {}) {
-  return String(t(ключ, запасной))
+export function tf(ключ, значения = {}) {
+  return String(t(ключ))
     .replace(/\{([^}]+)\}/g, (_, к) => (значения[к] == null ? '' : String(значения[к])));
 }

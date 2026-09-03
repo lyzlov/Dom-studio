@@ -35,13 +35,13 @@ function hint(путь, владелец) {
   // Баннер первого экрана берёт содержимое либо от ближайшего события, либо от
   // названной записи, либо ниоткуда. Слово «nearest» человеку не показывается.
   if (k === 'source' && путь.includes('banner'))
-    return { options: [{ value: 'nearest', caption: t('banner.nearest', 'the nearest event') },
+    return { options: [{ value: 'nearest', caption: t('banner.nearest') },
                        ...с.sources(),
-                       { value: '', caption: t('banner.none', 'nothing') }] };
+                       { value: '', caption: t('banner.none') }] };
   if (k === 'id' && путь.includes('banner')) {
     const вид = с.kinds().find(в => с.sourceOf(в) === (владелец.source || ''));
     const пары = вид ? с.pairs(вид.key) : [];
-    return { options: [{ value: '', caption: t('banner.any', 'any') }, ...пары] };
+    return { options: [{ value: '', caption: t('banner.any') }, ...пары] };
   }
   if (k === 'source') return { options: с.sources() };
 
@@ -191,7 +191,7 @@ export function fileField(путь) {
   const поле = el('input', 'ed-file');
   поле.type = 'file';
   поле.accept = '.svg,image/svg+xml,image/*';
-  const load = iconButton('import', t('media.upload', 'upload a frame'), () => поле.click());
+  const load = iconButton('import', t('media.upload'), () => поле.click());
   поле.addEventListener('change', async () => {
     const ф = поле.files && поле.files[0];
     поле.value = '';
@@ -235,7 +235,7 @@ function inFrame(html, ширина, дело) {
       const готова = д && д.readyState === 'complete' && д.body
         && д.documentElement.clientWidth > 0 && д.querySelector('main');
       if (!готова && попыток < 100) return setTimeout(check, 50);
-      if (!готова) { рамка.remove(); return problem(new Error(t('err.notRendered', 'the page did not render'))); }
+      if (!готова) { рамка.remove(); return problem(new Error(t('err.notRendered'))); }
       // Снимок ждёт картинки: без них у кадров нулевая высота и пустая заливка.
       setTimeout(async () => {
         try {
@@ -271,7 +271,7 @@ function sectionNames(путь) {
 
 export async function exportLayout(путь, блок = null, скачивать = false) {
   const html = pageForShot(путь);
-  if (!html) throw new Error(t('err.notBuilt', 'the page is not built yet'));
+  if (!html) throw new Error(t('err.notBuilt'));
   const имена = sectionNames(путь);
   const сдвиг = имена.length - (S.data.structure.pages[путь].blocks || []).filter(б => !б.hidden).length;
   const сделано = [];
@@ -297,17 +297,17 @@ export async function exportLayout(путь, блок = null, скачивать
 function showDiff(путь, отчёты) {
   const д = $('dialog');
   д.textContent = '';
-  д.append(el('h2', null, t('layout.compare', 'Layout check')));
+  д.append(el('h2', null, t('layout.compare')));
   if (!отчёты.length) {
-    д.append(el('p', null, t('layout.none', 'No layout yet — export one first.')));
+    д.append(el('p', null, t('layout.none')));
   } else {
     for (const о of отчёты) {
       д.append(el('p', null, `${о.устройство}: ${о.различия.length
-        ? `${t('layout.diffs', 'differences')}: ${о.различия.length}` : t('layout.same', 'matches')}`));
+        ? `${t('layout.diffs')}: ${о.различия.length}` : t('layout.same')}`));
       if (!о.различия.length) continue;
       const с = el('div', 'ed-files');
       о.различия.slice(0, 30).forEach(р => с.append(el('p', null,
-        р.kind === 'moved' ? `${р.name}: ${t('layout.moved', 'moved vertically')} ${р.from} \u2192 ${р.to}`
+        р.kind === 'moved' ? `${р.name}: ${t('layout.moved')} ${р.from} \u2192 ${р.to}`
           : `${р.name}: ${t('layout.' + р.kind)}`)));
       д.append(с);
     }
@@ -316,7 +316,7 @@ function showDiff(путь, отчёты) {
       .map(р => р.name)))];
     if (убранные.length) {
       const действия = el('div', 'ed-actions');
-      действия.append(button(`${t('layout.hideMissing', 'Hide blocks missing from the layout')}: ${убранные.length}`, () => {
+      действия.append(button(`${t('layout.hideMissing')}: ${убранные.length}`, () => {
         const оп = S.data.structure.pages[путь];
         const видимые = (оп.blocks || []).filter(б => !б.hidden);
         const сдвиг = sectionNames(путь).length - видимые.length;
@@ -331,7 +331,7 @@ function showDiff(путь, отчёты) {
     }
   }
   const низ = el('div', 'ed-actions');
-  низ.append(button(t('layout.close', 'Close'), () => д.close()));
+  низ.append(button(t('layout.close'), () => д.close()));
   д.append(низ);
   д.showModal();
 }
@@ -410,10 +410,10 @@ function imageField(владелец, ключ) {
 
   const accept = кадры => { владелец[ключ] = кадры[кадры.length - 1]; apply(true); };
   const поле = fileInput(false, ф => acceptFrames(ф, () => {}, т => { отчёт.textContent = т; })
-    .then(accept).catch(e => { отчёт.textContent = t('app.failed', 'Failed') + ': ' + e.message; }));
+    .then(accept).catch(e => { отчёт.textContent = t('app.failed') + ': ' + e.message; }));
   сетка.append(
-    actionTile('import', t('media.upload', 'upload a frame'), () => поле.click()),
-    actionTile('view-grid', t('media.pick', 'choose a frame'),
+    actionTile('import', t('media.upload'), () => поле.click()),
+    actionTile('view-grid', t('media.pick'),
       () => frameChoice(о => { владелец[ключ] = о; apply(true); })));
 
   блок.append(сетка, отчёт, поле);
@@ -430,7 +430,7 @@ export function frameTile({ основа, подпись, убрать, обло
   вид.draggable = false;
   плитка.title = подпись || '';
   плитка.append(вид);
-  if (обложка) плитка.append(el('span', 'ed-tile-mark', t('media.cover', 'cover')));
+  if (обложка) плитка.append(el('span', 'ed-tile-mark', t('media.cover')));
   плитка.append(iconButton('close', t('btn.delete'), () => ask(
     `${t('btn.delete')}: ${подпись || основа}`, t('btn.delete'), убрать)));
   return плитка;
@@ -473,7 +473,7 @@ export async function acceptFrames(файлы, наКадр, наОтчёт = ()
   const готово = [];
   for (let i = 0; i < файлы.length; i++) {
     const ф = файлы[i];
-    наОтчёт(`${t('media.slicing', 'Resizing…')} ${i + 1}/${файлы.length}`);
+    наОтчёт(`${t('media.slicing')} ${i + 1}/${файлы.length}`);
     const основа = freeBase(sectionFolder(), translit(ф.name.replace(/\.[^.]+$/, '')));
     const { файлы: куски, размер } = await resize(ф, основа, S.project.media);
     for (const [п, байты] of куски) S.media.set(п, байты);
@@ -508,7 +508,7 @@ const folderName = п => (lang() === 'en' ? humanize(п)
 export function frameChoice(готово) {
   const д = $('dialog');
   д.textContent = '';
-  д.append(el('h2', null, t('media.pick', 'choose a frame')));
+  д.append(el('h2', null, t('media.pick')));
 
   const строкаПапки = el('div', 'ed-inline');
   const выбор = el('select', 'ed-pick');
@@ -527,7 +527,7 @@ export function frameChoice(готово) {
 
   const showFrames = основы => {
     сетка.textContent = '';
-    if (!основы.length) { отчёт.textContent = t('media.empty', 'No frames in this folder.'); return; }
+    if (!основы.length) { отчёт.textContent = t('media.empty'); return; }
     отчёт.textContent = '';
     основы.forEach(о => {
       const b = el('button', 'ed-frame-button');
@@ -543,13 +543,13 @@ export function frameChoice(готово) {
   };
 
   const loadFolder = async () => {
-    отчёт.textContent = t('media.reading', 'Reading the list…');
+    отчёт.textContent = t('media.reading');
     try {
       showFrames(await frameCatalog(выбор.value, TARGETS()[TARGETS().length - 1], S.project.media));
     } catch {
       const свои = imageBases(S.data).filter(о => о.includes(`/${выбор.value}/`));
       showFrames(свои);
-      if (свои.length) отчёт.textContent = t('media.partial', 'Repository listing unavailable — showing frames already in use.');
+      if (свои.length) отчёт.textContent = t('media.partial');
     }
   };
   выбор.addEventListener('change', loadFolder);

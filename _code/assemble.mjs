@@ -8,7 +8,7 @@ import { buildBlock, buildElement, sessionTime, CONTENTS, PAGE_LEVEL, KINDS } fr
 import { t, tf } from './lang.mjs';
 
 /** Сумма со знаком валюты: знак объявлен в словаре языка. */
-const money = сумма => `${сумма}${t('ui.currency', ' $')}`;
+const money = сумма => `${сумма}${t('ui.currency')}`;
 
 export const substitute = (t, з) => String(t).replace(/\{([^}]+)\}/g, (_, k) => з[k] ?? '');
 
@@ -152,12 +152,12 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
                      т.single ? money(т.single) : '—',
                      т.packages.map(п => `${п.tableLabel} — ${money(п.price)}`).join(', ')]);
         return { columns: [t('ui.direction'), t('ui.planTrial'),
-                  t('ui.planSingle'), t('ui.planPackage', 'Package / module')], rows,
+                  t('ui.planSingle'), t('ui.planPackage')], rows,
                  widths: ['33.3333%', '16.6667%', '16.6667%', '33.3333%'],
                  headNoScope: true, note: prices.note };
       }
       if (б.source === 'camp.routine')
-        return { columns: [t('ui.time'), t('ui.whatHappens', 'What happens')], rows: camp.routine.rows,
+        return { columns: [t('ui.time'), t('ui.whatHappens')], rows: camp.routine.rows,
                  widths: ['22%', '78%'], note: camp.routine.note };
       throw new Error(`unknown table source: ${б.source}`);
     },
