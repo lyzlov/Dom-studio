@@ -1,21 +1,15 @@
 {
   "$comment": "The single source of facts. Prose and descriptions do not belong here.",
   "org": {
-    "title": "ДОМ",
-    "fullName": "ДОМ — школа архитектуры и искусства",
-    "slogan": "Школа архитектуры и искусства для детей",
     "legalEntity": null,
     "inn": null,
     "ogrn": null,
     "legalAddress": null
   },
   "contacts": {
-    "address": "Красногорск, посёлок Ильинское-Усово, ул. Архангельская, 11",
-    "place": "Школа ДОМ, Ильинское-Усово",
     "phone": "+7 991 740 70 10",
     "social": [
       {
-        "name": "Telegram",
         "icon": "telegram",
         "label": "t.me/layout_studio",
         "href": "https://t.me/layout_studio"
@@ -26,155 +20,119 @@
       55.770482,
       37.235447
     ],
-    "route": "https://yandex.ru/maps/-/CTwrrEzD",
-    "mapCaption": "Карта: школа ДОМ, улица Архангельская, 11"
+    "route": "https://yandex.ru/maps/-/CTwrrEzD"
   },
   "site": {
-    "address": "https://lyzlov.github.io/Dom-studio/",
+    "url": "https://lyzlov.github.io/Dom-studio/",
     "indexing": false
   },
   "rooms": [
     {
-      "id": "big",
-      "title": "Большой"
+      "id": "big"
     },
     {
-      "id": "small",
-      "title": "Малый"
+      "id": "small"
     }
   ],
   "directions": [
     {
-      "id": "courses",
-      "title": "Авторские курсы"
+      "id": "courses"
     },
     {
-      "id": "buro",
-      "title": "Бюро"
+      "id": "buro"
     },
     {
-      "id": "subscription",
-      "title": "Занятия по абонементу"
+      "id": "subscription"
     }
   ],
   "reviews": {
-    "rating": "5,0",
-    "caption": "68 оценок и 53 отзыва на Яндекс.Картах",
-    "link": "https://yandex.ru/maps/-/CTwrrEzD",
-    "button": "Читать отзывы"
+    "link": "https://yandex.ru/maps/-/CTwrrEzD"
   },
   "gallery": [
     {
-      "base": "_assets/media/space/studio-01",
-      "caption": "Фото школы, 1"
+      "base": "_assets/media/space/studio-01"
     },
     {
-      "base": "_assets/media/space/studio-02",
-      "caption": "Фото школы, 2"
+      "base": "_assets/media/space/studio-02"
     },
     {
-      "base": "_assets/media/space/studio-03",
-      "caption": "Фото школы, 3"
+      "base": "_assets/media/space/studio-03"
     },
     {
-      "base": "_assets/media/space/studio-04",
-      "caption": "Фото школы, 4"
+      "base": "_assets/media/space/studio-04"
     },
     {
-      "base": "_assets/media/space/studio-05",
-      "caption": "Фото школы, 5"
+      "base": "_assets/media/space/studio-05"
     },
     {
-      "base": "_assets/media/space/studio-06",
-      "caption": "Фото школы, 6"
+      "base": "_assets/media/space/studio-06"
     },
     {
-      "base": "_assets/media/space/studio-07",
-      "caption": "Фото школы, 7"
+      "base": "_assets/media/space/studio-07"
     },
     {
-      "base": "_assets/media/space/studio-08",
-      "caption": "Фото школы, 8"
+      "base": "_assets/media/space/studio-08"
     },
     {
-      "base": "_assets/media/space/studio-09",
-      "caption": "Фото школы, 9"
+      "base": "_assets/media/space/studio-09"
     },
     {
-      "base": "_assets/media/space/studio-10",
-      "caption": "Фото школы, 10"
+      "base": "_assets/media/space/studio-10"
     },
     {
-      "base": "_assets/media/space/studio-11",
-      "caption": "Фото школы, 11"
+      "base": "_assets/media/space/studio-11"
     },
     {
-      "base": "_assets/media/space/studio-12",
-      "caption": "Фото школы, 12"
+      "base": "_assets/media/space/studio-12"
     },
     {
-      "base": "_assets/media/space/studio-13",
-      "caption": "Фото школы, 13"
+      "base": "_assets/media/space/studio-13"
     },
     {
-      "base": "_assets/media/space/studio-14",
-      "caption": "Фото школы, 14"
+      "base": "_assets/media/space/studio-14"
     }
   ],
   "eventKinds": [
     {
-      "id": "master-klass",
-      "title": "Мастер-класс"
+      "id": "master-klass"
     },
     {
-      "id": "otkrytoe-zanyatie",
-      "title": "Открытое занятие"
+      "id": "otkrytoe-zanyatie"
     },
     {
-      "id": "vstrecha-s-arhitektorom",
-      "title": "Встреча с архитектором"
+      "id": "vstrecha-s-arhitektorom"
     },
     {
-      "id": "ekskursiya",
-      "title": "Экскурсия"
+      "id": "ekskursiya"
     },
     {
-      "id": "pokaz-rabot",
-      "title": "Показ работ"
+      "id": "pokaz-rabot"
     },
     {
-      "id": "otkrytyy-den",
-      "title": "Открытый день"
+      "id": "otkrytyy-den"
     }
   ],
   "sessionKinds": [
     {
-      "id": "istoricheskaya-smena",
-      "title": "Историческая смена"
+      "id": "istoricheskaya-smena"
     },
     {
-      "id": "biologicheskaya-smena",
-      "title": "Биологическая смена"
+      "id": "biologicheskaya-smena"
     },
     {
-      "id": "smena-buduschego",
-      "title": "Смена будущего"
+      "id": "smena-buduschego"
     },
     {
-      "id": "vkusnaya-smena",
-      "title": "Вкусная смена"
+      "id": "vkusnaya-smena"
     },
     {
-      "id": "letopisnaya-smena",
-      "title": "Летописная смена"
+      "id": "letopisnaya-smena"
     },
     {
-      "id": "fizicheskaya-smena",
-      "title": "Физическая смена"
+      "id": "fizicheskaya-smena"
     },
     {
-      "id": "inzhenernaya-smena",
-      "title": "Инженерная смена"
+      "id": "inzhenernaya-smena"
     }
   ]
 }

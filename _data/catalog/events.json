@@ -1,14 +1,11 @@
 [
   {
     "id": "knights",
-    "title": "Мастер-класс Рыцари круглого стола",
     "type": "master-klass",
     "date": {
       "from": "2026-02-20",
-      "to": "2026-02-20",
-      "caption": "20 февраля 2026"
+      "to": "2026-02-20"
     },
-    "place": "Школа ДОМ, Ильинское-Усово",
     "age": [
       {
         "min": 5,
@@ -21,14 +18,11 @@
   },
   {
     "id": "guests",
-    "title": "Приглашаем в гости",
     "type": "otkrytoe-zanyatie",
     "date": {
       "from": "2026-03-05",
-      "to": "2026-03-08",
-      "caption": "5 и 8 марта 2026"
+      "to": "2026-03-08"
     },
-    "place": "Школа ДОМ, Ильинское-Усово",
     "age": null,
     "curators": [],
     "price": null,
@@ -36,14 +30,11 @@
   },
   {
     "id": "belousov",
-    "title": "Встреча с архитектором Николаем Белоусовым",
     "type": "vstrecha-s-arhitektorom",
     "date": {
       "from": "2026-04-24",
-      "to": "2026-04-24",
-      "caption": "24 апреля 2026"
+      "to": "2026-04-24"
     },
-    "place": "Школа ДОМ, Ильинское-Усово",
     "age": [
       {
         "min": 11,
@@ -58,14 +49,11 @@
   },
   {
     "id": "march",
-    "title": "Экскурсия в МАРШ",
     "type": "ekskursiya",
     "date": {
       "from": "2026-06-04",
-      "to": "2026-06-04",
-      "caption": "4 июня 2026"
+      "to": "2026-06-04"
     },
-    "place": "МАРШ, Москва",
     "age": null,
     "curators": [],
     "price": null,
@@ -73,36 +61,29 @@
   },
   {
     "id": "showcase",
-    "title": "Экскурсия и показ работ учеников",
     "type": "pokaz-rabot",
     "date": {
       "from": "2026-06-11",
-      "to": "2026-06-13",
-      "caption": "11–13 июня 2026"
+      "to": "2026-06-13"
     },
-    "place": "Школа ДОМ, Ильинское-Усово",
     "age": null,
     "curators": [],
-    "price": "Бесплатно",
+    "price": 0,
     "image": "_assets/media/events/ev-13-parents"
   },
   {
     "id": "opendoor",
-    "title": "День открытых дверей",
     "type": "otkrytyy-den",
     "date": {
       "from": "2026-09-01",
-      "to": "2026-09-01",
-      "caption": "1 сентября 2026"
+      "to": "2026-09-01"
     },
-    "place": "Школа ДОМ, Ильинское-Усово",
     "age": [],
     "curators": [
       "olga-zinyukova",
       "regina-nazarova"
     ],
-    "price": "Бесплатно",
-    "image": "_assets/media/events/ev-06-opendoor",
-    "description": "Открытые занятия, знакомство с педагогами и мастерскими. Приходите всей семьёй."
+    "price": 0,
+    "image": "_assets/media/events/ev-06-opendoor"
   }
 ]

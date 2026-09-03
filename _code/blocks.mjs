@@ -42,6 +42,14 @@ export function card({ linkTo, heading, linkLabel, meta, subheading, description
   });
 }
 
+/**
+ * Дни недели: череда машинная и живёт в коде, слово — в словаре языка. Раньше
+ * череда лежала словами в словаре, и совпадение с данными держалось на том,
+ * что язык данных и язык словаря один. У второго языка так не выйдет.
+ */
+export const ДНИ = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+export const день = код => t('ui.weekday.' + код);
+
 /* #region Время занятий */
 export function sessionTime(курс, { withRoom, room = x => x }) {
   const ручная = withRoom ? курс.timeLabel : курс.timeLabelCard;
@@ -49,12 +57,12 @@ export function sessionTime(курс, { withRoom, room = x => x }) {
   const залы = [...new Set(курс.lessons.map(з => room(з.room)))];
   if (залы.length > 1) {
     return курс.lessons
-      .map(з => `${з.day} ${з.time} (${ageText(з.age)}${withRoom ? tf('ui.hallOf', { room: room(з.room) }) : ''})`)
+      .map(з => `${день(з.day)} ${з.time} (${ageText(з.age)}${withRoom ? tf('ui.hallOf', { room: room(з.room) }) : ''})`)
       .join(' / ');
   }
   const хвост = withRoom ? tf('ui.hallOf', { room: залы[0] }) : '';
   const возрастыРазные = new Set(курс.lessons.map(з => JSON.stringify(з.age))).size > 1;
-  if (!возрастыРазные) return курс.lessons.map(з => `${з.day} ${з.time}`).join(' / ') + хвост;
+  if (!возрастыРазные) return курс.lessons.map(з => `${день(з.day)} ${з.time}`).join(' / ') + хвост;
   const поДням = [];
   for (const з of курс.lessons) {
     let г = поДням.find(x => x.day === з.day);
@@ -62,7 +70,7 @@ export function sessionTime(курс, { withRoom, room = x => x }) {
     г.слоты.push(з);
   }
   return поДням.map(г => г.слоты
-    .map((з, i) => `${i ? '' : г.day + ' '}${з.time}${withRoom ? ` (${ageText(з.age)})` : ''}`)
+    .map((з, i) => `${i ? '' : день(г.day) + ' '}${з.time}${withRoom ? ` (${ageText(з.age)})` : ''}`)
     .join(' / ')).join('; ') + хвост;
 }
 
@@ -122,12 +130,12 @@ const textBlock = (б, ctx) => innerBlocks(ctx.text(б.text), ctx.href);
 const filtersBlock = (б, ctx, list) => {
   const ПОДПИСИ = () => ({ age: t('ui.age'), day: t('ui.day'),
                          direction: t('ui.direction') });
-  // Порядок дней приходит из словаря языка: сами дни лежат в данных, а их
-  // череда — свойство языка, а не расписания.
-  const ПОРЯДОК_ДНЕЙ = () => t('ui.weekdayOrder').split(',').map(д => д.trim());
   const values = группа => {
     if (группа === 'age') return ['3–5', '6–10', '11–16'];
-    if (группа === 'day') return ПОРЯДОК_ДНЕЙ().filter(д => list.some(c => c.lessons.some(з => з.day === д)));
+    // Отбор идёт по коду дня, а показывается слово: у отбора машинное значение,
+    // у подписи — язык.
+    if (группа === 'day') return ДНИ.filter(д => list.some(c => c.lessons.some(з => з.day === д)))
+      .map(д => ({ value: д, caption: день(д) }));
     return [...new Set(list.map(c => c.direction))]
       .map(id => ({ value: id, caption: ctx.name('direction', id) }))
       .sort((a, b) => a.caption.localeCompare(b.caption, t('ui.collator')));

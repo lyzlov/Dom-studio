@@ -1,85 +1,57 @@
 {
   "$comment": "Price plans. The order of the list is the order of the rows in the price table.",
-  "note": "Пропуск по болезни — перерасчёт по справке; пропуск по другой причине — можно посетить открытый мастер-класс вместо занятия без потери оплаты; при досрочном прекращении — возврат за ещё не начавшиеся занятия.",
   "plans": [
     {
       "id": "subscription",
-      "title": "Занятия по абонементу",
       "trial": 1200,
       "single": 1800,
       "packages": [
         {
-          "title": "Абонемент на 6 занятий",
-          "price": 9600,
-          "tableLabel": "6 занятий"
+          "price": 9600
         },
         {
-          "title": "Абонемент на 12 занятий",
-          "price": 15600,
-          "short": "на 12 занятий",
-          "tableLabel": "12 занятий"
+          "price": 15600
         }
-      ],
-      "tableLabel": "Занятия по абонементу"
+      ]
     },
     {
       "id": "courses-robotics",
-      "title": "Авторские курсы · Робототехника",
       "trial": null,
       "single": 2500,
       "packages": [
         {
-          "title": "Модуль 6 недель",
-          "price": 13200,
-          "tableLabel": "6 нед"
+          "price": 13200
         },
         {
-          "title": "Модуль 5 недель",
-          "price": 11600,
-          "short": "5 недель",
-          "tableLabel": "5 нед"
+          "price": 11600
         }
-      ],
-      "tableLabel": "Робототехника"
+      ]
     },
     {
       "id": "courses",
-      "title": "Авторские курсы",
       "trial": null,
       "single": 1800,
       "packages": [
         {
-          "title": "Модуль 6 недель",
-          "price": 9600,
-          "tableLabel": "6 нед"
+          "price": 9600
         },
         {
-          "title": "Модуль 5 недель",
-          "price": 8500,
-          "short": "5 недель",
-          "tableLabel": "5 нед"
+          "price": 8500
         }
-      ],
-      "tableLabel": "Архитектура игр"
+      ]
     },
     {
       "id": "buro",
-      "title": "Бюро",
       "trial": 2000,
       "single": null,
       "packages": [
         {
-          "title": "1 семестр (сентябрь–декабрь, 17 недель)",
-          "price": 28000,
-          "tableLabel": "1 семестр (17 нед)"
+          "price": 28000
         },
         {
-          "title": "2 семестр (январь–май, 19 недель)",
-          "price": 31000,
-          "tableLabel": "2 семестр (19 нед)"
+          "price": 31000
         }
-      ],
-      "tableLabel": "Бюро"
+      ]
     }
   ]
 }

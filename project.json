@@ -7,7 +7,7 @@
     "site": "_data/site.json",
     "archive": "_data/archive.json",
     "catalog": "_data/catalog/{name}.json",
-    "texts": "_data/text/",
+    "texts": "_lang/{lang}/text/",
     "pages": "_data/pages.json",
     "templates": "_data/templates.json",
     "navigation": "_data/navigation.json",

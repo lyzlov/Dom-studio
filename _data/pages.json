@@ -27,7 +27,7 @@
     "blocks": [
       {
         "type": "text",
-        "text": "_data/text/pages/privacy.html"
+        "text": "pages/privacy"
       }
     ],
     "wrapper": "doc"
@@ -43,7 +43,7 @@
     "blocks": [
       {
         "type": "text",
-        "text": "_data/text/pages/offer.html"
+        "text": "pages/offer"
       }
     ],
     "wrapper": "doc"
@@ -60,17 +60,17 @@
       {
         "type": "text",
         "id": "manifest",
-        "text": "_data/text/pages/principles-manifest.html"
+        "text": "pages/principles-manifest"
       },
       {
         "type": "text",
         "id": "sources",
-        "text": "_data/text/pages/principles-sources.html"
+        "text": "pages/principles-sources"
       },
       {
         "type": "text",
         "id": "practice",
-        "text": "_data/text/pages/principles-practice.html"
+        "text": "pages/principles-practice"
       }
     ]
   },
@@ -164,7 +164,7 @@
       {
         "type": "text",
         "id": "space",
-        "text": "_data/text/pages/studio-space.html"
+        "text": "pages/studio-space"
       },
       {
         "type": "rating",
@@ -209,21 +209,21 @@
             "key": "format",
             "blockType": {
               "type": "text",
-              "text": "_data/text/pages/camp-format.html"
+              "text": "pages/camp-format"
             }
           },
           {
             "key": "age",
             "blockType": {
               "type": "text",
-              "text": "_data/text/pages/camp-age.html"
+              "text": "pages/camp-age"
             }
           },
           {
             "key": "price",
             "blockType": {
               "type": "text",
-              "text": "_data/text/pages/camp-price.html"
+              "text": "pages/camp-price"
             }
           }
         ]
@@ -254,21 +254,21 @@
             "key": "format",
             "blockType": {
               "type": "text",
-              "text": "_data/text/pages/events-format.html"
+              "text": "pages/events-format"
             }
           },
           {
             "key": "age",
             "blockType": {
               "type": "text",
-              "text": "_data/text/pages/events-age.html"
+              "text": "pages/events-age"
             }
           },
           {
             "key": "price",
             "blockType": {
               "type": "text",
-              "text": "_data/text/pages/events-price.html"
+              "text": "pages/events-price"
             }
           }
         ]
@@ -312,21 +312,21 @@
             "key": "format",
             "blockType": {
               "type": "text",
-              "text": "_data/text/pages/courses-format.html"
+              "text": "pages/courses-format"
             }
           },
           {
             "key": "age",
             "blockType": {
               "type": "text",
-              "text": "_data/text/pages/courses-age.html"
+              "text": "pages/courses-age"
             }
           },
           {
             "key": "types",
             "blockType": {
               "type": "text",
-              "text": "_data/text/pages/courses-types.html"
+              "text": "pages/courses-types"
             }
           },
           {

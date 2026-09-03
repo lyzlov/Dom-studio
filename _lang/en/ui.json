@@ -27,6 +27,7 @@
   "ui.formLesson": "Form Lesson",
   "ui.formNotWired": "Form Not Wired",
   "ui.formSubmit": "Form Submit",
+  "ui.free": "Free",
   "ui.galleryGrid": "Gallery Grid",
   "ui.galleryModes": "Gallery Modes",
   "ui.galleryNext": "Gallery Next",
@@ -72,6 +73,12 @@
   "ui.sortBy": "Sort By",
   "ui.sorted": "Sorted",
   "ui.time": "Time",
-  "ui.weekdayOrder": "Mon, Tue, Wed, Thu, Fri, Sat, Sun",
+  "ui.weekday.fri": "Fri",
+  "ui.weekday.mon": "Mon",
+  "ui.weekday.sat": "Sat",
+  "ui.weekday.sun": "Sun",
+  "ui.weekday.thu": "Thu",
+  "ui.weekday.tue": "Tue",
+  "ui.weekday.wed": "Wed",
   "ui.whatHappens": "What happens"
 }

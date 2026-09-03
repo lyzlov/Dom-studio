@@ -1,0 +1,22 @@
+{
+  "$comment": "English words of the same subject. Empty value means: not translated yet.",
+  "belousov#date.caption": "",
+  "belousov#place": "",
+  "belousov#title": "",
+  "guests#date.caption": "",
+  "guests#place": "",
+  "guests#title": "",
+  "knights#date.caption": "",
+  "knights#place": "",
+  "knights#title": "",
+  "march#date.caption": "",
+  "march#place": "",
+  "march#title": "",
+  "opendoor#date.caption": "",
+  "opendoor#description": "",
+  "opendoor#place": "",
+  "opendoor#title": "",
+  "showcase#date.caption": "",
+  "showcase#place": "",
+  "showcase#title": ""
+}

@@ -489,6 +489,99 @@
     ],
     "form": [
       "caption"
+    ],
+    "site": [
+      "title",
+      "fullName",
+      "slogan",
+      "legalEntity",
+      "legalAddress",
+      "address",
+      "place",
+      "mapCaption",
+      "name",
+      "caption",
+      "button",
+      "rating"
+    ],
+    "archive": [
+      "title",
+      "heading",
+      "name",
+      "role",
+      "bio",
+      "place",
+      "description",
+      "caption",
+      "question",
+      "answer",
+      "note",
+      "date",
+      "readTime",
+      "timeLabel"
+    ],
+    "courses": [
+      "title",
+      "timeLabel",
+      "timeLabelCard"
+    ],
+    "events": [
+      "title",
+      "place",
+      "caption",
+      "description"
+    ],
+    "camp": [
+      "title",
+      "place",
+      "description",
+      "caption",
+      "note"
+    ],
+    "team": [
+      "name",
+      "role",
+      "bio"
+    ],
+    "faq": [
+      "question",
+      "answer"
+    ],
+    "services": [
+      "title",
+      "description"
+    ],
+    "universities": [
+      "title",
+      "subheading",
+      "description",
+      "note"
+    ],
+    "prices": [
+      "note",
+      "title",
+      "tableLabel",
+      "short"
+    ],
+    "blog": [
+      "heading",
+      "date",
+      "readTime"
     ]
+  },
+  "enums": {
+    "$comment": "Machine value sets that are not data: the values live here, the words in the language file under <words>.<value>.",
+    "day": {
+      "values": [
+        "mon",
+        "tue",
+        "wed",
+        "thu",
+        "fri",
+        "sat",
+        "sun"
+      ],
+      "words": "ui.weekday"
+    }
   }
 }

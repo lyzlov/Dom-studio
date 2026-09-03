@@ -9,6 +9,8 @@ const R = (имя, данные) => render(имя, данные).replace(/\n$/, 
 
 /** Сумма со знаком валюты: знак объявлен в словаре языка. */
 const money = сумма => `${сумма}${t('ui.currency')}`;
+// Цена машинная: ноль — это «бесплатно», и словом его делает словарь языка.
+const цена = з => (з == null || з === '' ? '' : (Number(з) === 0 ? t('ui.free') : money(з)));
 
 /* #region Вспомогательное */
 export { esc };
@@ -63,7 +65,7 @@ export function ageBuckets(промежутки) {
 
 /* #region Каркас: head, шапка, подвал, модальное окно */
 function head({ site, title, description, путь, depth, image }) {
-  const abs = p => site.site.address.replace(/\/$/, '') + '/' + p.replace(/(^|\/)index\.html$/, '$1');
+  const abs = p => site.site.url.replace(/\/$/, '') + '/' + p.replace(/(^|\/)index\.html$/, '$1');
   return R('head', {
     u: up(depth), title, description,
     canonical: abs(путь),
@@ -230,7 +232,7 @@ export const HEAD_FIELDS = {
     [t('ui.age'), esc(ageText(e.age))],
     [t('ui.place'), esc(e.place)],
     [e.curators.length > 1 ? t('ui.curators') : t('ui.curator'), esc(ctx.person(e.curators))],
-    [t('ui.price'), esc(e.price)],
+    [t('ui.price'), esc(цена(e.price))],
   ],
   post: () => [],
   session: (s, ctx) => [
@@ -239,7 +241,7 @@ export const HEAD_FIELDS = {
     [t('ui.age'), esc(ageText(s.age))],
     [t('ui.place'), esc(s.place)],
     [t('ui.curator'), esc(ctx.person(s.curator))],
-    [t('ui.price'), esc(s.price)],
+    [t('ui.price'), esc(цена(s.price))],
   ],
 };
 

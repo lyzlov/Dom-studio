@@ -1,7 +1,6 @@
 [
   {
     "id": "architecture",
-    "title": "Архитектура",
     "direction": "subscription",
     "age": [
       {
@@ -14,7 +13,7 @@
     "image": "_assets/media/courses/course-arch-46",
     "lessons": [
       {
-        "day": "Вс",
+        "day": "sun",
         "time": "13:00",
         "age": [
           {
@@ -28,7 +27,6 @@
   },
   {
     "id": "culture-code-4-6",
-    "title": "Культурный код",
     "direction": "buro",
     "age": [
       {
@@ -41,7 +39,7 @@
     "image": "_assets/media/courses/course-timeline",
     "lessons": [
       {
-        "day": "Чт",
+        "day": "thu",
         "time": "18:00",
         "age": [
           {
@@ -52,7 +50,7 @@
         "room": "small"
       },
       {
-        "day": "Сб",
+        "day": "sat",
         "time": "11:00",
         "age": [
           {
@@ -66,7 +64,6 @@
   },
   {
     "id": "culture-code-7-10",
-    "title": "Культурный код",
     "direction": "buro",
     "age": [
       {
@@ -79,7 +76,7 @@
     "image": "_assets/media/courses/course-timeline",
     "lessons": [
       {
-        "day": "Пт",
+        "day": "fri",
         "time": "16:00",
         "age": [
           {
@@ -90,7 +87,7 @@
         "room": "big"
       },
       {
-        "day": "Сб",
+        "day": "sat",
         "time": "13:00",
         "age": [
           {
@@ -100,12 +97,10 @@
         ],
         "room": "big"
       }
-    ],
-    "timeLabel": "Пт 16:00 (I поток) / Сб 13:00 (II поток), Большой зал"
+    ]
   },
   {
     "id": "drawing-academic",
-    "title": "Академический рисунок",
     "direction": "subscription",
     "age": [
       {
@@ -122,7 +117,7 @@
     "image": "_assets/media/courses/course-neformat",
     "lessons": [
       {
-        "day": "Вт",
+        "day": "tue",
         "time": "16:00",
         "age": [
           {
@@ -133,7 +128,7 @@
         "room": "big"
       },
       {
-        "day": "Вт",
+        "day": "tue",
         "time": "18:00",
         "age": [
           {
@@ -147,7 +142,6 @@
   },
   {
     "id": "game-arch",
-    "title": "Архитектура игр",
     "direction": "courses",
     "age": [
       {
@@ -160,7 +154,7 @@
     "image": "_assets/media/courses/course-arch-710",
     "lessons": [
       {
-        "day": "Вс",
+        "day": "sun",
         "time": "18:00",
         "age": [
           {
@@ -174,7 +168,6 @@
   },
   {
     "id": "graphics",
-    "title": "Графика",
     "direction": "subscription",
     "age": [
       {
@@ -191,7 +184,7 @@
     "image": "_assets/media/courses/course-graphics",
     "lessons": [
       {
-        "day": "Пн",
+        "day": "mon",
         "time": "16:00",
         "age": [
           {
@@ -202,7 +195,7 @@
         "room": "big"
       },
       {
-        "day": "Пн",
+        "day": "mon",
         "time": "18:00",
         "age": [
           {
@@ -213,7 +206,7 @@
         "room": "big"
       },
       {
-        "day": "Вс",
+        "day": "sun",
         "time": "15:30",
         "age": [
           {
@@ -227,7 +220,6 @@
   },
   {
     "id": "painting",
-    "title": "Живопись",
     "direction": "subscription",
     "age": [
       {
@@ -244,7 +236,7 @@
     "image": "_assets/media/courses/course-artcluster",
     "lessons": [
       {
-        "day": "Чт",
+        "day": "thu",
         "time": "16:00",
         "age": [
           {
@@ -255,7 +247,7 @@
         "room": "big"
       },
       {
-        "day": "Чт",
+        "day": "thu",
         "time": "18:00",
         "age": [
           {
@@ -266,7 +258,7 @@
         "room": "big"
       },
       {
-        "day": "Вс",
+        "day": "sun",
         "time": "11:00",
         "age": [
           {
@@ -280,7 +272,6 @@
   },
   {
     "id": "risovashki",
-    "title": "Рисовашки",
     "direction": "subscription",
     "age": [
       {
@@ -293,7 +284,7 @@
     "image": "_assets/media/courses/course-risovashki",
     "lessons": [
       {
-        "day": "Вс",
+        "day": "sun",
         "time": "11:00",
         "age": [
           {
@@ -307,7 +298,6 @@
   },
   {
     "id": "robotics",
-    "title": "Робототехника",
     "direction": "courses",
     "age": [
       {
@@ -324,7 +314,7 @@
     "image": "_assets/media/courses/course-arch-46",
     "lessons": [
       {
-        "day": "Сб",
+        "day": "sat",
         "time": "11:00",
         "age": [
           {
@@ -335,7 +325,7 @@
         "room": "big"
       },
       {
-        "day": "Сб",
+        "day": "sat",
         "time": "13:00",
         "age": [
           {
@@ -349,7 +339,6 @@
   },
   {
     "id": "sculpture",
-    "title": "Скульптура",
     "direction": "subscription",
     "age": [
       {
@@ -362,7 +351,7 @@
     "image": "_assets/media/courses/course-sculpture",
     "lessons": [
       {
-        "day": "Вс",
+        "day": "sun",
         "time": "13:00",
         "age": [
           {
@@ -376,7 +365,6 @@
   },
   {
     "id": "toddler-creative",
-    "title": "Малыши и креатив",
     "direction": "subscription",
     "age": [
       {
@@ -389,7 +377,7 @@
     "image": null,
     "lessons": [
       {
-        "day": "Ср",
+        "day": "wed",
         "time": "18:00",
         "age": [
           {
@@ -403,7 +391,6 @@
   },
   {
     "id": "visualization",
-    "title": "Архитектура. Визуализация",
     "direction": "buro",
     "age": [
       {
@@ -416,7 +403,7 @@
     "image": "_assets/media/courses/course-graphics",
     "lessons": [
       {
-        "day": "Ср",
+        "day": "wed",
         "time": "16:00",
         "age": [
           {
@@ -427,7 +414,7 @@
         "room": "big"
       },
       {
-        "day": "Сб",
+        "day": "sat",
         "time": "15:30",
         "age": [
           {
@@ -438,7 +425,7 @@
         "room": "big"
       },
       {
-        "day": "Сб",
+        "day": "sat",
         "time": "18:00",
         "age": [
           {
@@ -448,7 +435,6 @@
         ],
         "room": "big"
       }
-    ],
-    "timeLabel": "Ср 16:00 (I поток) / Сб 15:30 и 18:00 (II поток), Большой зал"
+    ]
   }
 ]

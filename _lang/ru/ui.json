@@ -27,6 +27,7 @@
   "ui.formLesson": "Занятие",
   "ui.formNotWired": "Заявка пока не отправляется — форма ещё не подключена. Напишите нам в ",
   "ui.formSubmit": "Отправить заявку",
+  "ui.free": "Бесплатно",
   "ui.galleryGrid": "Плитка",
   "ui.galleryModes": "Вид галереи",
   "ui.galleryNext": "Следующий кадр",
@@ -72,6 +73,12 @@
   "ui.sortBy": "Сортировать по: ",
   "ui.sorted": "Расписание отсортировано по колонке «{column}».",
   "ui.time": "Время",
-  "ui.weekdayOrder": "Пн, Вт, Ср, Чт, Пт, Сб, Вс",
+  "ui.weekday.fri": "Пт",
+  "ui.weekday.mon": "Пн",
+  "ui.weekday.sat": "Сб",
+  "ui.weekday.sun": "Вс",
+  "ui.weekday.thu": "Чт",
+  "ui.weekday.tue": "Вт",
+  "ui.weekday.wed": "Ср",
   "ui.whatHappens": "Что происходит"
 }

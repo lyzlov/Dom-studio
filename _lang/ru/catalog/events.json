@@ -1,0 +1,22 @@
+{
+  "$comment": "Words of _data/catalog/events.json in Russian. Key: record and path to the field.",
+  "belousov#date.caption": "24 апреля 2026",
+  "belousov#place": "Школа ДОМ, Ильинское-Усово",
+  "belousov#title": "Встреча с архитектором Николаем Белоусовым",
+  "guests#date.caption": "5 и 8 марта 2026",
+  "guests#place": "Школа ДОМ, Ильинское-Усово",
+  "guests#title": "Приглашаем в гости",
+  "knights#date.caption": "20 февраля 2026",
+  "knights#place": "Школа ДОМ, Ильинское-Усово",
+  "knights#title": "Мастер-класс Рыцари круглого стола",
+  "march#date.caption": "4 июня 2026",
+  "march#place": "МАРШ, Москва",
+  "march#title": "Экскурсия в МАРШ",
+  "opendoor#date.caption": "1 сентября 2026",
+  "opendoor#description": "Открытые занятия, знакомство с педагогами и мастерскими. Приходите всей семьёй.",
+  "opendoor#place": "Школа ДОМ, Ильинское-Усово",
+  "opendoor#title": "День открытых дверей",
+  "showcase#date.caption": "11–13 июня 2026",
+  "showcase#place": "Школа ДОМ, Ильинское-Усово",
+  "showcase#title": "Экскурсия и показ работ учеников"
+}

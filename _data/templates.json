@@ -7,7 +7,7 @@
       {
         "type": "text",
         "id": "format",
-        "text": "_data/text/courses/{id}.html"
+        "text": "courses/{id}"
       }
     ],
     "folder": "courses"
@@ -18,7 +18,7 @@
     "blocks": [
       {
         "type": "text",
-        "text": "_data/text/events/{id}.html"
+        "text": "events/{id}"
       }
     ],
     "folder": "events"
@@ -29,7 +29,7 @@
     "blocks": [
       {
         "type": "text",
-        "text": "_data/text/camp/{id}.html"
+        "text": "camp/{id}"
       },
       {
         "type": "table",
@@ -48,7 +48,7 @@
     "blocks": [
       {
         "type": "text",
-        "text": "_data/text/blog/{id}.html"
+        "text": "blog/{id}"
       }
     ]
   }

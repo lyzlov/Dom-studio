@@ -110,6 +110,24 @@ const fetchJSON = async путь => {
  * Устройство страниц и их слова читаются раздельно и сливаются: дальше редактор
  * работает с одним объектом, а разделение живёт только на диске.
  */
+async function сСловами(имя, путь) {
+  let подписи = {};
+  try { подписи = await fetchJSON(путьСлов(имя)); } catch { подписи = {}; }
+  S.wordsComment.set(имя, подписи.$comment || '');
+  return mergeCaptions(await fetchJSON(путь), подписи);
+}
+
+/**
+ * Обратный ход: данные без слов и слова отдельно — ровно так, как они лежат на
+ * диске. Поля со словами объявлены по имени файла, а не по пути к нему.
+ */
+function разделить(имя, о) {
+  const свои = splitCaptions(о, captionFields(S.data.types, имя.split('/').pop()));
+  const по = { $comment: S.wordsComment.get(имя) || '' };
+  Object.keys(свои.подписи).sort().forEach(к => { по[к] = свои.подписи[к]; });
+  return { данные: свои.структура, подписи: по };
+}
+
 async function структураСПодписями(types) {
   const из = {};
   for (const файл of ФАЙЛЫ_СТРУКТУРЫ) {
@@ -163,10 +181,10 @@ export async function load() {
   step(t('load.data'));
   const catalog = {};
   for (const имя of catalogNames(types))
-    catalog[имя] = await fetchJSON(FILES().catalog.replace('{name}', имя));
+    catalog[имя] = await сСловами(`catalog/${имя}`, FILES().catalog.replace('{name}', имя));
   S.data = {
-    site: await fetchJSON(FILES().site),
-    archive: FILES().archive ? await fetchJSON(FILES().archive) : { items: [] },
+    site: await сСловами('site', FILES().site),
+    archive: FILES().archive ? await сСловами('archive', FILES().archive) : { items: [] },
     catalog,
     structure: await структураСПодписями(types),
     types,
@@ -260,7 +278,9 @@ function buildScript() {
 
 function build(повтор = false) {
   S.requested = new Set();
-  const text = п => {
+  // Текст назван именем; путь до него — дело языка, и складывается здесь.
+  const text = имя => {
+    const п = путьФайла('texts') + имя + '.html';
     S.requested.add(п);
     return S.texts.has(п) ? S.texts.get(п) : null;
   };
@@ -432,8 +452,8 @@ function fileContents() {
   // что и при чтении, только в обратную сторону.
   const делённая = разделитьСтруктуру();
   return {
-    site: () => J(S.data.site),
-    archive: () => J(S.data.archive),
+    site: () => J(разделить('site', S.data.site).данные),
+    archive: () => J(разделить('archive', S.data.archive).данные),
     pages: () => J(делённая.структура.pages),
     templates: () => J(делённая.структура.templates),
     navigation: () => J(делённая.структура.navigation),
@@ -480,8 +500,13 @@ function changes() {
   // Слова кода сайта: сверяются, только если словарь прочитан — иначе пустой
   // словарь выглядел бы правкой, стирающей файл.
   if (S.sources.has(путьСлов('ui'))) compare(путьСлов('ui'), J(S.siteWords));
-  for (const имя of catalogNames(S.data.types))
-    compare(FILES().catalog.replace('{name}', имя), J(S.data.catalog[имя]));
+  for (const имя of catalogNames(S.data.types)) {
+    const свои = разделить(`catalog/${имя}`, S.data.catalog[имя]);
+    compare(FILES().catalog.replace('{name}', имя), J(свои.данные));
+    compare(путьСлов(`catalog/${имя}`), J(свои.подписи));
+  }
+  for (const имя of ['site', 'archive'])
+    compare(путьСлов(имя), J(разделить(имя, S.data[имя]).подписи));
   compare(МАНИФЕСТ, J(S.project));
   for (const [путь, содержимое] of S.texts) compare(путь, содержимое);
   for (const [путь, байты] of S.media) compare(путь, байты);
@@ -1734,7 +1759,10 @@ function sourcesHelp() {
   // Слова показываются по файлам, а не образцом пути: человек ищет то, что
   // лежит на диске. Названы они своим предметом — тем же именем, что и файл
   // данных, слова которого в них лежат; какие именно это слова, говорит папка.
-  for (const имя of [...ФАЙЛЫ_СТРУКТУРЫ, 'ui']) строки.push([имя, путьСлов(имя), true, 'words']);
+  for (const имя of [...ФАЙЛЫ_СТРУКТУРЫ, 'site', 'archive', 'ui'])
+    строки.push([имя, путьСлов(имя), true, 'words']);
+  for (const имя of catalogNames(S.data.types))
+    строки.push([имя, путьСлов(`catalog/${имя}`), true, 'words']);
   for (const имя of ['project', 'types', 'tokens']) строки.push([имя, путьСлов(имя), false, 'words']);
   const м = S.project.media || {};
   if (м.folder) строки.push(['media', м.folder, true]);
@@ -2611,7 +2639,7 @@ function fileSection(путь) {
       || String(x.data).startsWith(`catalog.${имя}.`));
     return в ? в.plural : имя;
   }
-  if (путь.startsWith(FILES().texts)) return t('files.texts');
+  if (путь.startsWith(путьФайла('texts'))) return t('files.texts');
   if (путь.startsWith(S.project.media.folder)) return t('files.images');
   if (путь.startsWith(layouts().folder)) return t('files.layouts');
   if (путь.startsWith('_data/')) return t('files.structure');

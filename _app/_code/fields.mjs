@@ -6,6 +6,7 @@
  */
 
 import { t, humanize, lang } from './locale.mjs';
+import { t as словоСайта } from '../../_code/lang.mjs';
 import { fieldRow, iconButton, icon, recordName, TECHNICAL } from './form.mjs';
 import { imageBases } from '../../_code/assemble.mjs';
 import { resize, frameCatalog, translit } from './media.mjs';
@@ -44,6 +45,12 @@ function hint(путь, владелец) {
     return { options: [{ value: '', caption: t('banner.any') }, ...пары] };
   }
   if (k === 'source') return { options: с.sources() };
+
+  // Набор машинных значений, объявленный в словаре устройства: слова к нему
+  // берутся из словаря языка сайта, а не пишутся в редакторе.
+  const набор = (S.data.types.enums || {})[k];
+  if (набор && Array.isArray(набор.values))
+    return { options: набор.values.map(з => ({ value: з, caption: словоСайта(`${набор.words}.${з}`) })) };
 
   const вид = S.recordKind;
   if (вид) {

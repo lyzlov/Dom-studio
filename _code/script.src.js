@@ -240,7 +240,9 @@
   });
 
   /* #region Таблица расписания */
-  var WEEKDAY_ORDER = T("weekdayOrder").split(",").map(function (д) { return д.trim(); });
+  /* Череда дней машинная: строка сортируется по коду дня, а показывает слово.
+     Слово приходит из словаря вместе со страницей. */
+  var WEEKDAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
   function weekdayIndex(day) {
     var i = WEEKDAY_ORDER.indexOf(day);
@@ -253,7 +255,7 @@
   }
 
   function compareRows(a, b, key) {
-    if (key === "day") return weekdayIndex(a.day) - weekdayIndex(b.day);
+    if (key === "day") return weekdayIndex(a.dayId) - weekdayIndex(b.dayId);
     if (key === "age") return firstNumber(a.age) - firstNumber(b.age);
     return (a[key] || "").toString().localeCompare((b[key] || "").toString(), "ru");
   }
@@ -286,7 +288,7 @@
       var i = 0;
       while (i < data.length) {
         var runLen = 1;
-        while (i + runLen < data.length && data[i + runLen].day === data[i].day) runLen++;
+        while (i + runLen < data.length && data[i + runLen].dayId === data[i].dayId) runLen++;
         for (var j = 0; j < runLen; j++) {
           var r = data[i + j];
           var dayCell = j === 0 ? '<td class="cell-day" rowspan="' + runLen + '">' + r.day + "</td>" : "";

@@ -4,7 +4,7 @@
  */
 
 import { entityPage, page, sectionHead, form, priceLine, isPast, ageText } from './render.mjs';
-import { buildBlock, buildElement, sessionTime, CONTENTS, PAGE_LEVEL, KINDS } from './blocks.mjs';
+import { buildBlock, buildElement, sessionTime, день, CONTENTS, PAGE_LEVEL, KINDS } from './blocks.mjs';
 import { t, tf } from './lang.mjs';
 
 /** Сумма со знаком валюты: знак объявлен в словаре языка. */
@@ -157,7 +157,8 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
                  headNoScope: true, note: prices.note };
       }
       if (б.source === 'camp.routine')
-        return { columns: [t('ui.time'), t('ui.whatHappens')], rows: camp.routine.rows,
+        return { columns: [t('ui.time'), t('ui.whatHappens')],
+                 rows: camp.routine.rows.map(с => [с.time, с.title]),
                  widths: ['22%', '78%'], note: camp.routine.note };
       throw new Error(`unknown table source: ${б.source}`);
     },
@@ -231,7 +232,7 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
         return итог.heading ? итог : null;
       },
       schedule: () => visibleRecords(courses).flatMap(c => visibleRecords(c.lessons).map(з => ({
-        day: з.day, time: з.time, course: c.title, age: ageText(з.age),
+        day: день(з.day), dayId: з.day, time: з.time, course: c.title, age: ageText(з.age),
         direction: name('direction', c.direction), directionId: c.direction,
         hall: name('room', з.room),
         curator: person(c.curator) }))),

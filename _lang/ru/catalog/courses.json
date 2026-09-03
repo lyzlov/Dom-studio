@@ -1,0 +1,17 @@
+{
+  "$comment": "Words of _data/catalog/courses.json in Russian. Key: record and path to the field.",
+  "architecture#title": "Архитектура",
+  "culture-code-4-6#title": "Культурный код",
+  "culture-code-7-10#timeLabel": "Пт 16:00 (I поток) / Сб 13:00 (II поток), Большой зал",
+  "culture-code-7-10#title": "Культурный код",
+  "drawing-academic#title": "Академический рисунок",
+  "game-arch#title": "Архитектура игр",
+  "graphics#title": "Графика",
+  "painting#title": "Живопись",
+  "risovashki#title": "Рисовашки",
+  "robotics#title": "Робототехника",
+  "sculpture#title": "Скульптура",
+  "toddler-creative#title": "Малыши и креатив",
+  "visualization#timeLabel": "Ср 16:00 (I поток) / Сб 15:30 и 18:00 (II поток), Большой зал",
+  "visualization#title": "Архитектура. Визуализация"
+}

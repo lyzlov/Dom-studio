@@ -1,0 +1,17 @@
+{
+  "$comment": "English words of the same subject. Empty value means: not translated yet.",
+  "architecture#title": "",
+  "culture-code-4-6#title": "",
+  "culture-code-7-10#timeLabel": "",
+  "culture-code-7-10#title": "",
+  "drawing-academic#title": "",
+  "game-arch#title": "",
+  "graphics#title": "",
+  "painting#title": "",
+  "risovashki#title": "",
+  "robotics#title": "",
+  "sculpture#title": "",
+  "toddler-creative#title": "",
+  "visualization#timeLabel": "",
+  "visualization#title": ""
+}

@@ -1,65 +1,38 @@
 [
   {
     "id": "detskiy-risunok",
-    "heading": "Понятие детского рисунка и его этапы",
-    "date": "7 января 2024",
-    "readTime": "1 мин",
     "cover": null
   },
   {
     "id": "ya-otdelnyy",
-    "heading": "Я — отдельный! Я существую!",
-    "date": "7 мая 2024",
-    "readTime": "1 мин",
     "cover": null
   },
   {
     "id": "pervaya-shkola",
-    "heading": "Первая школа детского искусства",
-    "date": "16 января 2024",
-    "readTime": "1 мин",
     "cover": null
   },
   {
     "id": "risunok-cheloveka",
-    "heading": "Периодизация рисунка человека",
-    "date": "24 января 2024",
-    "readTime": "1 мин",
     "cover": null
   },
   {
     "id": "samoopredelenie",
-    "heading": "Самоопределение подростков",
-    "date": "4 февраля 2024",
-    "readTime": "1 мин",
     "cover": null
   },
   {
     "id": "navigatorskiy-podhod",
-    "heading": "Навигаторский подход",
-    "date": "27 января 2024",
-    "readTime": "1 мин",
     "cover": null
   },
   {
     "id": "divergentnoe-myshlenie",
-    "heading": "Дивергентное мышление",
-    "date": "9 февраля 2024",
-    "readTime": "1 мин",
     "cover": null
   },
   {
     "id": "neyroseti-i-professii",
-    "heading": "Нейросети и будущее профессий",
-    "date": "27 февраля 2024",
-    "readTime": "1 мин",
     "cover": null
   },
   {
     "id": "lichnaya-terapiya",
-    "heading": "Зачем педагогу личная терапия?",
-    "date": "11 декабря 2024",
-    "readTime": "1 мин",
     "cover": null
   }
 ]
