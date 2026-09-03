@@ -465,5 +465,36 @@
       "data": "structure.form.fields",
       "template": "form"
     }
+  },
+  "captions": {
+    "$комментарий": "Поля со словами — по файлу структуры. Слова уезжают в _structure/captions.<язык>.json, состав остаётся здесь. Одно и то же имя в разных файлах значит разное: name в форме — машинное имя поля, а в крошках — подпись.",
+    "pages": [
+      "metaTitle",
+      "metaDescription",
+      "eyebrow",
+      "h1",
+      "heading",
+      "subheading",
+      "slogan",
+      "facts",
+      "meta",
+      "caption",
+      "collapsed",
+      "name",
+      "lead"
+    ],
+    "templates": [
+      "metaTitle",
+      "metaDescription",
+      "eyebrow",
+      "heading",
+      "section"
+    ],
+    "navigation": [
+      "group"
+    ],
+    "form": [
+      "caption"
+    ]
   }
 }

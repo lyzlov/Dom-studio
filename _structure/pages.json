@@ -1,15 +1,9 @@
 {
   "$комментарий": "Состав страниц. Страницы-сущности (курсы, события, смены, посты) здесь не перечисляются — их описывают шаблоны в templates.json. Страница, которой здесь нет, пока свёрстана руками.",
   "blog/index.html": {
-    "metaTitle": "Блог — ДОМ",
-    "metaDescription": "Заметки о детском рисунке, педагогике и творческом развитии.",
-    "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "Блог"
-    },
+    "heading": {},
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -23,15 +17,9 @@
     ]
   },
   "about/privacy/index.html": {
-    "metaTitle": "Политика обработки данных — ДОМ",
-    "metaDescription": "Как школа ДОМ обрабатывает персональные данные.",
-    "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "Политика обработки данных"
-    },
+    "heading": {},
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -45,15 +33,9 @@
     "wrapper": "doc"
   },
   "about/offer/index.html": {
-    "metaTitle": "Договор-оферта — ДОМ",
-    "metaDescription": "Условия оказания услуг школы ДОМ.",
-    "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "Договор-оферта"
-    },
+    "heading": {},
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -67,15 +49,9 @@
     "wrapper": "doc"
   },
   "about/principles/index.html": {
-    "metaTitle": "Наши принципы — ДОМ",
-    "metaDescription": "Манифест школы, педагогические источники и практические принципы.",
-    "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "Наши принципы"
-    },
+    "heading": {},
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -84,29 +60,22 @@
       {
         "type": "text",
         "id": "manifest",
-        "heading": "Манифест",
         "text": "_content/text/pages/principles-manifest.html"
       },
       {
         "type": "text",
         "id": "sources",
-        "heading": "Педагогические источники",
         "text": "_content/text/pages/principles-sources.html"
       },
       {
         "type": "text",
         "id": "practice",
-        "heading": "Практические принципы",
         "text": "_content/text/pages/principles-practice.html"
       }
     ]
   },
   "about/team/index.html": {
-    "metaTitle": "Команда — ДОМ",
-    "metaDescription": "Педагоги и специалисты школы ДОМ.",
     "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "Команда",
       "lead": [
         "Занятия ведут архитекторы, художники и педагоги. У каждого курса свой куратор, который ведёт группу весь модуль или семестр.",
         "Школу основала Ольга Зинюкова — архитектор и педагог, выпускница МАрхИ 2004 года."
@@ -114,7 +83,6 @@
     },
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -128,18 +96,13 @@
     ]
   },
   "about/faq/index.html": {
-    "metaTitle": "Памятка — ДОМ",
-    "metaDescription": "Ответы на частые вопросы: стоимость, пропуски, возраст, программы.",
     "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "Памятка",
       "lead": [
         "Мы собрали ответы на самые частые вопросы. Если не нашли своего — напишите нам, контакты на странице <a href=\"../contacts/\">Контакты</a>."
       ]
     },
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -153,15 +116,9 @@
     ]
   },
   "services/index.html": {
-    "metaTitle": "Услуги — ДОМ",
-    "metaDescription": "Курсы для школ и садов, персональные уроки, праздники, мастер-классы.",
-    "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "Услуги"
-    },
+    "heading": {},
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -176,11 +133,7 @@
     ]
   },
   "services/admissions/index.html": {
-    "metaTitle": "Профориентация — ДОМ",
-    "metaDescription": "Творческие вузы Москвы и подготовка к поступлению.",
     "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "Профориентация",
       "lead": [
         "Московские вузы — архитектура, дизайн, строительство. Ориентир для учеников 11–16 лет, готовящихся к поступлению."
       ],
@@ -190,7 +143,6 @@
     },
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -205,11 +157,7 @@
     ]
   },
   "about/studio/index.html": {
-    "metaTitle": "Школа — ДОМ",
-    "metaDescription": "Два зала в посёлке Ильинское-Усово под Красногорском: пространство, история, отзывы.",
     "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "Школа",
       "lead": [
         "Два зала — Большой и Малый — в посёлке Ильинское-Усово под Красногорском."
       ],
@@ -222,7 +170,6 @@
     },
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -231,32 +178,23 @@
       {
         "type": "gallery",
         "id": "gallery",
-        "source": "site.gallery",
-        "collapsed": "Галерея"
+        "source": "site.gallery"
       },
       {
         "type": "text",
         "id": "space",
-        "heading": "Пространство",
         "text": "_content/text/pages/studio-space.html"
       },
       {
         "type": "rating",
-        "id": "reviews",
-        "heading": "Отзывы"
+        "id": "reviews"
       }
     ]
   },
   "about/contacts/index.html": {
-    "metaTitle": "Контакты — ДОМ",
-    "metaDescription": "Адрес, телефон, Telegram и карта проезда школы ДОМ.",
-    "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "Контакты"
-    },
+    "heading": {},
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -270,22 +208,14 @@
       },
       {
         "type": "form",
-        "id": "form",
-        "heading": "Записаться"
+        "id": "form"
       }
     ]
   },
   "camp/index.html": {
-    "metaTitle": "Летний лагерь — ДОМ",
-    "metaDescription": "Семь тематических смен для детей 6–16 лет летом 2026 года.",
-    "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "Летний лагерь",
-      "meta": "Работает третий год"
-    },
+    "heading": {},
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -296,7 +226,6 @@
         "tabs": [
           {
             "key": "format",
-            "name": "Формат",
             "blockType": {
               "type": "text",
               "text": "_content/text/pages/camp-format.html"
@@ -304,7 +233,6 @@
           },
           {
             "key": "age",
-            "name": "Возраст",
             "blockType": {
               "type": "text",
               "text": "_content/text/pages/camp-age.html"
@@ -312,7 +240,6 @@
           },
           {
             "key": "price",
-            "name": "Стоимость",
             "blockType": {
               "type": "text",
               "text": "_content/text/pages/camp-price.html"
@@ -323,23 +250,17 @@
       {
         "type": "cards",
         "id": "shifts",
-        "heading": "Смены 2026",
         "source": "camp",
         "kind": "session"
       }
     ]
   },
   "events/index.html": {
-    "metaTitle": "События — ДОМ",
-    "metaDescription": "Мастер-классы, экскурсии, встречи с архитекторами и открытые дни.",
     "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "События",
       "button": true
     },
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -350,7 +271,6 @@
         "tabs": [
           {
             "key": "format",
-            "name": "Формат",
             "blockType": {
               "type": "text",
               "text": "_content/text/pages/events-format.html"
@@ -358,7 +278,6 @@
           },
           {
             "key": "age",
-            "name": "Возраст",
             "blockType": {
               "type": "text",
               "text": "_content/text/pages/events-age.html"
@@ -366,7 +285,6 @@
           },
           {
             "key": "price",
-            "name": "Стоимость",
             "blockType": {
               "type": "text",
               "text": "_content/text/pages/events-price.html"
@@ -377,7 +295,6 @@
       {
         "type": "cards",
         "id": "afisha",
-        "heading": "Афиша",
         "source": "events",
         "filter": "upcoming",
         "kind": "event",
@@ -386,7 +303,6 @@
       {
         "type": "cards",
         "id": "past",
-        "heading": "Прошедшие",
         "source": "events",
         "filter": "past",
         "kind": "event"
@@ -394,16 +310,11 @@
     ]
   },
   "courses/index.html": {
-    "metaTitle": "Курсы — ДОМ",
-    "metaDescription": "Расписание, направления, возрастные группы и стоимость занятий школы ДОМ.",
     "heading": {
-      "eyebrow": "ДОМ — школа архитектуры и искусства",
-      "h1": "Курсы",
       "button": true
     },
     "path": [
       {
-        "name": "Главная",
         "href": "index.html"
       },
       {}
@@ -413,13 +324,11 @@
         "type": "tabs",
         "action": {
           "icon": "print",
-          "attr": "data-print",
-          "caption": "Печать расписания"
+          "attr": "data-print"
         },
         "tabs": [
           {
             "key": "format",
-            "name": "Формат",
             "blockType": {
               "type": "text",
               "text": "_content/text/pages/courses-format.html"
@@ -427,7 +336,6 @@
           },
           {
             "key": "age",
-            "name": "Возраст",
             "blockType": {
               "type": "text",
               "text": "_content/text/pages/courses-age.html"
@@ -435,7 +343,6 @@
           },
           {
             "key": "types",
-            "name": "Типы занятий",
             "blockType": {
               "type": "text",
               "text": "_content/text/pages/courses-types.html"
@@ -443,7 +350,6 @@
           },
           {
             "key": "schedule",
-            "name": "Расписание",
             "blockType": {
               "type": "table",
               "kind": "schedule"
@@ -451,7 +357,6 @@
           },
           {
             "key": "price",
-            "name": "Стоимость",
             "blockType": {
               "type": "table",
               "kind": "plain",
@@ -462,7 +367,6 @@
       },
       {
         "type": "cards",
-        "heading": "Все курсы",
         "srHeading": true,
         "source": "courses",
         "kind": "course",
@@ -475,39 +379,27 @@
     ]
   },
   "index.html": {
-    "metaTitle": "ДОМ — школа архитектуры и искусства для детей",
-    "metaDescription": "Школа архитектуры и искусства для детей 3–16 лет в Красногорске. Первое занятие бесплатно.",
     "heading": null,
     "path": [
-      {
-        "name": "Главная"
-      }
+      {}
     ],
     "blocks": [
       {
         "type": "hero",
-        "heading": "ДОМ",
-        "subheading": "Школа архитектуры и искусства",
-        "slogan": "Учим создавать, а не копировать",
-        "facts": "3–16 лет · Красногорск, Ильинское-Усово · первое занятие бесплатно",
         "banner": {
-          "source": "nearest",
-          "caption": "Открытые занятия, знакомство с педагогами и мастерскими.<br>Школа ДОМ, Ильинское-Усово"
+          "source": "nearest"
         }
       },
       {
         "type": "links",
         "items": [
           {
-            "name": "Курсы",
             "href": "courses/index.html"
           },
           {
-            "name": "События",
             "href": "events/index.html"
           },
           {
-            "name": "Школа",
             "href": "about/studio/index.html"
           }
         ]

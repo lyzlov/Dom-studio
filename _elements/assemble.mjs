@@ -224,7 +224,8 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
       },
       schedule: () => visibleRecords(courses).flatMap(c => visibleRecords(c.lessons).map(з => ({
         day: з.day, time: з.time, course: c.title, age: з.age,
-        direction: name('direction', c.direction), hall: name('room', з.room),
+        direction: name('direction', c.direction), directionId: c.direction,
+        hall: name('room', з.room),
         curator: c.curator }))),
       frames: б => (б.source === 'site.gallery' ? site.gallery : [])
         .map(к => ({ ...к, ...(sizes[к.base] || { width: 400, height: 600 }) })),

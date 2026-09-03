@@ -3,33 +3,28 @@
   "fields": [
     {
       "key": "name",
-      "caption": "Имя родителя",
       "type": "text",
       "name": "name",
       "required": true
     },
     {
       "key": "phone",
-      "caption": "Телефон",
       "type": "tel",
       "name": "phone",
       "required": true
     },
     {
       "key": "age",
-      "caption": "Возраст ребёнка",
       "type": "text",
       "name": "child_age"
     },
     {
       "key": "time",
-      "caption": "Удобное время",
       "type": "text",
       "name": "time"
     },
     {
       "key": "comment",
-      "caption": "Комментарий",
       "multiline": true,
       "name": "comment",
       "wide": true

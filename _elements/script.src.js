@@ -258,15 +258,11 @@
     return (a[key] || "").toString().localeCompare((b[key] || "").toString(), "ru");
   }
 
-  var TYPE_CLASS = {
-    "Авторские курсы": "type-courses",
-    "Бюро": "type-buro",
-    "Занятия по абонементу": "type-subscription"
-  };
-  function typeTag(name) {
-    var cls = TYPE_CLASS[name];
-    if (!cls) return name;
-    return '<span class="type-tag ' + cls + '">' + name + "</span>";
+  /* Класс направления выводится из его опознавателя, а не из названия: имя
+     меняется при переводе, опознаватель — нет. */
+  function typeTag(name, id) {
+    if (!id) return name;
+    return '<span class="type-tag type-' + id + '">' + name + "</span>";
   }
 
   document.querySelectorAll("table.schedule[data-rows]").forEach(function (table) {
@@ -298,7 +294,7 @@
             '<td class="cell-time" data-label="' + T("time") + '">' + r.time + "</td>" +
             '<td data-label="' + T("lesson") + '">' + r.course + "</td>" +
             '<td data-label="' + T("age") + '">' + r.age + "</td>" +
-            '<td data-label="' + T("direction") + '">' + typeTag(r.direction) + "</td>" +
+            '<td data-label="' + T("direction") + '">' + typeTag(r.direction, r.directionId) + "</td>" +
             '<td data-label="' + T("hall") + '">' + r.hall + "</td>" +
             '<td data-label="' + T("curator") + '">' + r.curator + "</td>" +
             "</tr>";

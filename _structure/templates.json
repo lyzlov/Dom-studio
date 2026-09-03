@@ -1,11 +1,7 @@
 {
   "$комментарий": "Шаблоны страниц-сущностей. Двенадцать страниц курсов описаны здесь одной записью: правка шаблона меняет все двенадцать.",
   "course": {
-    "section": "Курсы",
     "parent": "courses/index.html",
-    "metaTitle": "{title} — курсы ДОМ",
-    "metaDescription": "{title}. Возраст: {age}.",
-    "eyebrow": "{direction}",
     "fields": [
       "возраст",
       "время",
@@ -23,11 +19,7 @@
     "folder": "courses"
   },
   "event": {
-    "section": "События",
     "parent": "events/index.html",
-    "metaTitle": "{title} — события ДОМ",
-    "metaDescription": "{title}. {date}.",
-    "eyebrow": "{type}",
     "fields": [
       "дата",
       "время и возраст",
@@ -45,11 +37,7 @@
     "folder": "events"
   },
   "session": {
-    "section": "Лагерь",
     "parent": "camp/index.html",
-    "metaTitle": "{title} — Летний лагерь ДОМ",
-    "metaDescription": "{description}",
-    "eyebrow": "Летний лагерь {year} · {type}",
     "fields": [
       "даты",
       "возраст",
@@ -66,7 +54,6 @@
       {
         "type": "table",
         "id": "schedule",
-        "heading": "Распорядок дня",
         "kind": "plain",
         "source": "camp.routine"
       }
@@ -74,12 +61,8 @@
     "folder": "camp"
   },
   "post": {
-    "section": "Блог",
     "parent": "blog/index.html",
     "folder": "blog",
-    "metaTitle": "{heading} — блог ДОМ",
-    "metaDescription": "{heading}. {date}.",
-    "eyebrow": "Блог",
     "fields": [],
     "button": "none",
     "meta": "{date} · {readTime}",

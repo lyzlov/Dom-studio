@@ -17,7 +17,6 @@
   "menu": [
     {
       "id": "activity",
-      "group": "Деятельность",
       "items": [
         {
           "href": "courses/index.html"
@@ -38,7 +37,6 @@
     },
     {
       "id": "about",
-      "group": "О нас",
       "items": [
         {
           "href": "about/studio/index.html"

@@ -7,6 +7,7 @@
 import { buildSite, imageBases } from '../_elements/assemble.mjs';
 import { setMarkup, parseSet, replaceTemplate } from '../_elements/template.mjs';
 import { setLang } from '../_elements/lang.mjs';
+import { splitCaptions, mergeCaptions, captionFields } from '../_elements/captions.mjs';
 import { form, node, plainList, recordForm, recordName, dragHandle, eyeButton, deleteButton,
          eyeIcon, fieldRow, iconButton, chevron, TECHNICAL,
          loadIcons, icon } from './form.mjs';
@@ -19,29 +20,32 @@ import { captureLayout, toSVG, parseSVG, compare } from './layout.mjs';
 import { t, tokenLabel, loadLocale, preferredLang, nextLang, lang,
          setAbbreviations, setProjectNames, humanize } from './locale.mjs';
 import { BRIDGE } from './preview.mjs';
+import { drawDesign, drawDesignTree } from './design.mjs';
+import { ctx, layouts, fieldOrder, changeType, fileInput, fileField, frameTile, frameChoice,
+         actionTile, acceptFrames, exportLayout, importLayout } from './fields.mjs';
 import { parseMarkup, serializeMarkup, showNode,
          humanAttributes } from './markup.mjs';
 
 /** Имя и версия продукта. contract — версия договора с манифестом. */
 export const PRODUCT = { name: 'Enfilade', version: '0.4.0', contract: 1 };
 
-const МАНИФЕСТ = 'project.json';
+export const МАНИФЕСТ = 'project.json';
 const КЛЮЧ = 'enfilade.token';
 const ПРЕВЬЮ = 'enfilade.preview';
 const ЧЕРНОВИК = 'enfilade.draft';
 const СКРИПТ_ИСХОДНИК = '_elements/script.src.js';
 const СКРИПТ = '_elements/script.js';
 
-const $ = id => document.getElementById(id);
-const el = (тег, класс, text) => {
+export const $ = id => document.getElementById(id);
+export const el = (тег, класс, text) => {
   const e = document.createElement(тег);
   if (класс) e.className = класс;
   if (text != null) e.textContent = text;
   return e;
 };
-const today = () => new Date().toISOString().slice(0, 10);
+export const today = () => new Date().toISOString().slice(0, 10);
 
-const S = {
+export const S = {
   token: '', пишем: false, головы: null,
   project: null, dict: null,
   data: null,
@@ -69,8 +73,10 @@ const S = {
   беды: [],                 // замечания последней проверки: они же метят дерево
 };
 
-const FILES = () => S.project.files;
-const TARGETS = () => S.project.commit.targets;
+export const FILES = () => S.project.files;
+/** Путь файла с подставленным языком: на диске лежит `ru`, в манифесте — образец. */
+const путьФайла = ключ => String(FILES()[ключ] || '').replace('{lang}', siteLang());
+export const TARGETS = () => S.project.commit.targets;
 
 // #region Загрузка
 
@@ -90,6 +96,31 @@ const fetchJSON = async путь => {
     throw new Error(`${путь}: ${e.message}`);
   }
 };
+
+/**
+ * Устройство страниц и их слова читаются раздельно и сливаются: дальше редактор
+ * работает с одним объектом, а разделение живёт только на диске.
+ */
+async function структураСПодписями(types) {
+  let подписи = {};
+  if (FILES().captions) {
+    try {
+      подписи = await fetchJSON(FILES().captions.replace('{lang}', siteLang()));
+      S.captionsComment = подписи.$comment || '';
+    }
+    catch { подписи = {}; }
+  }
+  const из = {};
+  for (const файл of ФАЙЛЫ_СТРУКТУРЫ) {
+    const свои = Object.fromEntries(Object.entries(подписи)
+      .filter(([к]) => к.startsWith(файл + '/')).map(([к, з]) => [к.slice(файл.length + 1), з]));
+    из[файл] = mergeCaptions(await fetchJSON(FILES()[файл]), свои);
+  }
+  void types;
+  return из;
+}
+
+const ФАЙЛЫ_СТРУКТУРЫ = ['pages', 'templates', 'navigation', 'form'];
 
 /** Какие файлы каталога грузить — выводится из словаря типов, не из кода. */
 function catalogNames(types) {
@@ -116,7 +147,7 @@ async function loadManifest() {
   projectNames();
 }
 
-async function load() {
+export async function load() {
   const step = т => { $('status').textContent = т; };
 
   step(t('load.types', 'Dictionary…'));
@@ -131,12 +162,7 @@ async function load() {
     site: await fetchJSON(FILES().site),
     archive: FILES().archive ? await fetchJSON(FILES().archive) : { items: [] },
     catalog,
-    structure: {
-      pages: await fetchJSON(FILES().pages),
-      templates: await fetchJSON(FILES().templates),
-      navigation: await fetchJSON(FILES().navigation),
-      form: await fetchJSON(FILES().form),
-    },
+    structure: await структураСПодписями(types),
     types,
     typography: await fetchJSON(FILES().typography),
   };
@@ -258,9 +284,9 @@ function build(повтор = false) {
  * тот же, каким элемент назван в дереве. По ключу проверка открывает элемент,
  * а дерево помечает его строку. Ключа нет только у того, что стоит вне дерева.
  */
-const problem = (text, ключ = null) => ({ text, ключ });
+export const problem = (text, ключ = null) => ({ text, ключ });
 
-function check() {
+export function check() {
   const беды = [];
   if (S.error) беды.push(problem(t('err.build', 'Build failed') + ': ' + S.error));
   S.notes.forEach(з => беды.push(problem(з)));
@@ -395,13 +421,17 @@ function resolve(каталог, отн) {
  */
 function fileContents() {
   const J = v => JSON.stringify(v, null, 2) + '\n';
+  // Структура пишется без слов, слова — одним файлом на язык: то же деление,
+  // что и при чтении, только в обратную сторону.
+  const делённая = разделитьСтруктуру();
   return {
     site: () => J(S.data.site),
     archive: () => J(S.data.archive),
-    pages: () => J(S.data.structure.pages),
-    templates: () => J(S.data.structure.templates),
-    navigation: () => J(S.data.structure.navigation),
-    form: () => J(S.data.structure.form),
+    pages: () => J(делённая.структура.pages),
+    templates: () => J(делённая.структура.templates),
+    navigation: () => J(делённая.структура.navigation),
+    form: () => J(делённая.структура.form),
+    captions: () => J(делённая.подписи),
     markup: () => S.markup,
     types: () => J(S.data.types),
     typography: () => J(S.data.typography),
@@ -411,8 +441,22 @@ function fileContents() {
   };
 }
 
+/** Слова страниц отдельно от их состава — так же, как они лежат на диске. */
+function разделитьСтруктуру() {
+  const структура = {};
+  const подписи = { $comment: (S.captionsComment || '') };
+  for (const файл of ФАЙЛЫ_СТРУКТУРЫ) {
+    const свои = splitCaptions(S.data.structure[файл], captionFields(S.data.types, файл));
+    структура[файл] = свои.структура;
+    for (const [к, з] of Object.entries(свои.подписи)) подписи[`${файл}/${к}`] = з;
+  }
+  const по = { $comment: подписи.$comment };
+  Object.keys(подписи).filter(к => к !== '$comment').sort().forEach(к => { по[к] = подписи[к]; });
+  return { структура, подписи: по };
+}
+
 /** Ключи манифеста, которые редактор пишет: один файл или целая папка. */
-const isWritten = ключ =>
+export const isWritten = ключ =>
   ключ in fileContents() || ключ === 'catalog' || ключ === 'texts'
   || ключ === 'media' || ключ === 'layouts' || ключ === 'project';
 
@@ -424,7 +468,7 @@ function changes() {
   const J = v => JSON.stringify(v, null, 2) + '\n';
 
   for (const [ключ, pick] of Object.entries(fileContents()))
-    if (FILES()[ключ]) compare(FILES()[ключ], pick());
+    if (FILES()[ключ]) compare(путьФайла(ключ), pick());
   for (const имя of catalogNames(S.data.types))
     compare(FILES().catalog.replace('{name}', имя), J(S.data.catalog[имя]));
   compare(МАНИФЕСТ, J(S.project));
@@ -461,7 +505,7 @@ function pageCaption(путь) {
   return lang() === 'en' ? humanize(pageKey(путь)) : pageName(путь);
 }
 
-function pageName(путь) {
+export function pageName(путь) {
   const оп = (S.data && S.data.structure.pages[путь]) || null;
   // Имя страницы одно — её заголовок. Крошка и пункт меню имя не задают, они
   // его лишь переопределяют там, где оно должно звучать иначе.
@@ -502,552 +546,6 @@ function catalogName(путь) {
 
 // #endregion
 
-// #region Подсказки полей
-
-/** Блок, которому принадлежит поле: нужен, чтобы знать, что он показывает. */
-function pathBlock() {
-  if (!String(S.section).startsWith('block:')) return null;
-  const [стр, n] = S.section.slice(6).split('#');
-  return ((S.data.structure.pages[стр] || {}).blocks || [])[Number(n)] || null;
-}
-
-function hint(путь, владелец) {
-  const k = путь[путь.length - 1];
-  const с = S.dict;
-  // Форма блока открывается из дерева, поэтому «мы внутри блока» знает состояние,
-  // а не путь: в пути лежит только номер записи.
-  const вБлоке = String(S.section).startsWith('block:') || String(S.section).startsWith('head:')
-    || путь.includes('blocks') || путь.includes('extra') || путь.includes('tabs');
-
-  if (k === 'type' && вБлоке)
-    return { options: с.blockTypes().map(т => ({ value: т.key, caption: т.name })),
-             description: с.typeDescription(владелец.type) };
-  // Баннер первого экрана берёт содержимое либо от ближайшего события, либо от
-  // названной записи, либо ниоткуда. Слово «nearest» человеку не показывается.
-  if (k === 'source' && путь.includes('banner'))
-    return { options: [{ value: 'nearest', caption: t('banner.nearest', 'the nearest event') },
-                       ...с.sources(),
-                       { value: '', caption: t('banner.none', 'nothing') }] };
-  if (k === 'id' && путь.includes('banner')) {
-    const вид = с.kinds().find(в => с.sourceOf(в) === (владелец.source || ''));
-    const пары = вид ? с.pairs(вид.key) : [];
-    return { options: [{ value: '', caption: t('banner.any', 'any') }, ...пары] };
-  }
-  if (k === 'source') return { options: с.sources() };
-
-  const вид = S.recordKind;
-  if (вид) {
-    const ссылка = с.refOf(вид, k);
-    if (ссылка) return { options: с.pairs(ссылка) };
-    const подсказки = с.optionsOf(вид, k);
-    if (подсказки && подсказки.length) return { подсказки };
-  }
-
-  // Вид карточки — это вид записи: список берётся из словаря, а не из строки.
-  if (k === 'kind' && вБлоке)
-    return { options: с.kinds().map(в => ({ value: в.key, caption: в.name })) };
-
-  // Фильтры для посетителя — поля той записи, которую показывает блок.
-  if (k === 'filters' || (Array.isArray(путь) && путь[путь.length - 2] === 'filters')) {
-    const б = pathBlock();
-    const в = б && (с.kinds().find(x => x.key === б.kind)
-      || с.kinds().find(x => с.sourceOf(x) === б.source));
-    const поля = (в && в.fields) || [];
-    if (поля.length) return { options: поля.map(f => ({ value: f, caption: ctx().caption(f) })) };
-  }
-
-  const описание = владелец && владелец.type && S.data.types.blockTypes[владелец.type]
-    ? (S.data.types.blockTypes[владелец.type].fields || {})[k] : null;
-  if (описание) {
-    const варианты = /^[^,]+\|/.test(описание) ? описание.split('|').map(s => s.trim()) : null;
-    return варианты ? { options: варианты.map(v => ({ value: v, caption: v })), description: описание }
-                    : { description: описание };
-  }
-  return {};
-}
-
-function changeType(блок, type) {
-  const поля = ((S.data.types.blockTypes[type] || {}).fields) || {};
-  for (const k of Object.keys(блок))
-    if (k !== 'type' && k !== 'class' && k !== 'hidden' && !(k in поля)) delete блок[k];
-  for (const k of Object.keys(поля)) if (!(k in блок)) блок[k] = '';
-}
-
-function fieldOrder(значение, путь) {
-  if (значение && значение.type && S.data.types.blockTypes[значение.type])
-    return ['type', 'heading', ...Object.keys(S.data.types.blockTypes[значение.type].fields || {})];
-  return путь.length <= 1 && S.recordKind ? S.dict.fieldOrder(S.recordKind) : null;
-}
-
-const КАРТИНКА = new Set(['image', 'photo', 'base']);
-
-function sectionFolder() {
-  const в = S.recordKind && S.dict.byKey(S.recordKind);
-  return (в && в.media) || S.project.media.fallbackFolder;
-}
-
-const frameHref = основа => S.mediaViews.get(основа) || ('../' + основа + '-400.jpg');
-
-/** Текст блока и картинка правятся на месте: путь к файлу читателю не нужен. */
-function special(владелец, ключ, путь) {
-  if (КАРТИНКА.has(ключ) && typeof владелец[ключ] !== 'object') return imageField(владелец, ключ);
-  if (ключ !== 'text') return null;
-  const файл = String(владелец[ключ] || '');
-  if (!S.texts.has(файл)) return null;
-  return textField(файл, путь);
-}
-
-/**
- * Длинный текст правится как текст, а не как разметка: человек видит абзацы,
- * подзаголовки и списки, а не угловые скобки. Набор приёмов ровно тот, что
- * встречается в текстах сайта, — больше в разметке ничего и нет.
- */
-const ПРИЁМЫ = [
-  { ключ: 'rich.paragraph', дело: () => document.execCommand('formatBlock', false, 'p') },
-  { ключ: 'rich.heading', дело: () => document.execCommand('formatBlock', false, 'h2') },
-  { ключ: 'rich.list', дело: () => document.execCommand('insertUnorderedList') },
-  { ключ: 'rich.strong', дело: () => document.execCommand('bold') },
-];
-
-function textField(файл, путь) {
-  const блок = el('div', 'ed-rich');
-  const панель = el('div', 'ed-rich-tools');
-  const поле = el('div', 'ed-rich-body');
-  поле.contentEditable = 'true';
-  поле.spellcheck = true;
-  поле.innerHTML = S.texts.get(файл) || '';
-  поле.id = 'п-' + путь.join('-').replace(/[^\wа-яА-ЯёЁ-]/g, '_');
-
-  const write = () => { S.texts.set(файл, поле.innerHTML); apply(false); };
-  поле.addEventListener('input', write);
-
-  const button = (подпись, дело) => {
-    const b = el('button', 'ed-rich-btn', подпись);
-    b.type = 'button';
-    b.addEventListener('click', е => {
-      е.preventDefault();
-      поле.focus();
-      дело();
-      write();
-    });
-    return b;
-  };
-  ПРИЁМЫ.forEach(п => панель.append(button(t(п.ключ), п.дело)));
-  панель.append(button(t('rich.link'), () => askString(t('rich.link'), '', href => {
-    поле.focus();
-    if (href) document.execCommand('createLink', false, href);
-    else document.execCommand('unlink');
-    write();
-  })));
-
-  блок.append(панель, поле);
-  return блок;
-}
-
-/** Окно с одной строкой ввода: адрес ссылки и всё, что спрашивается одним словом. */
-function askString(вопрос, значение, сделать) {
-  const д = $('dialog');
-  д.textContent = '';
-  д.append(el('h2', null, вопрос));
-  const поле = el('input');
-  поле.type = 'text';
-  поле.value = значение || '';
-  поле.setAttribute('aria-label', вопрос);
-  д.append(поле);
-  const действия = el('div', 'ed-actions');
-  const отмена = button(t('btn.cancel'), () => д.close());
-  действия.append(отмена, button(t('btn.save'), () => { д.close(); сделать(поле.value.trim()); }));
-  д.append(действия);
-  д.showModal();
-  поле.focus();
-}
-
-/**
- * Замена файла, лежащего в разметке: логотипа шапки, логотипа подвала. Путь
- * объявлен рядом с именем части, в types.json, — редактор его не выдумывает.
- * Файл кладётся туда же, откуда взят: адрес в разметке не меняется.
- */
-function fileField(путь) {
-  const блок = el('div', 'ed-frame-field');
-  const вид = el('img', 'ed-thumb');
-  вид.alt = '';
-  вид.src = '../' + путь;
-  const имя = el('span', 'ed-hint', путь.split('/').pop());
-
-  const поле = el('input', 'ed-file');
-  поле.type = 'file';
-  поле.accept = '.svg,image/svg+xml,image/*';
-  const load = iconButton('import', t('media.upload', 'upload a frame'), () => поле.click());
-  поле.addEventListener('change', async () => {
-    const ф = поле.files && поле.files[0];
-    поле.value = '';
-    if (!ф) return;
-    const text = /svg/i.test(ф.type) || /\.svg$/i.test(ф.name)
-      ? await ф.text() : new Uint8Array(await ф.arrayBuffer());
-    S.media.set(путь, text);
-    вид.src = typeof text === 'string'
-      ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(text)
-      : URL.createObjectURL(new Blob([text]));
-    apply(true);
-  });
-
-  const действия = el('div', 'ed-tools');
-  действия.append(load, поле);
-  блок.append(вид, имя, действия);
-  return блок;
-}
-
-
-/** Страница снимается в отдельной рамке нужной ширины, а не в предпросмотре. */
-/**
- * Снимок страницы в скрытой рамке. Первое событие load приходит от пустого
- * about:blank, поэтому ждём, пока в рамке действительно окажется страница и
- * её стили: иначе снимается документ нулевой ширины.
- */
-function inFrame(html, ширина, дело) {
-  // Высота рамки — как у настоящего экрана: единицы vh считаются от неё, и
-  // растянутая рамка растянула бы первый экран вчетверо.
-  const высота = ширина >= 1024 ? 900 : 844;
-  return new Promise((готово, problem) => {
-    const рамка = document.createElement('iframe');
-    рамка.style.cssText = `position:fixed;left:-20000px;top:0;width:${ширина}px;height:${высота}px;border:0`;
-    document.body.append(рамка);
-    рамка.srcdoc = html;
-
-    let попыток = 0;
-    const check = () => {
-      попыток++;
-      const д = рамка.contentDocument;
-      const готова = д && д.readyState === 'complete' && д.body
-        && д.documentElement.clientWidth > 0 && д.querySelector('main');
-      if (!готова && попыток < 100) return setTimeout(check, 50);
-      if (!готова) { рамка.remove(); return problem(new Error(t('err.notRendered', 'the page did not render'))); }
-      // Снимок ждёт картинки: без них у кадров нулевая высота и пустая заливка.
-      setTimeout(async () => {
-        try {
-          д.querySelectorAll('img[loading="lazy"]').forEach(и => { и.loading = 'eager'; });
-          await Promise.all([...д.images].map(и => (и.complete ? null
-            : new Promise(р => { и.onload = и.onerror = р; }))));
-          готово(await дело(д));
-        } catch (e) { problem(e); } finally { рамка.remove(); }
-      }, 120);
-    };
-    setTimeout(check, 50);
-  });
-}
-
-const pageForShot = путь => {
-  const пара = S.built.find(([п]) => п === путь);
-  if (!пара) return null;
-  const база = new URL('../' + путь, location.href).href;
-  const тема = `<style>${S.theme.css.replace(/<\/style/gi, '<\\/style')}</style>`;
-  return пара[1].replace(/<head>/i, `<head>\n  <base href="${база}">`)
-    .replace(/<\/head>/i, `  ${тема}\n</head>`);
-};
-
-/** Имена секций берутся из структуры страницы, а не из классов вёрстки. */
-function sectionNames(путь) {
-  const оп = S.data.structure.pages[путь];
-  if (!оп) return [];
-  return [
-    ...(оп.heading ? ['section-head'] : []),
-    ...(оп.blocks || []).filter(б => !б.hidden).map(б => б.type || 'block'),
-  ];
-}
-
-async function exportLayout(путь, блок = null, скачивать = false) {
-  const html = pageForShot(путь);
-  if (!html) throw new Error(t('err.notBuilt', 'the page is not built yet'));
-  const имена = sectionNames(путь);
-  const сдвиг = имена.length - (S.data.structure.pages[путь].blocks || []).filter(б => !б.hidden).length;
-  const сделано = [];
-  for (const у of layouts().devices) {
-    const макет = await inFrame(html, у.width, д => captureLayout(д, имена));
-    // Слой блока ищется по номеру в имени, а не по месту в массиве: шапка и
-    // подвал тоже слои, и место сдвинулось бы на них.
-    if (блок != null) {
-      const метка = String(блок + сдвиг + 1).padStart(2, '0') + '-';
-      макет.слои = макет.слои.filter(с => с.name.startsWith(метка));
-    }
-    const имя = layoutName(путь, у.name);
-    const svg = toSVG(макет, { страница: pageName(путь), устройство: у.name });
-    S.layouts.set(имя, svg);
-    if (скачивать) download(имя.split('/').pop(), svg);
-    сделано.push(имя);
-  }
-  return сделано;
-}
-
-/** Файл уходит и в репозиторий по «Сохранить», и сразу в загрузки браузера. */
-/** Что изменилось в правленом макете относительно собранной страницы. */
-function showDiff(путь, отчёты) {
-  const д = $('dialog');
-  д.textContent = '';
-  д.append(el('h2', null, t('layout.compare', 'Layout check')));
-  if (!отчёты.length) {
-    д.append(el('p', null, t('layout.none', 'No layout yet — export one first.')));
-  } else {
-    for (const о of отчёты) {
-      д.append(el('p', null, `${о.устройство}: ${о.различия.length
-        ? `${t('layout.diffs', 'differences')}: ${о.различия.length}` : t('layout.same', 'matches')}`));
-      if (!о.различия.length) continue;
-      const с = el('div', 'ed-files');
-      о.различия.slice(0, 30).forEach(р => с.append(el('p', null,
-        р.kind === 'moved' ? `${р.name}: ${t('layout.moved', 'moved vertically')} ${р.from} \u2192 ${р.to}`
-          : `${р.name}: ${t('layout.' + р.kind)}`)));
-      д.append(с);
-    }
-    const убранные = [...new Set(отчёты.flatMap(о => о.различия
-      .filter(р => р.kind === 'removed' && !р.name.includes('/'))
-      .map(р => р.name)))];
-    if (убранные.length) {
-      const действия = el('div', 'ed-actions');
-      действия.append(button(`${t('layout.hideMissing', 'Hide blocks missing from the layout')}: ${убранные.length}`, () => {
-        const оп = S.data.structure.pages[путь];
-        const видимые = (оп.blocks || []).filter(б => !б.hidden);
-        const сдвиг = sectionNames(путь).length - видимые.length;
-        убранные.forEach(имя => {
-          const i = Number(имя.slice(0, 2)) - 1 - сдвиг;
-          if (видимые[i]) видимые[i].hidden = true;
-        });
-        д.close();
-        apply(true);
-      }));
-      д.append(действия);
-    }
-  }
-  const низ = el('div', 'ed-actions');
-  низ.append(button(t('layout.close', 'Close'), () => д.close()));
-  д.append(низ);
-  д.showModal();
-}
-
-function download(имя, text) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' }));
-  const a = el('a');
-  a.href = url;
-  a.download = имя;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-/** Импорт: файл со слоями сверяется со страницей, различия показываются. */
-function importLayout(путь) {
-  const login = el('input');
-  login.type = 'file';
-  login.accept = '.svg';
-  login.className = 'ed-file';
-  login.addEventListener('change', async () => {
-    const файл = login.files && login.files[0];
-    if (!файл) return;
-    const text = await файл.text();
-    const html = pageForShot(путь);
-    const имена = sectionNames(путь);
-    // Сверяем с тем устройством, которое записано в самом файле: иначе
-    // мобильный макет сравнивается с десктопным снимком и всё «расходится».
-    const изФайла = parseSVG(text);
-    const устройство = (text.match(/data-device="([^"]+)"/) || [])[1];
-    const свои = layouts().devices.filter(у => !устройство || у.name === устройство);
-    const отчёты = [];
-    for (const у of (свои.length ? свои : layouts().devices)) {
-      const текущий = await inFrame(html, у.width, д => captureLayout(д, имена));
-      отчёты.push({ устройство: у.name, имя: файл.name, различия: compare(текущий, изФайла) });
-    }
-    showDiff(путь, отчёты);
-  });
-  return login;
-}
-
-const ctx = () => ({ hint, changeType, fieldOrder, special,
-  rowOf: ключ => S.dict.rowOf(ключ),
-  formatOf: ключ => S.dict.formatOf(ключ),
-  months: () => S.dict.months(),
-  // Подпись поля — одна на весь редактор и приходит из словаря имён проекта.
-  caption: к => S.dict.caption(к),
-  itemName: (з, i) => {
-    if (з && typeof з === 'object' && з.type) {
-      const т = S.dict.blockTypes().find(x => x.key === з.type);
-      const своё = з.title || з.heading || з.caption || з.name || з.question;
-      const имя = (т && т.name) || з.type;
-      return своё ? `${имя} — ${своё}` : имя;
-    }
-    return recordName(з, i);
-  },
-  onChange: структурно => apply(структурно) });
-
-// #endregion
-
-// #region Картинки
-
-/**
- * Одиночный кадр — та же галерея, что и у списка кадров, только на одну
- * плитку: видно, что стоит, и одинаково понятно, как это убрать и заменить.
- */
-function imageField(владелец, ключ) {
-  const блок = el('div', 'ed-media');
-  const отчёт = el('span', 'ed-hint', '');
-  const сетка = el('div', 'ed-gallery');
-  const основа = String(владелец[ключ] || '');
-
-  if (основа) сетка.append(frameTile({
-    основа, подпись: основа.replace(S.project.media.folder, ''),
-    убрать: () => { владелец[ключ] = ''; apply(true); },
-  }));
-
-  const accept = кадры => { владелец[ключ] = кадры[кадры.length - 1]; apply(true); };
-  const поле = fileInput(false, ф => acceptFrames(ф, () => {}, т => { отчёт.textContent = т; })
-    .then(accept).catch(e => { отчёт.textContent = t('app.failed', 'Failed') + ': ' + e.message; }));
-  сетка.append(
-    actionTile('import', t('media.upload', 'upload a frame'), () => поле.click()),
-    actionTile('view-grid', t('media.pick', 'choose a frame'),
-      () => frameChoice(о => { владелец[ключ] = о; apply(true); })));
-
-  блок.append(сетка, отчёт, поле);
-  return блок;
-}
-
-/** Плитка кадра: сама картинка, крестик и пометка обложки у первой. */
-function frameTile({ основа, подпись, убрать, обложка = false, индекс = null }) {
-  const плитка = el('div', 'ed-tile');
-  if (индекс != null) плитка.dataset.index = String(индекс);
-  const вид = el('img', 'ed-tile-img');
-  вид.src = frameHref(String(основа || ''));
-  вид.alt = подпись || '';
-  вид.draggable = false;
-  плитка.title = подпись || '';
-  плитка.append(вид);
-  if (обложка) плитка.append(el('span', 'ed-tile-mark', t('media.cover', 'cover')));
-  плитка.append(iconButton('close', t('btn.delete'), () => ask(
-    `${t('btn.delete')}: ${подпись || основа}`, t('btn.delete'), убрать)));
-  return плитка;
-}
-
-/** Плитка-действие: добавить с компьютера или выбрать из медиатеки. */
-function actionTile(значокИмя, hint, действие) {
-  const b = el('button', 'ed-tile ed-tile-add');
-  b.type = 'button';
-  b.title = hint;
-  b.setAttribute('aria-label', hint);
-  // Подпись у плитки есть всегда: две плитки, различающиеся только значком, —
-  // ребус, а не выбор.
-  b.append(icon(значокИмя), el('span', 'ed-tile-label', hint));
-  b.addEventListener('click', действие);
-  return b;
-}
-
-const layouts = () => (S.project.layouts || { folder: 'layouts/', devices: [] });
-
-const layoutName = (страница, устройство) =>
-  `${layouts().folder}${(страница.replace(/\/?index\.html$/, '') || 'index').replace(/\//g, '-')}-${устройство}.svg`;
-
-/** Имя не затирает уже лежащий frame: занятое получает номер. */
-function freeBase(folder, имя) {
-  const taken = о => S.media.has(`${о}-${S.project.media.widths[0]}.jpg`) || !!S.sizes[о];
-  const корень = `${S.project.media.folder}${folder}/${имя}`;
-  if (!taken(корень)) return корень;
-  let n = 2;
-  while (taken(`${корень}-${n}`)) n++;
-  return `${корень}-${n}`;
-}
-
-/**
- * Нарезка выбранных файлов. Файлов может быть сколько угодно: человек выбирает
- * их разом в окне выбора, и каждый становится своим кадром, а не заменяет
- * предыдущий.
- */
-async function acceptFrames(файлы, наКадр, наОтчёт = () => {}) {
-  const готово = [];
-  for (let i = 0; i < файлы.length; i++) {
-    const ф = файлы[i];
-    наОтчёт(`${t('media.slicing', 'Resizing…')} ${i + 1}/${файлы.length}`);
-    const основа = freeBase(sectionFolder(), translit(ф.name.replace(/\.[^.]+$/, '')));
-    const { файлы: куски, размер } = await resize(ф, основа, S.project.media);
-    for (const [п, байты] of куски) S.media.set(п, байты);
-    S.sizes[основа] = размер;
-    const первый = куски.get(`${основа}-${S.project.media.widths[0]}.jpg`);
-    if (первый) S.mediaViews.set(основа, URL.createObjectURL(new Blob([первый], { type: 'image/jpeg' })));
-    готово.push(основа);
-    наКадр(основа);
-  }
-  наОтчёт('');
-  return готово;
-}
-
-/** Скрытое поле выбора файлов: у одного кадра — один файл, у галереи — сколько угодно. */
-function fileInput(много, accept) {
-  const поле = el('input', 'ed-file');
-  поле.type = 'file';
-  поле.accept = 'image/*';
-  if (много) поле.multiple = true;
-  поле.addEventListener('change', async () => {
-    const выбраны = [...(поле.files || [])];
-    поле.value = '';
-    if (выбраны.length) await accept(выбраны);
-  });
-  return поле;
-}
-
-/** Имя папки медиатеки по-человечески: латиницу папок человеку не показываем. */
-const folderName = п => (lang() === 'en' ? humanize(п)
-  : ((S.data.types.mediaFolders || {})[п] || humanize(п)));
-
-function frameChoice(готово) {
-  const д = $('dialog');
-  д.textContent = '';
-  д.append(el('h2', null, t('media.pick', 'choose a frame')));
-
-  const строкаПапки = el('div', 'ed-inline');
-  const выбор = el('select', 'ed-pick');
-  S.project.media.folders.forEach(п => {
-    const o = el('option', null, folderName(п));
-    o.value = п;
-    выбор.append(o);
-  });
-  выбор.value = sectionFolder();
-  строкаПапки.append(выбор);
-  д.append(строкаПапки);
-
-  const сетка = el('div', 'ed-frame-grid');
-  const отчёт = el('p', 'ed-hint', '');
-  д.append(сетка, отчёт);
-
-  const showFrames = основы => {
-    сетка.textContent = '';
-    if (!основы.length) { отчёт.textContent = t('media.empty', 'No frames in this folder.'); return; }
-    отчёт.textContent = '';
-    основы.forEach(о => {
-      const b = el('button', 'ed-frame-button');
-      b.type = 'button';
-      b.title = о.replace(S.project.media.folder, '');
-      const и = el('img');
-      и.src = frameHref(о);
-      и.alt = '';
-      b.append(и);
-      b.addEventListener('click', () => { д.close(); готово(о); });
-      сетка.append(b);
-    });
-  };
-
-  const loadFolder = async () => {
-    отчёт.textContent = t('media.reading', 'Reading the list…');
-    try {
-      showFrames(await frameCatalog(выбор.value, TARGETS()[TARGETS().length - 1], S.project.media));
-    } catch {
-      const свои = imageBases(S.data).filter(о => о.includes(`/${выбор.value}/`));
-      showFrames(свои);
-      if (свои.length) отчёт.textContent = t('media.partial', 'Repository listing unavailable — showing frames already in use.');
-    }
-  };
-  выбор.addEventListener('change', loadFolder);
-
-  const действия = el('div', 'ed-actions');
-  действия.append(button(t('btn.cancel'), () => д.close()));
-  д.append(действия);
-  д.showModal();
-  loadFolder();
-}
-
-// #endregion
 
 // #region Отрисовка
 
@@ -1125,7 +623,7 @@ function pagePath(путь) {
 }
 
 /** Крошки одного вида в обоих барах: одна строка, один цвет, один разделитель. */
-function crumbs(звенья, где, go) {
+export function crumbs(звенья, где, go) {
   где.textContent = '';
   звенья.forEach((з, i) => {
     if (i) где.append(el('span', 'ed-crumb-sep', '/'));
@@ -1189,7 +687,7 @@ function navRow(у) {
   return с;
 }
 
-const levelIndent = глубина => `calc(${глубина} * var(--size-cell))`;
+export const levelIndent = глубина => `calc(${глубина} * var(--size-cell))`;
 
 /**
  * Элемент, который открывает что-то поверх страницы, ведёт к нему: кнопка
@@ -1212,7 +710,7 @@ function linkToOverlay(у) {
  * Выбор узла: показываем его страницу и выделяем его. Открытая правка при
  * этом закрывается — поле, оставшееся от прошлого элемента, только путает.
  */
-function select(у) {
+export function select(у) {
   go(() => {
     if (S.section !== у.key) { S.editing.clear(); S.снимок = null; }
     S.section = у.key;
@@ -1267,6 +765,32 @@ function blockWithKind(вид) {
 }
 
 // #endregion
+
+/**
+ * Список навигатора: раскрывающийся заголовок и строки под ним. Один и тот же
+ * у обеих вкладок — иначе одинаковые на вид списки ведут себя по-разному.
+ */
+export function navList(ключПодписи, имя, строки, наполнить = null) {
+  const открыт = S.lists.has(имя);
+  const g = el('details', 'ed-list');
+  g.open = открыт;
+  const шапка = el('summary', 'ed-list-head');
+  шапка.append(icon(открыт ? 'chevron-down' : 'chevron-right'),
+               el('span', null, t(ключПодписи)));
+  шапка.addEventListener('click', е => {
+    е.preventDefault();
+    if (S.lists.has(имя)) S.lists.delete(имя); else S.lists.add(имя);
+    drawTree();
+  });
+  g.append(шапка);
+  if (открыт) {
+    const тело = el('div', 'ed-list-body ed-lines');
+    (строки || []).forEach(с => тело.append(с));
+    if (наполнить) наполнить(тело);
+    g.append(тело);
+  }
+  return g;
+}
 
 // #region Перетаскивание в дереве
 
@@ -1699,7 +1223,7 @@ function caretToName() {
  * четыре кнопки — правка, в архив, экспорт и импорт макета. Карандаш
  * раскрывает форму прямо под строкой, второй раз сворачивает.
  */
-function drawMain() {
+export function drawMain() {
   const где = $('fields');
   const кнопки = $('form-tools');
   где.textContent = '';
@@ -1735,7 +1259,7 @@ function drawMain() {
  * только заполняет. Всё, что построено из строк, кладётся в этот список —
  * иначе строка остаётся без колонок и экран разъезжается.
  */
-function inGrid(...узлы) {
+export function inGrid(...узлы) {
   const с = el('div', 'ed-fields');
   узлы.filter(Boolean).forEach(у => с.append(у));
   return с;
@@ -2067,7 +1591,7 @@ function siteForm() {
 }
 
 /** Справочные разделы: читаются, но не правятся. */
-const СПРАВКИ = {
+export const СПРАВКИ = {
   elementTypes: () => typesHelp(),
   sources: () => sourcesHelp(),
 };
@@ -2170,7 +1694,7 @@ function sourcesHelp() {
   // Язык подставлен и там и там: человек ищет файл, который лежит на диске,
   // а не образец его имени.
   for (const [ключ, путь] of Object.entries(FILES()))
-    строки.push([ключ, путь.replace('{lang}', lang())]);
+    строки.push([ключ, путь.replace('{lang}', siteLang())]);
   const м = S.project.media || {};
   if (м.folder) строки.push(['media', м.folder]);
   строки.push(['layouts', layouts().folder]);
@@ -2215,7 +1739,7 @@ function newRecord(список) {
 
 // #endregion
 
-function group(заголовок, внутри, открыта) {
+export function group(заголовок, внутри, открыта) {
   const g = el('details', 'ed-group');
   g.open = !!открыта;
   const шапка = el('summary', 'ed-head');
@@ -2244,7 +1768,7 @@ function pageForm(путь) {
   return блок;
 }
 
-const row = (подпись, контрол) => {
+export const row = (подпись, контрол) => {
   const об = el('div', 'ed-control');
   об.append(контрол);
   return fieldRow({ name: подпись, value: об });
@@ -2594,7 +2118,7 @@ function layoutTargets(у) {
 
 /** Окно подтверждения: по умолчанию отмена, подтверждение — вторым. */
 /** Окно с одной мыслью и кнопкой «Закрыть»: сообщение, а не вопрос. */
-function say(заголовок, text) {
+export function say(заголовок, text) {
   const д = $('dialog');
   д.textContent = '';
   д.append(el('h2', null, заголовок), el('p', null, text));
@@ -2604,7 +2128,7 @@ function say(заголовок, text) {
   д.showModal();
 }
 
-function ask(вопрос, подпись, сделать) {
+export function ask(вопрос, подпись, сделать) {
   const д = $('dialog');
   д.textContent = '';
   д.append(el('h2', null, вопрос));
@@ -2633,653 +2157,6 @@ function archiveForm() {
 
 // #endregion
 
-// #region Оформление
-
-/** Подпись условия («от 1024px») берётся из манифеста и переводится словарём. */
-const ruleCaption = где => (где === ':root' ? t('grid.mobile', 'Mobile')
-  : t(S.project.theme.conditions[где.replace('@media ', '')] || '', где.replace('@media ', '')));
-
-const isTechnicalToken = т => /^--type-/.test(т.name);
-
-/** Все варианты одного токена: базовый и переопределения в медиазапросах. */
-const tokenOptions = имя => S.theme.tokens.filter(т => т.name === имя);
-
-const tokenNames = pattern => {
-  const re = new RegExp(pattern);
-  const итог = [];
-  for (const т of S.theme.tokens)
-    if (re.test(т.name) && !итог.includes(т.name)) итог.push(т.name);
-  return итог;
-};
-
-/** Значение токена с учётом несохранённой правки. */
-const tokenValue = т => S.theme.values[т.name + '@' + т.where] ?? т.value;
-
-function writeToken(т, новое) {
-  S.theme.values[т.name + '@' + т.where] = новое;
-  S.theme.css = replaceTokens(S.sources.get(FILES().tokens), S.theme.tokens, S.theme.values);
-  apply(false);
-}
-
-/** Дерево вкладки «Оформление»: группы и разделы из манифеста. */
-function drawDesignTree(где) {
-  const группы = S.project.theme.groups;
-  const обычные = группы.map(г => ({ г, свои: г.sections.filter(р => !р.dev) }));
-  const первый = обычные.find(x => x.свои.length);
-  if (!S.section || !S.section.startsWith('token:'))
-    S.section = 'token:' + первый.г.key + '.' + первый.свои[0].key;
-  // Список, в котором лежит открытый раздел, раскрыт: человек должен видеть,
-  // где он находится, не открывая списки заново.
-  const где_ = String(S.section).slice(6).split('.')[0];
-  S.lists.add(где_ === 'ref' ? 'dev' : где_);
-
-  // Списки те же, что и во вкладке «Сайт»: заголовок раскрывается, строки
-  // лежат в сетке. Второго вида списка в редакторе нет.
-  for (const { г, свои } of обычные) {
-    if (!свои.length) continue;
-    где.append(navList('design.' + г.key, г.key,
-      свои.map(р => designItem(г, р))));
-  }
-  const дляРазработчика = [];
-  for (const г of группы)
-    for (const р of г.sections.filter(x => x.dev)) дляРазработчика.push(designItem(г, р));
-  Object.keys(СПРАВКИ).forEach(к => дляРазработчика.push(designItem({ key: 'ref' }, { key: к })));
-  где.append(navList('nav.dev', 'dev', дляРазработчика));
-}
-
-/**
- * Список навигатора: раскрывающийся заголовок и строки под ним. Один и тот же
- * у обеих вкладок — иначе одинаковые на вид списки ведут себя по-разному.
- */
-function navList(ключПодписи, имя, строки, наполнить = null) {
-  const открыт = S.lists.has(имя);
-  const g = el('details', 'ed-list');
-  g.open = открыт;
-  const шапка = el('summary', 'ed-list-head');
-  шапка.append(icon(открыт ? 'chevron-down' : 'chevron-right'),
-               el('span', null, t(ключПодписи)));
-  шапка.addEventListener('click', е => {
-    е.preventDefault();
-    if (S.lists.has(имя)) S.lists.delete(имя); else S.lists.add(имя);
-    drawTree();
-  });
-  g.append(шапка);
-  if (открыт) {
-    const тело = el('div', 'ed-list-body ed-lines');
-    (строки || []).forEach(с => тело.append(с));
-    if (наполнить) наполнить(тело);
-    g.append(тело);
-  }
-  return g;
-}
-
-function designItem(г, р) {
-  const ключ = 'token:' + г.key + '.' + р.key;
-  const с = el('div', 'ed-nav-row');
-  // Строка собрана как в навигаторе: главное слева, кнопки справа. Иначе она
-  // заполняет колонки списка не по две ячейки, и список разъезжается.
-  // Отступ — от уровня, а не от числа соседей: раздел всегда лежит в группе.
-  const главное = el('span', 'ed-line-main');
-  главное.style.paddingLeft = levelIndent(0);
-  главное.append(el('span', 'ed-cell ed-handle-off'), el('span', 'ed-cell ed-chevron-off'));
-  const b = el('button', 'ed-item');
-  b.type = 'button';
-  b.append(el('span', 'ed-name', t(СПРАВКИ[р.key] ? 'nav.' + р.key : 'design.' + р.key)));
-  b.setAttribute('aria-current', String(S.section === ключ));
-  b.addEventListener('click', () => go(() => { S.section = ключ; }));
-  главное.append(b);
-  с.append(главное, el('span', 'ed-line-tools'));
-  return с;
-}
-
-/** Правка вкладки «Оформление». */
-function drawDesign(где) {
-  const [гр, сек] = String(S.section).slice(6).split('.');
-  // Справка стоит в той же группе «Для разработчика», что и разметка, и путь
-  // до неё называется так же, как остальные: группа и раздел.
-  if (СПРАВКИ[сек]) {
-    crumbs([{ имя: t('nav.dev') }, { имя: t('nav.' + сек) }], $('form-crumbs'), () => {});
-    return где.append(inGrid(СПРАВКИ[сек]()));
-  }
-  const group = (S.project.theme.groups || []).find(г => г.key === гр) || { sections: [] };
-  const раздел = (group.sections || []).find(x => x.key === сек) || {};
-  // Крошка называет то место, где раздел стоит в навигаторе. Разделы для
-  // разработчика собраны в свой список, и путь до них — тот же список.
-  crumbs([{ имя: t(раздел.dev ? 'nav.dev' : 'design.' + гр) }, { имя: t('design.' + сек) }],
-    $('form-crumbs'), () => {});
-  if (раздел.source === 'typography') return где.append(inGrid(typesetForm()));
-  if (раздел.source === 'markup') return где.append(inGrid(markupForm()));
-  где.append(designSection(гр, сек, раздел.pattern));
-}
-
-/**
- * Правила набора: сам список правил и переключатель над ним. Обёртки-раздела
- * у списка нет — он единственное содержимое экрана, и второй заголовок над
- * ним повторял бы путь в баре.
- */
-function typesetForm() {
-  const блок = el('div', 'ed-node');
-  const т = S.data.typography;
-  блок.append(node(т, 'enabled', ['typography', 'enabled'], ctx()));
-  блок.append(plainList(т, 'rules', ['typography', 'rules'], ctx()));
-  return блок;
-}
-
-/**
- * Раздел вкладки «Оформление» — таблица: строка это токен, колонка это его
- * вариант (ступень экрана или светлота цвета). Подписи колонок стоят один раз
- * в шапке, а не повторяются в каждой строке.
- */
-function designSection(group, раздел, pattern) {
-  if (раздел === 'styles') return wholeSpellings();
-  return tokenTable(tokenNames(pattern), linkOptions(group, раздел));
-}
-
-/* #region Таблица токенов */
-
-/**
- * Каркас таблицы. Колонки те же, что и у строки элемента во вкладке «Сайт»:
- * ручка · шеврон · имя · значения · кнопки, поэтому имена начинаются на одной
- * вертикали в обеих вкладках.
- */
-function tokenTable(имена, вариантыСписка) {
-  const колонки = steps(имена);
-  const т = tableFrame(колонки.map(ruleCaption));
-  имена.forEach(имя => tableRow(т, {
-    имя: tokenLabel(имя), id: имя, колонки,
-    ячейка: где => {
-      const в = tokenOptions(имя).find(x => x.where === где);
-      if (!в) return null;
-      return /^(#|rgb|hsl|linear-gradient)/.test(tokenValue(в))
-        ? colorField(в) : tokenField(в, вариантыСписка);
-    },
-    токены: tokenOptions(имя),
-    ссылки: [имя],
-    растягивать: true,
-    переименовать: новое => renameToken(имя, новое),
-  }));
-  return т;
-}
-
-/**
- * Переименование токена: имя меняется сразу в наборе токенов, в вёрстке сайта
- * и в именах оформления. Иначе имя разошлось бы со значением или со стилями.
- */
-function renameToken(старое, новое) {
-  const имя = новое.startsWith('--') ? новое : '--' + новое;
-  if (!/^--[a-z][a-z0-9-]*$/.test(имя) || tokenOptions(имя).length) return;
-  const было = new RegExp(старое.replace(/[-]/g, '\\$&') + '(?![a-z0-9-])', 'g');
-  S.theme.css = S.theme.css.replace(было, имя);
-  if (S.styles) S.styles = S.styles.replace(было, имя);
-  S.theme.tokens = parseTokens(S.theme.css);
-  const карта = {};
-  for (const [к, з] of Object.entries(S.theme.values))
-    карта[к.startsWith(старое + '@') ? имя + к.slice(старое.length) : к] = з;
-  S.theme.values = карта;
-  moveName(старое, имя);
-  apply(true);
-}
-
-/** Человеческое имя переезжает вместе с токеном: пара ключ↔значение не рвётся. */
-function moveName(старое, новое) {
-  const имена = ((S.project.theme || {}).names) || {};
-  for (const язык of Object.keys(имена)) {
-    if (язык.startsWith('$')) continue;
-    const о = имена[язык];
-    const ключ = 'token.' + старое.slice(2);
-    if (о && ключ in о) { о['token.' + новое.slice(2)] = о[ключ]; delete о[ключ]; }
-  }
-  projectNames();
-}
-
-/** Ступени экрана, на которых хоть один токен раздела переопределён. */
-function steps(имена) {
-  const итог = [];
-  for (const т of S.theme.tokens)
-    if (имена.includes(т.name) && !итог.includes(т.where)) итог.push(т.where);
-  return итог.length ? итог : [':root'];
-}
-
-function tableFrame(подписи) {
-  const т = el('div', 'ed-table');
-  // repeat() не принимает var(), поэтому колонки считаются здесь, а не в CSS.
-  // Имени отдаётся всё, что не нужно значениям: у сетки в колонке стоит «4»,
-  // а подпись «Кадров видно сразу» переносить незачем.
-  т.style.gridTemplateColumns = 'var(--size-cell) var(--size-cell) minmax(0, var(--measure-label)) '
-    + `repeat(${подписи.length}, minmax(0, var(--measure-pick))) 1fr`;
-  if (подписи.length > 1) {
-    const ш = el('div', 'ed-tr ed-th-row');
-    ш.append(el('span'), el('span'), el('span'));
-    подписи.forEach(п => ш.append(el('span', 'ed-th', п)));
-    ш.append(el('span'));
-    т.append(ш);
-  }
-  return т;
-}
-
-/**
- * Строка таблицы: шеврон раскрывает подробности, дальше имя, значения по
- * колонкам и кнопки. Значение, у которого ступень одна, занимает всю ширину.
- */
-function tableRow(таблица, { имя, id, колонки, ячейка, токены, ссылки, подробно,
-                                  растягивать = false, переименовать = null }) {
-  подробно = подробно || (linkCount(ссылки) ? (() => usedIn(ссылки)) : null);
-  const row = el('div', 'ed-tr');
-  const подробности = el('div', 'ed-tr-detail');
-  подробности.hidden = true;
-
-  // Шеврон есть только там, где под ним что-то есть: пустой список никому
-  // ничего не сообщает, а место занимает.
-  let открыт = false;
-  const шеврон = подробно ? chevron(false, () => {
-    открыт = !открыт;
-    подробности.hidden = !открыт;
-    шеврон.textContent = открыт ? '▾' : '▸';
-    if (открыт && !подробности.childElementCount) подробности.append(подробно());
-  }) : el('span', 'ed-cell ed-chevron-off');
-
-  const подпись = el('span', 'ed-line-name');
-  const название = el('span', 'ed-name', имя);
-  подпись.append(название);
-  if (id) подпись.title = String(id);
-  row.append(el('span', 'ed-cell ed-handle-off'), шеврон, подпись);
-  if (ссылки && ссылки.length && !ссылки.some(isUsed)) row.dataset.unused = 'true';
-
-  // Значение без ступеней занимает всю ширину: колонка «мобильный» для него
-  // ничего не значит. У цвета так нельзя — там колонки это разные цвета.
-  const поля = колонки.map(ячейка);
-  const одно = растягивать && поля.filter(Boolean).length === 1;
-  поля.forEach(поле => {
-    const я = el('span', 'ed-td');
-    if (поле) я.append(поле);
-    if (одно && поле) я.style.gridColumn = `4 / ${4 + колонки.length}`;
-    if (одно && !поле) я.hidden = true;
-    row.append(я);
-  });
-
-  const кнопки = el('span', 'ed-line-tools');
-  кнопки.append(nameEdit(название, имя, переименовать) || el('span', 'ed-cell'),
-                discard(токены) || el('span', 'ed-cell'));
-  row.append(кнопки);
-
-  таблица.append(row, подробности);
-  return row;
-}
-
-/**
- * Карандаш у токена переименовывает его. Имя цвета врёт, если поменять
- * значение и не поменять имя, — поэтому переименование должно быть под рукой.
- */
-function nameEdit(название, имя, переименовать) {
-  const b = iconButton('edit', t('btn.edit'), () => {
-    const поле = el('input', 'ed-name-field');
-    поле.type = 'text';
-    поле.value = имя;
-    поле.setAttribute('aria-label', t('btn.edit'));
-    название.textContent = '';
-    название.append(поле);
-    поле.focus();
-    поле.select();
-    const accept = () => {
-      const новое = поле.value.trim();
-      название.textContent = новое || имя;
-      if (новое && новое !== имя) переименовать(новое);
-    };
-    поле.addEventListener('blur', accept);
-    поле.addEventListener('keydown', е => { if (е.key === 'Enter') поле.blur(); });
-  });
-  if (!переименовать) return null;
-  return b;
-}
-
-/** Вернуть значение из файла: правка живёт в S.theme.values до сохранения. */
-function discard(токены) {
-  const href = т => т.name + '@' + т.where;
-  const есть = (токены || []).some(т => href(т) in S.theme.values);
-  if (!есть) return null;
-  return iconButton('undo', t('btn.reset'), () => {
-    токены.forEach(т => delete S.theme.values[href(т)]);
-    S.theme.css = replaceTokens(S.sources.get(FILES().tokens), S.theme.tokens, S.theme.values);
-    apply(false);
-    drawMain();
-  });
-}
-
-/* #endregion */
-
-/* #region Цвет */
-
-/** Поле цвета: текст и квадратик рядом — квадратик у всего, что цвет. */
-function colorField(т) {
-  const обёртка = el('span', 'ed-color');
-  const значение = tokenValue(т);
-  const поле = el('input');
-  поле.type = 'text';
-  поле.className = 'ed-hex';
-  поле.value = значение;
-  поле.setAttribute('aria-label', т.name);
-  const hex = v => /^#[0-9a-fA-F]{6}$/.test(v);
-
-  // Пипетка понимает только #rrggbb. Для rgba и градиента она молча показала
-  // бы чёрный, поэтому там стоит образец с настоящим значением.
-  if (!hex(значение)) {
-    const образец = colorSwatch(значение);
-    поле.addEventListener('input', () => {
-      образец.style.background = поле.value;
-      writeToken(т, поле.value);
-    });
-    обёртка.append(образец, поле);
-    return обёртка;
-  }
-  const пипетка = el('input');
-  пипетка.type = 'color';
-  пипетка.className = 'ed-picker';
-  пипетка.value = значение;
-  пипетка.setAttribute('aria-label', т.name);
-  поле.addEventListener('input', () => {
-    if (hex(поле.value)) пипетка.value = поле.value;
-    writeToken(т, поле.value);
-  });
-  пипетка.addEventListener('input', () => { поле.value = пипетка.value; writeToken(т, пипетка.value); });
-  обёртка.append(пипетка, поле);
-  return обёртка;
-}
-
-/** Есть ли вообще кому ссылаться на этот токен: другие токены или вёрстка. */
-const linkCount = имена => имена.some(и => isUsed(и));
-
-/** Токен в деле, если на него ссылается вёрстка сайта или другой токен. */
-function isUsed(имя) {
-  const узор = `var(${имя})`;
-  return (S.styles || '').includes(узор)
-    || S.theme.tokens.some(т => т.name !== имя && т.value.includes(узор));
-}
-
-/** Роли и градиенты, которые ссылаются на этот цвет. */
-function usedIn(имена) {
-  const внутри = el('div');
-  внутри.append(el('p', 'ed-section-label', t('design.usedIn')));
-  const роли = S.theme.tokens.filter(т => имена.some(и => т.value.includes(`var(${и})`)));
-  if (!роли.length) внутри.append(el('p', 'ed-hint', '—'));
-  роли.forEach(р => внутри.append(el('p', 'ed-hint', tokenLabel(р.name, р.caption))));
-  return внутри;
-}
-
-/* #endregion */
-
-/* #region Написания */
-
-const SPELLING_NAMES = () => {
-  const итог = [];
-  for (const т of S.theme.tokens) {
-    const m = /^--type-(.+)-(font|weight|size|leading|tracking|caps)$/.exec(т.name);
-    if (m && !итог.includes(m[1])) итог.push(m[1]);
-  }
-  return итог;
-};
-
-const ВЕСА = ['400', '500', '700'];
-const КАПС = ['none', 'uppercase'];
-const СВОЙСТВА = [['font', 'select'], ['weight', 'select'], ['leading', 'text'],
-                  ['tracking', 'text'], ['caps', 'select']];
-
-/**
- * Написания той же таблицей: в колонках кегль по ступеням экрана, остальные
- * свойства — под шевроном, иначе строка растянулась бы на семь колонок.
- */
-function wholeSpellings() {
-  const имена = SPELLING_NAMES();
-  const колонки = steps(имена.map(и => `--type-${и}-size`));
-  const т = tableFrame(колонки.map(ruleCaption));
-  имена.forEach(имя => {
-    const row = tableRow(т, {
-      имя: t('style.' + имя, имя), id: figmaName(имя), колонки,
-      ячейка: где => {
-        const в = tokenOptions(`--type-${имя}-size`).find(x => x.where === где);
-        return в ? sizeField(в) : null;
-      },
-      токены: СВОЙСТВА.map(([с]) => tokenOptions(`--type-${имя}-${с}`))
-        .flat().concat(tokenOptions(`--type-${имя}-size`)),
-      подробно: () => spellingProps(имя),
-      растягивать: true,
-    });
-    return row;
-  });
-  return т;
-}
-
-function spellingProps(имя) {
-  const внутри = el('div', 'ed-node');
-  for (const [свойство, вид] of СВОЙСТВА) {
-    const т = tokenOptions(`--type-${имя}-${свойство}`)[0];
-    if (!т) continue;
-    внутри.append(fieldRow({
-      name: t('type.' + свойство), id: т.name,
-      value: propertyField(т, свойство, вид),
-      tools: [discard([т])],
-    }));
-  }
-  return внутри;
-}
-
-/** Имя стиля так, как оно называется в Figma: display-hero → Display/Hero. */
-const figmaName = имя => имя.replace('-', '/').replace(/(^|[/-])([a-z])/g,
-  (_, р, б) => р + б.toUpperCase());
-
-/** Кегль в rem, рядом серым — те же пиксели: человек мыслит и так, и так. */
-function sizeField(т) {
-  const обёртка = el('span', 'ed-size');
-  const поле = el('input');
-  поле.type = 'text';
-  поле.className = 'ed-num';
-  поле.value = tokenValue(т);
-  поле.setAttribute('aria-label', т.name);
-  const вПикселях = el('span', 'ed-hint');
-  const recount = () => {
-    const m = /^([\d.]+)rem$/.exec(поле.value.trim());
-    вПикселях.textContent = m ? `(${Math.round(parseFloat(m[1]) * 16)} px)` : '';
-  };
-  recount();
-  поле.addEventListener('input', () => { recount(); writeToken(т, поле.value); });
-  обёртка.append(поле, вПикселях);
-  return обёртка;
-}
-
-function propertyField(т, свойство, вид) {
-  const обёртка = el('div', 'ed-control');
-  const значение = tokenValue(т);
-  if (вид === 'select') {
-    const список = свойство === 'font' ? tokenNames('^--font-').map(и => ({ value: `var(${и})`, caption: tokenLabel(и) }))
-      : свойство === 'weight' ? ВЕСА.map(в => ({ value: в, caption: в }))
-      : КАПС.map(в => ({ value: в, caption: t('caps.' + в, в) }));
-    const поле = el('select');
-    if (!список.some(в => в.value === значение)) список.unshift({ value: значение, caption: значение });
-    список.forEach(в => {
-      const o = el('option', null, в.caption);
-      o.value = в.value;
-      поле.append(o);
-    });
-    поле.value = значение;
-    поле.setAttribute('aria-label', т.name);
-    поле.addEventListener('change', () => writeToken(т, поле.value));
-    обёртка.append(поле);
-    return обёртка;
-  }
-  const поле = el('input');
-  поле.type = 'text';
-  поле.className = 'ed-num';
-  поле.value = значение;
-  поле.setAttribute('aria-label', т.name);
-  поле.addEventListener('input', () => writeToken(т, поле.value));
-  обёртка.append(поле);
-  return обёртка;
-}
-
-/* #endregion */
-
-/**
- * Значение-ссылка выбирается списком. Выбирать можно только из токенов с
- * конечным значением: цепочек «ссылка на ссылку» не бывает, иначе правка
- * палитры отзывается там, где человек её не ждёт.
- */
-const finalTokens = () => S.theme.tokens.filter(x => x.where === ':root'
-  && !isTechnicalToken(x) && !/^var\(--/.test(x.value));
-
-/**
- * Откуда берутся варианты для значения-ссылки: раздел объявлен в манифесте
- * полем options. Роль выбирает из палитры, а не из чего попало, и уж точно
- * не из другой роли.
- */
-function linkOptions(гр, сек) {
-  const group = (S.project.theme.groups || []).find(г => г.key === гр);
-  const раздел = group && (group.sections || []).find(x => x.key === сек);
-  const источник = раздел && раздел.options
-    && (group.sections || []).find(x => x.key === раздел.options);
-  if (!источник || !источник.pattern) return finalTokens();
-  const re = new RegExp(источник.pattern);
-  return finalTokens().filter(x => re.test(x.name));
-}
-
-function tokenField(т, варианты) {
-  const значение = tokenValue(т);
-  if (/^var\(--/.test(значение)) {
-    const обёртка = el('span', 'ed-color');
-    обёртка.append(colorSwatch(значение));
-    const сп = варианты && варианты.length ? варианты : finalTokens();
-    const поле = el('select');
-    сп.forEach(x => {
-      const o = el('option', null, tokenLabel(x.name, x.caption));
-      o.value = `var(${x.name})`;
-      поле.append(o);
-    });
-    if (!сп.some(x => `var(${x.name})` === значение)) {
-      const o = el('option', null, значение);
-      o.value = значение;
-      поле.append(o);
-    }
-    поле.value = значение;
-    поле.setAttribute('aria-label', т.name);
-    поле.addEventListener('change', () => {
-      writeToken(т, поле.value);
-      обёртка.replaceChild(colorSwatch(поле.value), обёртка.firstChild);
-    });
-    обёртка.append(поле);
-    return обёртка;
-  }
-  const поле = el('input');
-  поле.type = 'text';
-  поле.className = /px|rem|ms|^\d/.test(значение) ? 'ed-num' : '';
-  поле.value = значение;
-  поле.setAttribute('aria-label', т.name);
-  поле.addEventListener('input', () => writeToken(т, поле.value));
-  return поле;
-}
-
-/** Образец показывает настоящее значение — с прозрачностью и градиентом. */
-function colorSwatch(значение) {
-  const о = el('span', 'ed-swatch');
-  о.style.background = /^var\(--/.test(значение)
-    ? `var(${(значение.match(/^var\((--[a-z0-9-]+)\)$/) || [])[1] || '--role-bg'})`
-    : значение;
-  return о;
-}
-
-/**
- * Имя шаблона по-человечески. Своего перечня имён у разметки нет: шаблон зовут
- * так же, как зовут то, что он рисует — тип блока, часть шапки, окно поверх
- * страницы. Чего нет ни в одном словаре, показывается по правилу ключа.
- */
-function templateName(имя) {
-  const путь = String(имя).replace('-', '.');
-  return t(`blockType.${имя}.name`, '')
-    || t(`part.${путь}.name`, '')
-    || t(`overlay.${имя}.name`, '')
-    || t(`template.${имя}`, '')
-    || t(`tag.${имя}`, '')
-    || humanize(имя);
-}
-
-function markupForm() {
-  const блок = el('div', 'ed-node');
-  if (!S.template || !S.templateNames.includes(S.template)) S.template = S.templateNames[0];
-  const выбор = el('select');
-  for (const имя of S.templateNames) {
-    const o = el('option', null, templateName(имя));
-    o.value = имя;
-    выбор.append(o);
-  }
-  выбор.value = S.template;
-  выбор.addEventListener('change', () => { S.template = выбор.value; drawMain(); });
-  const обёртка = el('div', 'ed-control');
-  обёртка.append(выбор);
-  блок.append(fieldRow({ name: t('ui.element', 'элемент'), value: обёртка }));
-
-  const исходный = S.templates[S.template] || '';
-  const дерево = parseMarkup(исходный);
-  // Код показывается, но не правится: два места для одного и того же — это
-  // два источника правды, а главное из них дерево.
-  const код = el('pre', 'ed-code');
-  код.textContent = исходный;
-
-  const write = () => {
-    const text = serializeMarkup(дерево);
-    S.templates[S.template] = text;
-    S.markup = replaceTemplate(S.markup, S.template, text);
-    setMarkup(S.templates);
-    код.textContent = text;
-    apply(false);
-  };
-
-  дерево.дети.forEach(у => drawMarkupNode(у, блок, 0, write));
-  блок.append(fieldRow({ name: t('markup.source', 'Source'), value: код }));
-  return блок;
-}
-
-/**
- * Строка разметки: чем узел является и что в нём стоит. Правится только
- * видимый текст — всё остальное показано, чтобы было понятно, куда он попадёт.
- */
-function drawMarkupNode(у, куда, уровень, write) {
-  if (!showNode(у)) return;
-  const fieldName = к => S.dict.caption(String(к).split('.').pop());
-  let имя = '', значение = null;
-  const ВИДЫ = { поле: 'value', повтор: 'repeat', иначе: 'otherwise' };
-
-  if (у.вид === 'тег') {
-    имя = t('tag.' + у.тег, у.тег);
-    const свойства = humanAttributes(у.свойства, fieldName);
-    if (свойства) значение = el('span', 'ed-hint', свойства);
-  } else if (у.вид === 'текст') {
-    const части = /^(\s*)([\s\S]*?)(\s*)$/.exec(у.сырое);
-    имя = t('markup.text', 'Text');
-    const поле = el('input');
-    поле.type = 'text';
-    поле.value = части[2];
-    поле.setAttribute('aria-label', имя);
-    поле.addEventListener('input', () => {
-      у.сырое = части[1] + поле.value + части[3];
-      write();
-    });
-    значение = поле;
-  } else if (у.вид === 'заметка') {
-    имя = t('markup.note', 'Note');
-    значение = el('span', 'ed-hint', у.текст);
-  } else if (у.вид === 'вставка') {
-    имя = t('markup.include', 'Include');
-    const b = el('button', 'ed-check', у.имя);
-    b.type = 'button';
-    b.addEventListener('click', () => { S.template = у.имя; drawMain(); });
-    значение = b;
-  } else {
-    имя = t('markup.' + (ВИДЫ[у.вид] || у.вид), у.вид);
-    значение = el('span', 'ed-hint', fieldName(у.имя));
-  }
-
-  куда.append(fieldRow({ name: имя, id: у.имя || у.тег, value: значение, level: уровень }));
-  (у.дети || []).forEach(д => drawMarkupNode(д, куда, уровень + 1, write));
-}
-
-// #endregion
 
 // #region Предпросмотр и состояние
 
@@ -3508,7 +2385,7 @@ function recordByHref(href) {
 }
 
 let таймер = null;
-function apply(структурно) {
+export function apply(структурно) {
   if (структурно) draw();
   clearTimeout(таймер);
   таймер = setTimeout(() => {
@@ -3640,7 +2517,7 @@ function placeInTree(ключ) {
   return null;
 }
 
-function updateState() {
+export function updateState() {
   const сп = changes();
   // Черновик держится ровно там, где есть что держать: чистое состояние
   // черновика не оставляет, иначе редактор предложит вернуть пустоту.
@@ -3656,13 +2533,13 @@ function updateState() {
   $('save').disabled = false;
 }
 
-function draw() {
+export function draw() {
   drawTabs();
   drawTree();
   drawMain();
 }
 
-function go(изменить) {
+export function go(изменить) {
   изменить();
   if (!S.section) {
     S.section = 'page:' + S.showing;
@@ -3802,14 +2679,14 @@ async function save() {
   отмена.focus();
 }
 
-const button = (имя, действие) => {
+export const button = (имя, действие) => {
   const b = el('button', 'ed-btn', имя);
   b.type = 'button';
   b.addEventListener('click', действие);
   return b;
 };
 
-function accept(файлы) {
+export function accept(файлы) {
   for (const [путь, содержимое] of файлы) {
     if (путь.startsWith(S.project.media.folder)) { S.sources.set(путь, содержимое); continue; }
     if (путь.endsWith('index.html')) S.pagesWere.set(путь, содержимое);
@@ -3846,7 +2723,7 @@ async function acceptKey(токен) {
  * окно открывается принудительно и уже с подставленным значением — стирать
  * сохранённое, чтобы показать форму, нельзя: отмена оставила бы без прав.
  */
-function login({ show = false } = {}) {
+export function login({ show = false } = {}) {
   return new Promise(готово => {
     const д = $('login');
     д.addEventListener('close', () => { д.textContent = ''; готово(); }, { once: true });
@@ -3934,7 +2811,7 @@ function labelColumns() {
  * `_elements/names.<язык>.json`, имена оформления — в манифесте. Английского
  * словаря нет: по-английски вещь называется так, как называется её ключ.
  */
-const projectNames = () => setProjectNames(S.names || {});
+export const projectNames = () => setProjectNames(S.names || {});
 
 /**
  * Словарь языка: слова сайта, имена сущностей и имена оформления — один файл
@@ -3946,7 +2823,7 @@ async function loadNames() {
   const шаблон = FILES().lang;
   if (шаблон) {
     try {
-      S.names = JSON.parse(await pick(шаблон.replace('{lang}', siteLang())));
+      S.names = JSON.parse(await pick(путьФайла('lang')));
     } catch { S.names = {}; }
   }
   setLang(S.names);
@@ -3954,7 +2831,7 @@ async function loadNames() {
 }
 
 /** Язык сайта объявлен в манифесте; язык редактора — свой, он у locale.mjs. */
-const siteLang = () => (S.project && S.project.lang) || 'ru';
+export const siteLang = () => (S.project && S.project.lang) || 'ru';
 
 /**
  * Настройки редактора: тот же сортамент, только его собственный. Правка видна

@@ -12,6 +12,7 @@
     "templates": "_structure/templates.json",
     "navigation": "_structure/navigation.json",
     "form": "_structure/form.json",
+    "captions": "_structure/captions.{lang}.json",
     "types": "_elements/types.json",
     "markup": "_elements/markup.html",
     "tokens": "_theme/tokens.css",
