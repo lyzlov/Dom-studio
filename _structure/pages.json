@@ -1,5 +1,5 @@
 {
-  "$comment": "Состав страниц. Страницы-сущности (курсы, события, смены, посты) здесь не перечисляются — их описывают шаблоны в templates.json. Страница, которой здесь нет, пока свёрстана руками.",
+  "$comment": "What the pages consist of. Record pages (courses, events, camp sessions, posts) are not listed here — templates.json describes them. A page missing from here is still laid out by hand.",
   "blog/index.html": {
     "heading": {},
     "path": [
@@ -75,12 +75,7 @@
     ]
   },
   "about/team/index.html": {
-    "heading": {
-      "lead": [
-        "Занятия ведут архитекторы, художники и педагоги. У каждого курса свой куратор, который ведёт группу весь модуль или семестр.",
-        "Школу основала Ольга Зинюкова — архитектор и педагог, выпускница МАрхИ 2004 года."
-      ]
-    },
+    "heading": {},
     "path": [
       {
         "href": "index.html"
@@ -96,11 +91,7 @@
     ]
   },
   "about/faq/index.html": {
-    "heading": {
-      "lead": [
-        "Мы собрали ответы на самые частые вопросы. Если не нашли своего — напишите нам, контакты на странице <a href=\"../contacts/\">Контакты</a>."
-      ]
-    },
+    "heading": {},
     "path": [
       {
         "href": "index.html"
@@ -133,14 +124,7 @@
     ]
   },
   "services/admissions/index.html": {
-    "heading": {
-      "lead": [
-        "Московские вузы — архитектура, дизайн, строительство. Ориентир для учеников 11–16 лет, готовящихся к поступлению."
-      ],
-      "paragraphs": [
-        "Список расположен по престижности в архитектурно-дизайнерской профессиональной среде, а не по общему рейтингу вузов."
-      ]
-    },
+    "heading": {},
     "path": [
       {
         "href": "index.html"
@@ -158,9 +142,6 @@
   },
   "about/studio/index.html": {
     "heading": {
-      "lead": [
-        "Два зала — Большой и Малый — в посёлке Ильинское-Усово под Красногорском."
-      ],
       "extra": [
         {
           "type": "contacts",

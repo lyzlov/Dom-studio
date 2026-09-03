@@ -96,12 +96,21 @@ export function createDict(types, данные, назвать = (ключ, за
     /** Поле-link: адрес хранится, название показывается. Объявлено у вида. */
     refOf: (kindKey, ключПоля) => ((byKey(kindKey) || {}).refs || {})[ключПоля] || null,
 
-    /** Варианты значения берутся из другого справочника по объявленному полю. */
+    /**
+     * Варианты значения берутся из другого справочника по объявленному полю.
+     * Объявлена подпись — хранится одно, показывается другое: у куратора в
+     * данных лежит его идентификатор, а в списке стоит имя.
+     */
     optionsOf: (kindKey, ключПоля) => {
       const о = ((byKey(kindKey) || {}).options || {})[ключПоля];
       if (!о) return null;
       const сп = byPath((byKey(о.kind) || {}).data) || [];
-      return [...new Set(сп.map(з => з && з[о.field]).filter(Boolean).map(String))];
+      if (!о.caption)
+        return [...new Set(сп.map(з => з && з[о.field]).filter(Boolean).map(String))];
+      const пары = new Map();
+      for (const з of сп)
+        if (з && з[о.field]) пары.set(String(з[о.field]), String(з[о.caption] || з[о.field]));
+      return [...пары].map(([value, caption]) => ({ value, caption }));
     },
 
     /** Пары «адрес — название» для выпадающего списка. */

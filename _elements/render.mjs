@@ -8,7 +8,7 @@ import { t, tf } from './lang.mjs';
 const R = (имя, данные) => render(имя, данные).replace(/\n$/, '');
 
 /** Сумма со знаком валюты: знак объявлен в словаре языка. */
-const money = сумма => `${сумма}${t('ui.currency', ' ₽')}`;
+const money = сумма => `${сумма}${t('ui.currency', ' $')}`;
 
 /* #region Вспомогательное */
 export { esc };
@@ -29,6 +29,37 @@ export function linkHtml(откуда, куда) {
 export const pad = (n, s) => s.split('\n').map(l => l ? ' '.repeat(n) + l : l).join('\n');
 
 export const isPast = (поКакую, сегодня) => поКакую < сегодня;
+
+/**
+ * Возраст. В данных он лежит промежутками — `[{ min: 7, max: 9 }, { min: 10,
+ * max: 12 }]`, `max: null` значит «и старше», пустой список — «любой». По нему
+ * считают: корзины фильтра, отбор, сравнение. Словами он становится только на
+ * странице, и слова эти из словаря: «лет», «и», десятичный знак у каждого
+ * языка свои.
+ */
+const число = n => String(n).replace('.', t('ui.decimal', '.'));
+
+export function ageText(промежутки) {
+  // Поля нет — сказать нечего; пустой список — сказано «любой», и это разное.
+  if (!Array.isArray(промежутки)) return '';
+  if (!промежутки.length) return t('ui.ageAny', 'any age');
+  const части = промежутки.map(({ min: от, max: до }) => (до == null
+    ? tf('ui.ageFrom', '{from}+', { from: число(от) })
+    : (от === до ? число(от) : `${число(от)}–${число(до)}`)));
+  return tf('ui.ageYears', '{ages} years', { ages: части.join(t('ui.ageJoin', ' and ')) });
+}
+
+const КОРЗИНЫ = [[3, 5, '3–5'], [6, 10, '6–10'], [11, 16, '11–16']];
+
+/** Корзины фильтра, с которыми возраст пересекается. Без разбора текста. */
+export function ageBuckets(промежутки) {
+  if (!Array.isArray(промежутки) || !промежутки.length) return [];
+  const имена = new Set();
+  for (const { min: от, max: до } of промежутки)
+    for (const [a, b, имя] of КОРЗИНЫ)
+      if (от <= b && (до == null ? 99 : до) >= a) имена.add(имя);
+  return КОРЗИНЫ.map(([, , имя]) => имя).filter(имя => имена.has(имя));
+}
 
 /* #region Каркас: head, шапка, подвал, модальное окно */
 function head({ site, title, description, путь, depth, image }) {
@@ -188,27 +219,27 @@ const substitute = (шаблон, знач) => String(шаблон).replace(/\{(
 
 export const HEAD_FIELDS = {
   course: (c, ctx) => [
-    [t('ui.age', 'Возраст'), esc(c.age)],
-    [t('ui.time', 'Время'), esc(ctx.lessonTime(c, { withRoom: true }))],
-    [t('ui.curator', 'Куратор'), esc(c.curator)],
-    [t('ui.payment', 'Оплата'), esc(ctx.payment(c))],
+    [t('ui.age'), esc(ageText(c.age))],
+    [t('ui.time'), esc(ctx.lessonTime(c, { withRoom: true }))],
+    [t('ui.curator'), esc(ctx.person(c.curator))],
+    [t('ui.payment'), esc(ctx.payment(c))],
   ],
-  event: e => [
-    [t('ui.date', 'Дата'), esc(e.date.caption)],
-    [t('ui.time', 'Время'), esc(e.date.time)],
-    [t('ui.age', 'Возраст'), esc(e.age)],
-    [t('ui.place', 'Место'), esc(e.place)],
-    [e.curators.length > 1 ? t('ui.curators', 'Кураторы') : t('ui.curator', 'Куратор'), esc(e.curators.join(', '))],
-    [t('ui.price', 'Цена'), esc(e.price)],
+  event: (e, ctx) => [
+    [t('ui.date'), esc(e.date.caption)],
+    [t('ui.time'), esc(e.date.time)],
+    [t('ui.age'), esc(ageText(e.age))],
+    [t('ui.place'), esc(e.place)],
+    [e.curators.length > 1 ? t('ui.curators') : t('ui.curator'), esc(ctx.person(e.curators))],
+    [t('ui.price'), esc(e.price)],
   ],
   post: () => [],
-  session: s => [
-    [t('ui.dates', 'Даты'), esc(s.dates.caption)],
-    [t('ui.time', 'Время'), esc(s.dates.time)],
-    [t('ui.age', 'Возраст'), esc(s.age)],
-    [t('ui.place', 'Место'), esc(s.place)],
-    [t('ui.curator', 'Куратор'), esc(s.curator)],
-    [t('ui.price', 'Цена'), esc(s.price)],
+  session: (s, ctx) => [
+    [t('ui.dates'), esc(s.dates.caption)],
+    [t('ui.time'), esc(s.dates.time)],
+    [t('ui.age'), esc(ageText(s.age))],
+    [t('ui.place'), esc(s.place)],
+    [t('ui.curator'), esc(ctx.person(s.curator))],
+    [t('ui.price'), esc(s.price)],
   ],
 };
 
@@ -216,14 +247,14 @@ const ПОДПИСЬ_КАДРА = {
   course: c => c.title,
   event: e => e.title,
   post: п => п.heading,
-  session: s => tf('ui.sessionPoster', 'Афиша смены «{title}»', { title: s.title }),
+  session: s => tf('ui.sessionPoster', 'Poster of session “{title}”', { title: s.title }),
 };
 
 export const priceLine = тариф => [
-  тариф.trial ? tf('ui.priceTrial', 'Пробное — {price}', { price: money(тариф.trial) })
-              : t('ui.priceNoTrial', 'Пробного нет'),
-  тариф.single ? tf('ui.priceSingle', 'разовое — {price}', { price: money(тариф.single) })
-               : t('ui.priceNoSingle', 'разового занятия нет'),
+  тариф.trial ? tf('ui.priceTrial', 'Trial — {price}', { price: money(тариф.trial) })
+              : t('ui.priceNoTrial', 'No trial'),
+  тариф.single ? tf('ui.priceSingle', 'single — {price}', { price: money(тариф.single) })
+               : t('ui.priceNoSingle', 'no single session'),
 ].join(', ') + '. '
   + тариф.packages.map((п, i) => `${i && п.short ? п.short : п.title} — ${money(п.price)}`).join(', ') + '.';
 
@@ -258,7 +289,7 @@ export function entityPage({ вид, сущность, шаблон, site, ст�
     description: substitute(шаблон.metaDescription, ctx.values),
     путь,
     active: шаблон.parent,
-    path: [{ name: t('ui.home', 'Главная'), href: 'index.html' },
+    path: [{ name: t('ui.home'), href: 'index.html' },
              { name: шаблон.section, href: шаблон.parent },
              { name: сущность.title || сущность.heading }],
   });

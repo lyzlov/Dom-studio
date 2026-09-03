@@ -1,0 +1,8 @@
+{
+  "$comment": "Words of data/form.json in Russian. Key: record and path to the field.",
+  "fields#0.caption": "Имя родителя",
+  "fields#1.caption": "Телефон",
+  "fields#2.caption": "Возраст ребёнка",
+  "fields#3.caption": "Удобное время",
+  "fields#4.caption": "Комментарий"
+}

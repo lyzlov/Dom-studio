@@ -3,7 +3,7 @@
  * Разметка в markup/*.html; здесь сопоставление данных с полями шаблона.
  */
 
-import { esc, linkHtml, galleryHtml, plainTable } from './render.mjs';
+import { esc, linkHtml, galleryHtml, plainTable, ageText, ageBuckets } from './render.mjs';
 import { R as render } from './template.mjs';
 import { t, tf } from './lang.mjs';
 
@@ -15,15 +15,6 @@ export const innerBlocks = (html, путь) =>
 /* #region Карточка */
 const SIZES = '(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw';
 const SIZES_TEAM = '(min-width: 600px) 260px, 45vw';
-
-const КОРЗИНЫ = [[3, 5, '3–5'], [6, 10, '6–10'], [11, 16, '11–16']];
-const numbers = s => (String(s).match(/\d+(?:,\d+)?/g) || []).map(x => parseFloat(x.replace(',', '.')));
-export function ageBuckets(текст) {
-  const n = numbers(текст);
-  if (!n.length) return [];
-  const от = Math.min(...n), до = Math.max(...n);
-  return КОРЗИНЫ.filter(([a, b]) => от <= b && до >= a).map(([, , имя]) => имя);
-}
 
 const picture = ({ base, caption, width, height, up, lazy = true, sizes = SIZES, class: cls = 'card-image' }) =>
   R('picture', { base: up + base, sizes, caption, width, height, lazy,
@@ -58,11 +49,11 @@ export function sessionTime(курс, { withRoom, room = x => x }) {
   const залы = [...new Set(курс.lessons.map(з => room(з.room)))];
   if (залы.length > 1) {
     return курс.lessons
-      .map(з => `${з.day} ${з.time} (${з.age}${withRoom ? `, ${room(з.room)} зал` : ''})`)
+      .map(з => `${з.day} ${з.time} (${ageText(з.age)}${withRoom ? tf('ui.hallOf', ', {room} hall', { room: room(з.room) }) : ''})`)
       .join(' / ');
   }
-  const хвост = withRoom ? `, ${залы[0]} зал` : '';
-  const возрастыРазные = new Set(курс.lessons.map(з => з.age)).size > 1;
+  const хвост = withRoom ? tf('ui.hallOf', ', {room} hall', { room: залы[0] }) : '';
+  const возрастыРазные = new Set(курс.lessons.map(з => JSON.stringify(з.age))).size > 1;
   if (!возрастыРазные) return курс.lessons.map(з => `${з.day} ${з.time}`).join(' / ') + хвост;
   const поДням = [];
   for (const з of курс.lessons) {
@@ -71,7 +62,7 @@ export function sessionTime(курс, { withRoom, room = x => x }) {
     г.слоты.push(з);
   }
   return поДням.map(г => г.слоты
-    .map((з, i) => `${i ? '' : г.day + ' '}${з.time}${withRoom ? ` (${з.age})` : ''}`)
+    .map((з, i) => `${i ? '' : г.day + ' '}${з.time}${withRoom ? ` (${ageText(з.age)})` : ''}`)
     .join(' / ')).join('; ') + хвост;
 }
 
@@ -82,13 +73,13 @@ export const KINDS = {
   course: (c, ctx) => card({
     linkTo: linkHtml(ctx.href, href('courses', c.id)), heading: c.title,
     meta: [`<span class="type-${esc(c.direction)}">${esc(ctx.name('direction', c.direction))}</span>`,
-           `${t('ui.age', 'Возраст')}: ${esc(c.age)}`, esc(ctx.lessonTime(c, { withRoom: false })),
-           `${t('ui.curator', 'Куратор')}: ${esc(c.curator)}`].join('<br>'),
+           `${t('ui.age')}: ${esc(ageText(c.age))}`, esc(ctx.lessonTime(c, { withRoom: false })),
+           `${t('ui.curator')}: ${esc(ctx.person(c.curator))}`].join('<br>'),
     image: c.image, sizes: ctx.sizes, up: ctx.up,
     attrs: { age: ageBuckets(c.age).join(' '),
                 day: [...new Set(c.lessons.map(з => з.day))].join(', '),
                 direction: c.direction },
-    action: t('ui.enrollLower', 'записаться'),
+    action: t('ui.enrollLower', 'sign up'),
   }),
   event: (e, ctx) => {
     const прошедшее = ctx.прошло(e);
@@ -97,18 +88,18 @@ export const KINDS = {
       linkLabel: прошедшее ? e.title
         : `${e.title}, ${e.date.caption.replace(/\s*\d{4}$/, '')}`,
       meta: прошедшее
-        ? [`${t('ui.age', 'Возраст')}: ${esc(e.age)}`, `${t('ui.date', 'Дата')}: ${esc(e.date.caption)}`].filter(x => !/: $/.test(x)).join('<br>')
+        ? [`${t('ui.age')}: ${esc(ageText(e.age))}`, `${t('ui.date')}: ${esc(e.date.caption)}`].filter(x => !/: $/.test(x)).join('<br>')
         : [esc(e.date.caption), esc(e.date.time), esc(e.place)].filter(Boolean).join(' · '),
       description: прошедшее ? null : e.description,
       image: e.image, sizes: ctx.sizes, up: ctx.up, wide: ctx.wide,
-      action: прошедшее ? null : t('ui.enroll', 'Записаться'),
+      action: прошедшее ? null : t('ui.enroll'),
     });
   },
   session: (s, ctx) => card({
     linkTo: linkHtml(ctx.href, href('camp', s.id)), heading: s.title,
-    linkLabel: tf('ui.sessionLink', 'Смена «{title}», {dates}', { title: s.title, dates: s.dates.caption }),
-    meta: [esc(s.dates.caption), esc(s.dates.time), esc(s.age)].filter(Boolean).join(' · '),
-    image: s.image, frameCaption: tf('ui.sessionPoster', 'Афиша смены «{title}»', { title: s.title }),
+    linkLabel: tf('ui.sessionLink', 'Session “{title}”, {dates}', { title: s.title, dates: s.dates.caption }),
+    meta: [esc(s.dates.caption), esc(s.dates.time), esc(ageText(s.age))].filter(Boolean).join(' · '),
+    image: s.image, frameCaption: tf('ui.sessionPoster', 'Poster of session “{title}”', { title: s.title }),
     sizes: ctx.sizes, up: ctx.up,
   }),
   post: (п, ctx) => card({
@@ -129,17 +120,17 @@ export const KINDS = {
 const textBlock = (б, ctx) => innerBlocks(ctx.text(б.text), ctx.href);
 
 const filtersBlock = (б, ctx, list) => {
-  const ПОДПИСИ = () => ({ age: t('ui.age', 'Возраст'), day: t('ui.day', 'День'),
-                         direction: t('ui.direction', 'Направление') });
+  const ПОДПИСИ = () => ({ age: t('ui.age'), day: t('ui.day'),
+                         direction: t('ui.direction') });
   // Порядок дней приходит из словаря языка: сами дни лежат в данных, а их
   // череда — свойство языка, а не расписания.
-  const ПОРЯДОК_ДНЕЙ = () => t('ui.weekdayOrder', 'Пн, Вт, Ср, Чт, Пт, Сб, Вс').split(',').map(д => д.trim());
+  const ПОРЯДОК_ДНЕЙ = () => t('ui.weekdayOrder', 'Mon, Tue, Wed, Thu, Fri, Sat, Sun').split(',').map(д => д.trim());
   const values = группа => {
     if (группа === 'age') return ['3–5', '6–10', '11–16'];
     if (группа === 'day') return ПОРЯДОК_ДНЕЙ().filter(д => list.some(c => c.lessons.some(з => з.day === д)));
     return [...new Set(list.map(c => c.direction))]
       .map(id => ({ value: id, caption: ctx.name('direction', id) }))
-      .sort((a, b) => a.caption.localeCompare(b.caption, t('ui.collator', 'ru')));
+      .sort((a, b) => a.caption.localeCompare(b.caption, t('ui.collator', 'en')));
   };
   const pairs = сп => сп.map(з => (typeof з === 'string' ? { value: з, caption: з } : з));
   return R('filters', {
@@ -175,10 +166,10 @@ const faqBlock = (б, ctx) => R('faq', {
 const scheduleBlock = (б, ctx) => R('schedule', {
   rows: JSON.stringify(ctx.schedule()),
   colgroup: R('colgroup', { widths: ['8.3333%', '8.3333%', '25.0000%', '16.6667%', '16.6667%', '8.3333%', '16.6667%'] }),
-  columns: [['day', t('ui.day', 'День')], ['time', t('ui.time', 'Время')],
-            ['course', t('ui.lesson', 'Занятие')], ['age', t('ui.age', 'Возраст')],
-            ['direction', t('ui.direction', 'Направление')], ['hall', t('ui.hall', 'Зал')],
-            ['curator', t('ui.curator', 'Куратор')]]
+  columns: [['day', t('ui.day')], ['time', t('ui.time')],
+            ['course', t('ui.lesson')], ['age', t('ui.age')],
+            ['direction', t('ui.direction')], ['hall', t('ui.hall')],
+            ['curator', t('ui.curator')]]
     .map(([key, name]) => ({ key, name })),
 });
 
@@ -203,7 +194,7 @@ linksBlock.секция = 'quicklinks';
 
 const ratingBlock = (б, ctx) => {
   const о = ctx.rating();
-  return R('rating', { ...о, routeLabel: tf('ui.newTab', '{name}, откроется в новой вкладке', { name: о.button }) });
+  return R('rating', { ...о, routeLabel: tf('ui.newTab', '{name}, opens in a new tab', { name: о.button }) });
 };
 
 const contactsBlock = (б, ctx) => {
@@ -212,20 +203,20 @@ const contactsBlock = (б, ctx) => {
   // Соцсетей может быть сколько угодно: каждая даёт свою строку в таблице
   // контактов и своё звено в строчном варианте.
   const соцсети = (к.social || []).map(с => ({
-    с, ссылка: R('social-link', { ...с, schoolNewTab: tf('ui.schoolNewTab', '{name} школы, откроется в новой вкладке', с) }),
+    с, ссылка: R('social-link', { ...с, schoolNewTab: tf('ui.schoolNewTab', '{name} of the school, opens in a new tab', с) }),
   }));
   const grid = R('contacts', {
     paragraphs: б.kind === 'paragraphs', address: к.address, phone,
     socials: соцсети.map(x => x.ссылка).join(' · '),
-    rows: [{ caption: t('ui.address', 'Адрес'), value: esc(к.address) },
-             { caption: t('ui.phone', 'Телефон'), value: phone },
+    rows: [{ caption: t('ui.address'), value: esc(к.address) },
+             { caption: t('ui.phone'), value: phone },
              ...соцсети.map(x => ({ caption: x.с.name, value: x.ссылка }))],
   });
   if (!б.map || б.map === 'none') return grid;
   const [lat, lng] = к.coords;
   const карта = R('map', { lat, lng, caption: к.mapCaption, route: к.route });
   return grid + '\n' + (б.map === 'collapsed'
-    ? R('disclosure', { class: 'disclosure-control', caption: t('ui.mapOpen', 'Посмотреть на карте'), inner: карта })
+    ? R('disclosure', { class: 'disclosure-control', caption: t('ui.mapOpen', 'Open on the map'), inner: карта })
     : карта);
 };
 
@@ -273,7 +264,7 @@ export function buildElement(б, ctx) {
 
 export function buildBlock(б, ctx) {
   const inner = CONTENTS[б.type];
-  if (!inner) throw new Error(`неизвестное наполнение блока: «${б.type}»`);
+  if (!inner) throw new Error(`unknown block filling: “${б.type}”`);
   const body = [
     б.heading ? R('block-title', { heading: б.heading, sr: !!б.srHeading }) : '',
     inner(б, ctx),

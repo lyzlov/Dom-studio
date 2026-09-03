@@ -56,26 +56,29 @@ export async function writeToGitHub(files, { token, targets, message, base = {} 
                                     onProgress = () => {}, onTarget = () => {}) {
   const report = [];
   for (const target of targets) {
-    onProgress(`${target.owner}/${target.repo}: чтение ветки`);
+    onProgress('save.readingBranch', { repo: `${target.owner}/${target.repo}` });
     const ref = await api(token, `/repos/${target.owner}/${target.repo}/git/ref/heads/${target.branch}`);
     const parent = ref.object.sha;
     const expected = base[targetKey(target)];
     // Ветка ушла вперёд с тех пор, как редактор прочитал site: наша запись
     // затёрла бы чужую правку. Ничего не пишем, пока страница не перечитана.
     if (expected && expected !== parent)
-      throw new Error(`${target.owner}/${target.repo}: ветка изменилась с момента открытия редактора (${expected.slice(0, 7)} → ${parent.slice(0, 7)}). Перезагрузите страницу и повторите правку.`);
+      throw Object.assign(new Error('branch moved'),
+        { code: 'save.branchMoved',
+          values: { repo: `${target.owner}/${target.repo}`,
+                    was: expected.slice(0, 7), now: parent.slice(0, 7) } });
     const commit = await api(token, `/repos/${target.owner}/${target.repo}/git/commits/${parent}`);
 
     const tree = [];
     let n = 0;
     for (const [path, content] of files) {
-      onProgress(`${target.owner}/${target.repo}: файл ${++n} из ${files.length}`);
+      onProgress('save.file', { repo: `${target.owner}/${target.repo}`, n: ++n, of: files.length });
       const blob = await api(token, `/repos/${target.owner}/${target.repo}/git/blobs`, 'POST',
         { content: base64(content), encoding: 'base64' });
       tree.push({ path: (target.prefix || '') + path, mode: '100644', type: 'blob', sha: blob.sha });
     }
 
-    onProgress(`${target.owner}/${target.repo}: commit`);
+    onProgress('save.commit', { repo: `${target.owner}/${target.repo}` });
     const newTree = await api(token, `/repos/${target.owner}/${target.repo}/git/trees`, 'POST',
       { base_tree: commit.tree.sha, tree: tree });
     const newCommit = await api(token, `/repos/${target.owner}/${target.repo}/git/commits`, 'POST',

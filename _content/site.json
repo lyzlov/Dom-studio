@@ -1,5 +1,5 @@
 {
-  "$comment": "Единый источник фактов. Тексты и описания сюда не кладутся — они в ТЗ/*.md.",
+  "$comment": "The single source of facts. Prose and descriptions do not belong here.",
   "org": {
     "title": "ДОМ",
     "fullName": "ДОМ — школа архитектуры и искусства",

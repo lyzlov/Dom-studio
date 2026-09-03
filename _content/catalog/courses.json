@@ -3,15 +3,25 @@
     "id": "architecture",
     "title": "Архитектура",
     "direction": "subscription",
-    "age": "4–7 лет",
-    "curator": "Милана Чернышова",
+    "age": [
+      {
+        "min": 4,
+        "max": 7
+      }
+    ],
+    "curator": "milana-chernyshova",
     "plan": "subscription",
     "image": "_content/media/courses/course-arch-46",
     "lessons": [
       {
         "day": "Вс",
         "time": "13:00",
-        "age": "4–7 лет",
+        "age": [
+          {
+            "min": 4,
+            "max": 7
+          }
+        ],
         "room": "small"
       }
     ]
@@ -20,21 +30,36 @@
     "id": "culture-code-4-6",
     "title": "Культурный код",
     "direction": "buro",
-    "age": "4–6 лет",
-    "curator": "Ольга Зинюкова",
+    "age": [
+      {
+        "min": 4,
+        "max": 6
+      }
+    ],
+    "curator": "olga-zinyukova",
     "plan": "buro",
     "image": "_content/media/courses/course-timeline",
     "lessons": [
       {
         "day": "Чт",
         "time": "18:00",
-        "age": "4–6 лет",
+        "age": [
+          {
+            "min": 4,
+            "max": 6
+          }
+        ],
         "room": "small"
       },
       {
         "day": "Сб",
         "time": "11:00",
-        "age": "4–6 лет",
+        "age": [
+          {
+            "min": 4,
+            "max": 6
+          }
+        ],
         "room": "small"
       }
     ]
@@ -43,21 +68,36 @@
     "id": "culture-code-7-10",
     "title": "Культурный код",
     "direction": "buro",
-    "age": "7–10 лет",
-    "curator": "Ольга Зинюкова",
+    "age": [
+      {
+        "min": 7,
+        "max": 10
+      }
+    ],
+    "curator": "olga-zinyukova",
     "plan": "buro",
     "image": "_content/media/courses/course-timeline",
     "lessons": [
       {
         "day": "Пт",
         "time": "16:00",
-        "age": "7–10 лет",
+        "age": [
+          {
+            "min": 7,
+            "max": 10
+          }
+        ],
         "room": "big"
       },
       {
         "day": "Сб",
         "time": "13:00",
-        "age": "7–10 лет",
+        "age": [
+          {
+            "min": 7,
+            "max": 10
+          }
+        ],
         "room": "big"
       }
     ],
@@ -67,21 +107,40 @@
     "id": "drawing-academic",
     "title": "Академический рисунок",
     "direction": "subscription",
-    "age": "8–11 и 12–15 лет",
-    "curator": "Софья Виноградова",
+    "age": [
+      {
+        "min": 8,
+        "max": 11
+      },
+      {
+        "min": 12,
+        "max": 15
+      }
+    ],
+    "curator": "sofya-vinogradova",
     "plan": "subscription",
     "image": "_content/media/courses/course-neformat",
     "lessons": [
       {
         "day": "Вт",
         "time": "16:00",
-        "age": "8–11 лет",
+        "age": [
+          {
+            "min": 8,
+            "max": 11
+          }
+        ],
         "room": "big"
       },
       {
         "day": "Вт",
         "time": "18:00",
-        "age": "12–15 лет",
+        "age": [
+          {
+            "min": 12,
+            "max": 15
+          }
+        ],
         "room": "big"
       }
     ]
@@ -90,15 +149,25 @@
     "id": "game-arch",
     "title": "Архитектура игр",
     "direction": "courses",
-    "age": "10–12 лет",
-    "curator": "Милана Чернышова",
+    "age": [
+      {
+        "min": 10,
+        "max": 12
+      }
+    ],
+    "curator": "milana-chernyshova",
     "plan": "courses",
     "image": "_content/media/courses/course-arch-710",
     "lessons": [
       {
         "day": "Вс",
         "time": "18:00",
-        "age": "10–12 лет",
+        "age": [
+          {
+            "min": 10,
+            "max": 12
+          }
+        ],
         "room": "big"
       }
     ]
@@ -107,27 +176,51 @@
     "id": "graphics",
     "title": "Графика",
     "direction": "subscription",
-    "age": "8–11 и 12–15 лет",
-    "curator": "Варвара Голубчекова",
+    "age": [
+      {
+        "min": 8,
+        "max": 11
+      },
+      {
+        "min": 12,
+        "max": 15
+      }
+    ],
+    "curator": "varvara-golubchekova",
     "plan": "subscription",
     "image": "_content/media/courses/course-graphics",
     "lessons": [
       {
         "day": "Пн",
         "time": "16:00",
-        "age": "8–11 лет",
+        "age": [
+          {
+            "min": 8,
+            "max": 11
+          }
+        ],
         "room": "big"
       },
       {
         "day": "Пн",
         "time": "18:00",
-        "age": "12–15 лет",
+        "age": [
+          {
+            "min": 12,
+            "max": 15
+          }
+        ],
         "room": "big"
       },
       {
         "day": "Вс",
         "time": "15:30",
-        "age": "8–15 лет",
+        "age": [
+          {
+            "min": 8,
+            "max": 15
+          }
+        ],
         "room": "big"
       }
     ]
@@ -136,27 +229,51 @@
     "id": "painting",
     "title": "Живопись",
     "direction": "subscription",
-    "age": "8–11 и 12–15 лет",
-    "curator": "Варвара Голубчекова",
+    "age": [
+      {
+        "min": 8,
+        "max": 11
+      },
+      {
+        "min": 12,
+        "max": 15
+      }
+    ],
+    "curator": "varvara-golubchekova",
     "plan": "subscription",
     "image": "_content/media/courses/course-artcluster",
     "lessons": [
       {
         "day": "Чт",
         "time": "16:00",
-        "age": "8–11 лет",
+        "age": [
+          {
+            "min": 8,
+            "max": 11
+          }
+        ],
         "room": "big"
       },
       {
         "day": "Чт",
         "time": "18:00",
-        "age": "12–15 лет",
+        "age": [
+          {
+            "min": 12,
+            "max": 15
+          }
+        ],
         "room": "big"
       },
       {
         "day": "Вс",
         "time": "11:00",
-        "age": "8–14 лет",
+        "age": [
+          {
+            "min": 8,
+            "max": 14
+          }
+        ],
         "room": "big"
       }
     ]
@@ -165,15 +282,25 @@
     "id": "risovashki",
     "title": "Рисовашки",
     "direction": "subscription",
-    "age": "5–7 лет",
-    "curator": "Милана Чернышова",
+    "age": [
+      {
+        "min": 5,
+        "max": 7
+      }
+    ],
+    "curator": "milana-chernyshova",
     "plan": "subscription",
     "image": "_content/media/courses/course-risovashki",
     "lessons": [
       {
         "day": "Вс",
         "time": "11:00",
-        "age": "5–7 лет",
+        "age": [
+          {
+            "min": 5,
+            "max": 7
+          }
+        ],
         "room": "small"
       }
     ]
@@ -182,21 +309,40 @@
     "id": "robotics",
     "title": "Робототехника",
     "direction": "courses",
-    "age": "7–9 и 10–12 лет",
-    "curator": "Антон Чепелюк",
+    "age": [
+      {
+        "min": 7,
+        "max": 9
+      },
+      {
+        "min": 10,
+        "max": 12
+      }
+    ],
+    "curator": "anton-chepelyuk",
     "plan": "courses-robotics",
     "image": "_content/media/courses/course-arch-46",
     "lessons": [
       {
         "day": "Сб",
         "time": "11:00",
-        "age": "7–9 лет",
+        "age": [
+          {
+            "min": 7,
+            "max": 9
+          }
+        ],
         "room": "big"
       },
       {
         "day": "Сб",
         "time": "13:00",
-        "age": "10–12 лет",
+        "age": [
+          {
+            "min": 10,
+            "max": 12
+          }
+        ],
         "room": "small"
       }
     ]
@@ -205,15 +351,25 @@
     "id": "sculpture",
     "title": "Скульптура",
     "direction": "subscription",
-    "age": "6–12 лет",
-    "curator": "Варвара Голубчекова",
+    "age": [
+      {
+        "min": 6,
+        "max": 12
+      }
+    ],
+    "curator": "varvara-golubchekova",
     "plan": "subscription",
     "image": "_content/media/courses/course-sculpture",
     "lessons": [
       {
         "day": "Вс",
         "time": "13:00",
-        "age": "6–12 лет",
+        "age": [
+          {
+            "min": 6,
+            "max": 12
+          }
+        ],
         "room": "big"
       }
     ]
@@ -222,15 +378,25 @@
     "id": "toddler-creative",
     "title": "Малыши и креатив",
     "direction": "subscription",
-    "age": "2,5–4,5 лет",
-    "curator": "Ольга Зинюкова",
+    "age": [
+      {
+        "min": 2.5,
+        "max": 4.5
+      }
+    ],
+    "curator": "olga-zinyukova",
     "plan": "subscription",
     "image": null,
     "lessons": [
       {
         "day": "Ср",
         "time": "18:00",
-        "age": "2,5–4,5 лет",
+        "age": [
+          {
+            "min": 2.5,
+            "max": 4.5
+          }
+        ],
         "room": "small"
       }
     ]
@@ -239,27 +405,47 @@
     "id": "visualization",
     "title": "Архитектура. Визуализация",
     "direction": "buro",
-    "age": "11–16 лет",
-    "curator": "Ольга Зинюкова",
+    "age": [
+      {
+        "min": 11,
+        "max": 16
+      }
+    ],
+    "curator": "olga-zinyukova",
     "plan": "buro",
     "image": "_content/media/courses/course-graphics",
     "lessons": [
       {
         "day": "Ср",
         "time": "16:00",
-        "age": "11–16 лет",
+        "age": [
+          {
+            "min": 11,
+            "max": 16
+          }
+        ],
         "room": "big"
       },
       {
         "day": "Сб",
         "time": "15:30",
-        "age": "11–16 лет",
+        "age": [
+          {
+            "min": 11,
+            "max": 16
+          }
+        ],
         "room": "big"
       },
       {
         "day": "Сб",
         "time": "18:00",
-        "age": "11–16 лет",
+        "age": [
+          {
+            "min": 11,
+            "max": 16
+          }
+        ],
         "room": "big"
       }
     ],

@@ -24,7 +24,7 @@ export const translit = s => String(s).toLowerCase()
 export async function frameCatalog(папка, { owner, repo }, медиа) {
   const о = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${медиа.folder}${папка}`,
     { headers: { Accept: 'application/vnd.github+json' } });
-  if (!о.ok) throw new Error(`не читается список кадров: ${о.status}`);
+  if (!о.ok) throw new Error(`cannot read the list of images: ${о.status}`);
   const файлы = await о.json();
   const основы = new Set();
   for (const ф of файлы) {
@@ -56,7 +56,7 @@ function shrink(источник, ширина) {
 }
 
 const toBytes = (холст, тип, качество) => new Promise((готово, reject) =>
-  холст.toBlob(б => (б ? б.arrayBuffer().then(a => готово(new Uint8Array(a))) : reject(new Error('не кодируется'))),
+  холст.toBlob(б => (б ? б.arrayBuffer().then(a => готово(new Uint8Array(a))) : reject(new Error('cannot encode the image'))),
     тип, качество));
 
 /**
@@ -67,11 +67,11 @@ export async function resize(файл, основа, медиа) {
   const картинка = await new Promise((готово, reject) => {
     const и = new Image();
     и.onload = () => готово(и);
-    и.onerror = () => reject(new Error('файл не открывается как изображение'));
+    и.onerror = () => reject(new Error('the file does not open as an image'));
     и.src = URL.createObjectURL(файл);
   });
   const исходная = картинка.naturalWidth;
-  if (!исходная) throw new Error('файл не открывается как изображение');
+  if (!исходная) throw new Error('the file does not open as an image');
 
   const нужные = медиа.widths.filter(ш => ш <= исходная);
   if (!нужные.length) нужные.push(исходная);

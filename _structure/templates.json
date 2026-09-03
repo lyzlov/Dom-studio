@@ -1,13 +1,7 @@
 {
-  "$comment": "Шаблоны страниц-сущностей. Двенадцать страниц курсов описаны здесь одной записью: правка шаблона меняет все двенадцать.",
+  "$comment": "Templates for record pages. Twelve course pages are described here by one entry: editing the template changes all twelve.",
   "course": {
     "parent": "courses/index.html",
-    "fields": [
-      "возраст",
-      "время",
-      "куратор",
-      "оплата"
-    ],
     "button": "always",
     "blocks": [
       {
@@ -20,13 +14,6 @@
   },
   "event": {
     "parent": "events/index.html",
-    "fields": [
-      "дата",
-      "время и возраст",
-      "место",
-      "кураторы",
-      "цена"
-    ],
     "button": "until-past",
     "blocks": [
       {
@@ -38,13 +25,6 @@
   },
   "session": {
     "parent": "camp/index.html",
-    "fields": [
-      "даты",
-      "возраст",
-      "место",
-      "куратор",
-      "цена"
-    ],
     "button": "until-past",
     "blocks": [
       {
@@ -63,7 +43,6 @@
   "post": {
     "parent": "blog/index.html",
     "folder": "blog",
-    "fields": [],
     "button": "none",
     "meta": "{date} · {readTime}",
     "blocks": [

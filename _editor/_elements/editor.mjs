@@ -17,7 +17,7 @@ import { writeToGitHub, checkAccess, branchHeads } from './save.mjs';
 import { resize, frameCatalog, translit } from './media.mjs';
 import { createDict } from './dict.mjs';
 import { captureLayout, toSVG, parseSVG, compare } from './layout.mjs';
-import { t, tokenLabel, loadLocale, preferredLang, nextLang, lang,
+import { t, tf, tokenLabel, loadLocale, preferredLang, nextLang, lang,
          setAbbreviations, setProjectNames, humanize } from './locale.mjs';
 import { BRIDGE } from './preview.mjs';
 import { drawDesign, drawDesignTree } from './design.mjs';
@@ -50,6 +50,7 @@ export const S = {
   project: null, dict: null,
   data: null,
   sources: new Map(),      // путь файла → текст, каким он лежит на сайте
+  wordsComment: new Map(), // файл данных → пояснение в его словаре
   texts: new Map(),         // _content/text/**.html → содержимое
   pagesWere: new Map(),   // путь страницы → html, какой лежит на сайте
   pagesReady: false,      // эталоны страниц догружены
@@ -76,6 +77,13 @@ export const S = {
 export const FILES = () => S.project.files;
 /** Путь файла с подставленным языком: на диске лежит `ru`, в манифесте — образец. */
 const путьФайла = ключ => String(FILES()[ключ] || '').replace('{lang}', siteLang());
+/**
+ * Путь до слов: у файла данных они лежат под тем же именем в `lang/<язык>/`.
+ * Слова, которые произносит сам код, файла данных не имеют — им отведено имя
+ * `ui`, и это единственное исключение из зеркала.
+ */
+const путьСлов = имя => String(FILES().words || 'lang/{lang}/{name}.json')
+  .replace('{lang}', siteLang()).replace('{name}', имя);
 export const TARGETS = () => S.project.commit.targets;
 
 // #region Загрузка
@@ -102,19 +110,12 @@ const fetchJSON = async путь => {
  * работает с одним объектом, а разделение живёт только на диске.
  */
 async function структураСПодписями(types) {
-  let подписи = {};
-  if (FILES().captions) {
-    try {
-      подписи = await fetchJSON(FILES().captions.replace('{lang}', siteLang()));
-      S.captionsComment = подписи.$comment || '';
-    }
-    catch { подписи = {}; }
-  }
   const из = {};
   for (const файл of ФАЙЛЫ_СТРУКТУРЫ) {
-    const свои = Object.fromEntries(Object.entries(подписи)
-      .filter(([к]) => к.startsWith(файл + '/')).map(([к, з]) => [к.slice(файл.length + 1), з]));
-    из[файл] = mergeCaptions(await fetchJSON(FILES()[файл]), свои);
+    let подписи = {};
+    try { подписи = await fetchJSON(путьСлов(файл)); } catch { подписи = {}; }
+    S.wordsComment.set(файл, подписи.$comment || '');
+    из[файл] = mergeCaptions(await fetchJSON(FILES()[файл]), подписи);
   }
   void types;
   return из;
@@ -164,7 +165,8 @@ export async function load() {
     catalog,
     structure: await структураСПодписями(types),
     types,
-    typography: await fetchJSON(FILES().typography),
+    // Правила набора зависят от языка, поэтому и путь к ним языковой.
+    typography: await fetchJSON(путьФайла('typography')),
   };
   // Снимок загруженного: по нему кнопка возврата отменяет правку элемента.
   S.начальное = JSON.parse(JSON.stringify(S.data));
@@ -431,7 +433,6 @@ function fileContents() {
     templates: () => J(делённая.структура.templates),
     navigation: () => J(делённая.структура.navigation),
     form: () => J(делённая.структура.form),
-    captions: () => J(делённая.подписи),
     markup: () => S.markup,
     types: () => J(S.data.types),
     typography: () => J(S.data.typography),
@@ -444,15 +445,15 @@ function fileContents() {
 /** Слова страниц отдельно от их состава — так же, как они лежат на диске. */
 function разделитьСтруктуру() {
   const структура = {};
-  const подписи = { $comment: (S.captionsComment || '') };
+  const подписи = {};
   for (const файл of ФАЙЛЫ_СТРУКТУРЫ) {
     const свои = splitCaptions(S.data.structure[файл], captionFields(S.data.types, файл));
     структура[файл] = свои.структура;
-    for (const [к, з] of Object.entries(свои.подписи)) подписи[`${файл}/${к}`] = з;
+    const по = { $comment: S.wordsComment.get(файл) || '' };
+    Object.keys(свои.подписи).sort().forEach(к => { по[к] = свои.подписи[к]; });
+    подписи[файл] = по;
   }
-  const по = { $comment: подписи.$comment };
-  Object.keys(подписи).filter(к => к !== '$comment').sort().forEach(к => { по[к] = подписи[к]; });
-  return { структура, подписи: по };
+  return { структура, подписи };
 }
 
 /** Ключи манифеста, которые редактор пишет: один файл или целая папка. */
@@ -469,6 +470,8 @@ function changes() {
 
   for (const [ключ, pick] of Object.entries(fileContents()))
     if (FILES()[ключ]) compare(путьФайла(ключ), pick());
+  for (const [файл, слова] of Object.entries(разделитьСтруктуру().подписи))
+    compare(путьСлов(файл), J(слова));
   for (const имя of catalogNames(S.data.types))
     compare(FILES().catalog.replace('{name}', имя), J(S.data.catalog[имя]));
   compare(МАНИФЕСТ, J(S.project));
@@ -1690,37 +1693,47 @@ function typeUsage() {
  */
 function sourcesHelp() {
   const блок = el('div', 'ed-node');
-  const строки = [['project', МАНИФЕСТ]];
+  // Строка: чем названа, что за путь, пишет ли её редактор. Пометка «только
+  // чтение» берётся отсюда, а не выводится из ключа: у слов и у их предмета
+  // ключ один, а пишутся они по-разному.
+  const строки = [['project', МАНИФЕСТ, true]];
   // Язык подставлен и там и там: человек ищет файл, который лежит на диске,
   // а не образец его имени.
-  for (const [ключ, путь] of Object.entries(FILES()))
-    строки.push([ключ, путь.replace('{lang}', siteLang())]);
+  for (const [ключ, путь] of Object.entries(FILES())) {
+    if (ключ === 'words') continue;
+    строки.push([ключ, путь.replace('{lang}', siteLang()), isWritten(ключ)]);
+  }
+  // Слова показываются по файлам, а не образцом пути: человек ищет то, что
+  // лежит на диске. Названы они своим предметом — тем же именем, что и файл
+  // данных, слова которого в них лежат; какие именно это слова, говорит папка.
+  for (const имя of ФАЙЛЫ_СТРУКТУРЫ) строки.push([имя, путьСлов(имя), true, 'words']);
+  for (const имя of ['ui', 'types', 'tokens']) строки.push([имя, путьСлов(имя), false, 'words']);
   const м = S.project.media || {};
-  if (м.folder) строки.push(['media', м.folder]);
-  строки.push(['layouts', layouts().folder]);
-  строки.push(['locale', `_editor/_lang/${lang()}.json`]);
+  if (м.folder) строки.push(['media', м.folder, true]);
+  строки.push(['layouts', layouts().folder, true]);
+  строки.push(['locale', `_editor/lang/${lang()}/ui.json`, false]);
 
   // Папка — уже готовая группировка: она в самом пути, и второго деления по
   // смыслу не заводится.
-  const folder = путь => (String(путь).startsWith('_') ? String(путь).split('/')[0] : '');
+  const folder = путь => (String(путь).includes('/') ? String(путь).split('/')[0] : '');
   const порядок = [];
   const по = new Map();
-  for (const [ключ, путь] of строки) {
-    const п = folder(путь);
+  for (const строка of строки) {
+    const п = folder(строка[1]);
     if (!по.has(п)) { по.set(п, []); порядок.push(п); }
-    по.get(п).push([ключ, путь]);
+    по.get(п).push(строка);
   }
   for (const п of порядок) {
     блок.append(el('div', 'ed-section-label', t('folder.' + (п || 'root'), п || '/')));
-    for (const [ключ, путь] of по.get(п)) {
+    for (const [ключ, путь, пишется, оЧём] of по.get(п)) {
       const место = el('div', 'ed-control');
       место.append(el('span', 'ed-path', путь));
       // Пометка стоит сразу за путём, а не в конце строки: иначе её место
       // зависит от длины описания и она гуляет по строке.
-      if (!isWritten(ключ))
+      if (!пишется)
         место.append(el('span', 'ed-hint', t('source.readonly', 'read only')));
-      место.append(el('span', 'ed-hint', t('about.' + ключ, '')));
-      блок.append(fieldRow({ name: t('source.' + ключ, ключ), id: ключ, value: место }));
+      место.append(el('span', 'ed-hint', t('about.' + (оЧём || ключ), '')));
+      блок.append(fieldRow({ name: t('source.' + ключ, ключ), id: п + '/' + ключ, value: место }));
     }
   }
   return блок;
@@ -1869,13 +1882,13 @@ function endEditing(у, отменить) {
 /** Что именно правится: запись в своём массиве или поле в своём владельце. */
 function captureState(у) {
   const место = nodePlace(у);
-  if (место) return { ключ: у.key, вид: 'место', было: JSON.parse(JSON.stringify(место.массив[место.индекс] ?? null)) };
-  if (у.поле) return { ключ: у.key, вид: 'поле', было: у.поле.владелец[у.поле.ключ] };
+  if (место) return { ключ: у.key, вид: 'place', было: JSON.parse(JSON.stringify(место.массив[место.индекс] ?? null)) };
+  if (у.поле) return { ключ: у.key, вид: 'field', было: у.поле.владелец[у.поле.ключ] };
   return null;
 }
 
 function restoreState(у, снимок) {
-  if (снимок.вид === 'место') {
+  if (снимок.вид === 'place') {
     const место = nodePlace(у);
     if (место) место.массив[место.индекс] = JSON.parse(JSON.stringify(снимок.было));
     return;
@@ -2654,7 +2667,7 @@ async function save() {
         message: S.project.commit.message || `${PRODUCT.name} ${PRODUCT.version}`,
         targets: осталось,
         base: S.heads || {},
-      }, ш => { отчёт.textContent = ш; },
+      }, (ключ, значения) => { отчёт.textContent = tf(ключ, '', значения); },
          (ключ, sha, цель) => {
            записаны.push(цель);
            S.heads = { ...(S.heads || {}), [ключ]: sha };
@@ -2668,7 +2681,10 @@ async function save() {
       осталось = осталось.filter(ц => !записаны.includes(ц));
       главная.disabled = false;
       const где = записаны.map(ц => `${ц.owner}/${ц.repo}`).join(', ');
-      отчёт.textContent = t('save.failed', 'Not written') + ': ' + e.message
+      // Модуль записи бросает ошибку кодом, а не фразой: словами её делает
+      // тот, кто показывает, — и на языке редактора.
+      const почему = e.code ? tf(e.code, '', e.values || {}) : e.message;
+      отчёт.textContent = t('save.failed', 'Not written') + ': ' + почему
         + (где ? ` \u2014 ${t('save.written', 'already written')}: ${где}; `
                  + t('save.retryRest', 'press Save again to write the rest') : '');
     }
@@ -2819,19 +2835,19 @@ export const projectNames = () => setProjectNames(S.names || {});
  * словами, что и записанная страница.
  */
 async function loadNames() {
-  // Два словаря на язык, и это разные вещи. Слова сайта уходят в сборку —
-  // предпросмотр обязан говорить теми же словами, что и записанная страница.
-  // Имена проекта показывает только редактор: на сайт они не попадают.
-  S.siteWords = await словарь('lang');
-  S.names = await словарь('names');
+  // Слова кода сайта уходят в сборку — предпросмотр обязан говорить теми же
+  // словами, что и записанная страница. Имена сортамента показывает только
+  // редактор: на сайт они не попадают, но принадлежат проекту, а не Enfilade,
+  // и потому лежат в его словаре, а не в словаре редактора.
+  S.siteWords = await словарь('ui');
+  S.names = { ...await словарь('types'), ...await словарь('tokens') };
   setLang(S.siteWords);
   projectNames();
 }
 
-/** Словарь по ключу манифеста; нет файла — пусто, а не поломка. */
-async function словарь(ключ) {
-  if (!FILES()[ключ]) return {};
-  try { return JSON.parse(await pick(путьФайла(ключ))); } catch { return {}; }
+/** Словарь слов для файла данных; нет файла — пусто, а не поломка. */
+async function словарь(имя) {
+  try { return JSON.parse(await pick(путьСлов(имя))); } catch { return {}; }
 }
 /** Язык сайта объявлен в манифесте; язык редактора — свой, он у locale.mjs. */
 export const siteLang = () => (S.project && S.project.lang) || 'ru';

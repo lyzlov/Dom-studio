@@ -1,5 +1,5 @@
 {
-  "$comment": "Манифест проекта для редактора Enfilade: где лежат файлы, куда писать, как резать картинки, как сгруппированы токены. Имён проекта в коде редактора нет.",
+  "$comment": "The project manifest for the Enfilade editor: where the files live, where to write, how to cut images, how the tokens are grouped. No project names live in the editor's code.",
   "name": "ДОМ",
   "lang": "ru",
   "contract": 1,
@@ -12,18 +12,16 @@
     "templates": "_structure/templates.json",
     "navigation": "_structure/navigation.json",
     "form": "_structure/form.json",
-    "captions": "_structure/captions.{lang}.json",
     "types": "_elements/types.json",
     "markup": "_elements/markup.html",
     "tokens": "_theme/tokens.css",
     "settings": "_theme/editor.css",
-    "typography": "_theme/typography.json",
+    "typography": "lang/{lang}/typography.json",
     "styles": "_theme/style.css",
-    "lang": "_lang/site.{lang}.json",
-    "names": "_lang/names.{lang}.json"
+    "words": "lang/{lang}/{name}.json"
   },
   "commit": {
-    "$comment": "Куда уходит коммит. Приставка — путь до корня сайта внутри репозитория.",
+    "$comment": "Where a commit goes. The prefix is the path to the site root inside the repository.",
     "targets": [
       {
         "owner": "lyzlov",
@@ -57,7 +55,7 @@
     "fallbackFolder": "space"
   },
   "theme": {
-    "$comment": "Группы и разделы оформления в порядке вывода. options — раздел, из которого берутся варианты для значений-ссылок. Подписи — в _editor/locale.",
+    "$comment": "Design groups and sections in the order they are shown. options names the section a reference value picks from. The words are in lang/<language>/tokens.json.",
     "groups": [
       {
         "key": "color",
@@ -158,7 +156,7 @@
     }
   },
   "layouts": {
-    "$comment": "Схемы страниц со слоями по структуре: выгрузка и сверка.",
+    "$comment": "Page layouts with layers by structure: export and comparison.",
     "folder": "layouts/",
     "devices": [
       {

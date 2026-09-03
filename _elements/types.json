@@ -1,7 +1,7 @@
 {
-  "$comment": "Устройство элементов сайта: из чего состоит каждый тип и какими полями описывается. Имён на человеческом языке здесь нет — они в _elements/names.<язык>.json. Сборка падает, если тип объявлен здесь и не реализован в коде или наоборот.",
+  "$comment": "How the site's elements are built: what each type consists of and which fields describe it. No human-language names live here — those are in lang/<language>/types.json. The build fails if a type is declared here and not implemented in code, or the other way round.",
   "blockTypes": {
-    "$comment": "Чем наполняется блок. Блок = заголовок + одно наполнение. Список закрыт.",
+    "$comment": "What a block can be filled with. A block is a heading plus exactly one filling. The list is closed.",
     "text": {
       "fields": {
         "heading": "string?",
@@ -86,7 +86,7 @@
     }
   },
   "pageElements": {
-    "$comment": "Элементы уровня страницы, вне списка блоков.",
+    "$comment": "Page-level elements, outside the list of blocks.",
     "section-head": {
       "fields": {
         "eyebrow": "string",
@@ -155,7 +155,7 @@
     }
   },
   "banner": {
-    "$comment": "Содержимое баннера первого экрана. Связь с сущностью указывается, но не диктует: любое поле можно перебить.",
+    "$comment": "Contents of the hero banner. The link to a record is stated but not binding: any field can be overridden.",
     "source": "nearest | catalog | none",
     "id": "id?",
     "overrides": [
@@ -166,7 +166,7 @@
     ]
   },
   "entities": {
-    "$comment": "То, у чего есть и карточка, и своя страница. Идентификатор задаёт и имя папки, и адрес. Набор полей — то, что показывает форма редактора.",
+    "$comment": "Things that have both a card and a page of their own. The identifier gives both the folder name and the address. The field list is what the editor's form shows.",
     "course": {
       "data": "catalog.courses",
       "media": "courses",
@@ -192,11 +192,8 @@
       "options": {
         "curator": {
           "kind": "teacher",
-          "field": "name"
-        },
-        "age": {
-          "kind": "course",
-          "field": "age"
+          "field": "id",
+          "caption": "name"
         }
       }
     },
@@ -223,10 +220,6 @@
         "type": "event-kind"
       },
       "options": {
-        "age": {
-          "kind": "event",
-          "field": "age"
-        },
         "place": {
           "kind": "event",
           "field": "place"
@@ -258,11 +251,8 @@
       "options": {
         "curator": {
           "kind": "teacher",
-          "field": "name"
-        },
-        "age": {
-          "kind": "session",
-          "field": "age"
+          "field": "id",
+          "caption": "name"
         },
         "place": {
           "kind": "session",
@@ -286,7 +276,7 @@
     }
   },
   "records": {
-    "$comment": "То, что живёт только карточкой или строкой: своей страницы нет.",
+    "$comment": "Things that live only as a card or a row: they have no page of their own.",
     "service": {
       "data": "catalog.services",
       "fields": [
@@ -322,7 +312,7 @@
     }
   },
   "dictionaries": {
-    "$comment": "Закрытые списки значений: у них нет ни карточки, ни страницы, но на них ссылаются поля. Правится название, ссылка идёт по адресу.",
+    "$comment": "Closed lists of values: no card, no page, but fields refer to them. The name is edited; the reference goes by address.",
     "direction": {
       "data": "site.directions",
       "fields": [
@@ -359,14 +349,14 @@
     }
   },
   "sources": {
-    "$comment": "Что может показывать блок помимо справочников.",
+    "$comment": "What a block can show besides the catalogs.",
     "site.gallery": true,
     "camp.routine": true,
     "nearest": true,
     "none": true
   },
   "rows": {
-    "$comment": "Из чего состоит строка списка. Нужно, чтобы пустой список показывал свои колонки и чтобы новая строка появлялась с нужными полями, а не пустой строкой.",
+    "$comment": "What a list row consists of. Needed so an empty list still shows its columns and a new row appears with the right fields rather than blank.",
     "lessons": [
       "day",
       "time",
@@ -446,7 +436,7 @@
     ]
   },
   "mediaFolders": {
-    "$comment": "Как папки медиатеки называются по-русски. Имена папок латиницей человеку не показываются.",
+    "$comment": "How the media folders are named for a person. The latin folder names are never shown.",
     "courses": true,
     "events": true,
     "camp": true,
@@ -454,20 +444,20 @@
     "space": true
   },
   "formats": {
-    "$comment": "Как поле показывается человеку. Хранится машинно — датой вида 2026-02-20, — а вводится и показывается по-нашему: 20.02.2026. Подпись даты собирается из имён месяцев, они лежат в словаре имён.",
+    "$comment": "How a field is shown to a person. Stored machine-readable — a date as 2026-02-20 — but entered and displayed the local way: 20.02.2026. The date caption is assembled from month names, which live in the words file.",
     "from": "date",
     "to": "date",
     "time": "time"
   },
   "overlayElements": {
-    "$comment": "Элементы поверх страницы: показываются по действию, а не в потоке. Разметка у них своя, данные — общие для всего сайта.",
+    "$comment": "Elements on top of the page: shown on an action rather than in the flow. Their markup is their own; their data is shared across the site.",
     "form": {
       "data": "structure.form.fields",
       "template": "form"
     }
   },
   "captions": {
-    "$comment": "Поля со словами — по файлу структуры. Слова уезжают в _structure/captions.<язык>.json, состав остаётся здесь. Одно и то же имя в разных файлах значит разное: name в форме — машинное имя поля, а в крошках — подпись.",
+    "$comment": "Fields that hold words, listed per data file. The words move to lang/<language>/<file>.json; the structure stays here. The same field name means different things in different files: name in the form is a machine field name, in the breadcrumbs it is a caption.",
     "pages": [
       "metaTitle",
       "metaDescription",
@@ -481,14 +471,16 @@
       "caption",
       "collapsed",
       "name",
-      "lead"
+      "lead",
+      "paragraphs"
     ],
     "templates": [
       "metaTitle",
       "metaDescription",
       "eyebrow",
       "heading",
-      "section"
+      "section",
+      "fields"
     ],
     "navigation": [
       "group"

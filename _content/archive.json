@@ -1,4 +1,4 @@
 {
-  "$comment": "Архив записей: убранное из справочников, но не потерянное. Каждая запись помнит, откуда пришла. Чтобы вычистить совсем — стереть элемент здесь руками.",
+  "$comment": "Archived records: removed from the catalogs but not lost. Every record remembers where it came from. To purge one for good, delete it here by hand.",
   "items": []
 }

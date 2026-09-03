@@ -10,28 +10,20 @@
  * английской фразой: «Pick an element on the left.» ключом не назовёшь.
  */
 
+import { humanize, setAbbreviations } from '../../_elements/lang.mjs';
+
+export { humanize, setAbbreviations };
+
 const ЯЗЫКИ = ['en', 'ru'];
 const ХРАНИЛИЩЕ = 'enfilade.locale';
-
-/**
- * Сокращения, которые пишутся целиком прописными. Правило набора, а не
- * перевод: живёт рядом с самим правилом. Проект может дополнить своим
- * списком через project.json → theme.typesetting.
- */
-let СОКРАЩЕНИЯ = new Set(['faq', 'id', 'url', 'svg', 'css', 'html', 'seo', 'json', 'ui']);
-
-export const setAbbreviations = список => {
-  if (Array.isArray(список) && список.length)
-    СОКРАЩЕНИЯ = new Set(список.map(s => String(s).toLowerCase()));
-};
 
 let dict = {};
 let проект = {};
 let текущий = 'en';
 
 /**
- * Имена оформления приходят из манифеста сайта, а не из словаря редактора:
- * «Мята» и «Первый экран, название» — слова этого сайта, а не слова Enfilade.
+ * Имена вещей проекта приходят из его словаря, а не из словаря Enfilade:
+ * «Мята» и «Первый экран, название» — слова этого сайта, а не слова редактора.
  */
 export function setProjectNames(о) {
   проект = о && typeof о === 'object' ? о : {};
@@ -46,25 +38,7 @@ function pick(о, ключ) {
     if (узел == null || typeof узел !== 'object') return undefined;
     узел = узел[часть];
   }
-  return isString(узел) ? узел : undefined;
-}
-
-const isString = v => typeof v === 'string';
-
-const word = с => (СОКРАЩЕНИЯ.has(с.toLowerCase())
-  ? с.toUpperCase() : с.charAt(0).toUpperCase() + с.slice(1));
-
-/**
- * Ключ по-человечески: `about-team` → «About Team», `exportLayout` → «Export
- * Layout». Регистр всюду один — с прописной, как и в русском переводе.
- * Косая черта в имени токена сохраняется: `fill-mint` приходит уже как
- * `Fill/Mint`, потому что делит группу и член группы.
- */
-export function humanize(имя) {
-  return String(имя).split('/').map(часть => часть
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .split(/[-_\s]+/).filter(Boolean).map(word)
-    .join(' ')).join('/');
+  return typeof узел === 'string' ? узел : undefined;
 }
 
 /**
@@ -78,6 +52,15 @@ export function t(ключ, запасной) {
   if (v != null) return v;
   if (запасной != null) return запасной;
   return humanize(String(ключ).split('.').pop());
+}
+
+/**
+ * Подпись с подстановками: `tf('save.file', '', { n, of })`. Имена в фигурных
+ * скобках те же, что в словаре, — переводчик видит, что подставится.
+ */
+export function tf(ключ, запасной, значения = {}) {
+  return String(t(ключ, запасной))
+    .replace(/\{([^}]+)\}/g, (_, к) => (значения[к] == null ? '' : String(значения[к])));
 }
 
 /**
@@ -110,7 +93,7 @@ export async function loadLocale(язык) {
   dict = {};
   if (текущий !== 'en') {
     try {
-      const о = await fetch(`_lang/${текущий}.json`, { cache: 'no-store' });
+      const о = await fetch(`lang/${текущий}/ui.json`, { cache: 'no-store' });
       if (о.ok) dict = await о.json();
     } catch { dict = {}; }
   }

@@ -4,7 +4,7 @@
  * кусок работы, у которого с остальным редактором всего два выхода наружу.
  */
 
-import { t, tokenLabel, lang, humanize } from './locale.mjs';
+import { t, tf, tokenLabel, lang, humanize } from './locale.mjs';
 import { fieldRow, iconButton, chevron, node, plainList } from './form.mjs';
 import { setMarkup, parseSet, replaceTemplate } from '../../_elements/template.mjs';
 import { parseMarkup, serializeMarkup, showNode, humanAttributes } from './markup.mjs';
@@ -566,7 +566,7 @@ function markupForm() {
   выбор.addEventListener('change', () => { S.template = выбор.value; drawMain(); });
   const обёртка = el('div', 'ed-control');
   обёртка.append(выбор);
-  блок.append(fieldRow({ name: t('ui.element', 'элемент'), value: обёртка }));
+  блок.append(fieldRow({ name: t('ui.element'), value: обёртка }));
 
   const исходный = S.templates[S.template] || '';
   const дерево = parseMarkup(исходный);
@@ -599,11 +599,12 @@ function drawMarkupNode(у, куда, уровень, write) {
   let имя = '', значение = null;
   const ВИДЫ = { поле: 'value', повтор: 'repeat', иначе: 'otherwise' };
 
-  if (у.вид === 'тег') {
+  if (у.вид === 'tag') {
     имя = t('tag.' + у.тег, у.тег);
-    const свойства = humanAttributes(у.свойства, fieldName);
+    const свойства = humanAttributes(у.свойства, fieldName,
+      имя => tf('markup.without', 'without “{name}”:', { name: имя }));
     if (свойства) значение = el('span', 'ed-hint', свойства);
-  } else if (у.вид === 'текст') {
+  } else if (у.вид === 'text') {
     const части = /^(\s*)([\s\S]*?)(\s*)$/.exec(у.сырое);
     имя = t('markup.text', 'Text');
     const поле = el('input');
@@ -615,10 +616,10 @@ function drawMarkupNode(у, куда, уровень, write) {
       write();
     });
     значение = поле;
-  } else if (у.вид === 'заметка') {
+  } else if (у.вид === 'note') {
     имя = t('markup.note', 'Note');
     значение = el('span', 'ed-hint', у.текст);
-  } else if (у.вид === 'вставка') {
+  } else if (у.вид === 'insert') {
     имя = t('markup.include', 'Include');
     const b = el('button', 'ed-check', у.имя);
     b.type = 'button';

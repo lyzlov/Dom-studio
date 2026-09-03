@@ -1,7 +1,7 @@
 {
-  "$comment": "Меню сайта и разделы подвала. Порядок и подписи — одни на весь сайт.",
+  "$comment": "The site menu and the footer sections. Order and captions are the same across the whole site.",
   "layout": {
-    "$comment": "Состав и порядок частей шапки и подвала. Часть, которой нет в списке, не выводится; порядок в списке — порядок на странице.",
+    "$comment": "Which parts the header and footer consist of, and in what order. A part missing from the list is not rendered; the order in the list is the order on the page.",
     "header": [
       "logo",
       "menu",

@@ -1,5 +1,5 @@
 {
-  "$comment": "Поля формы записи. Одна форма на два места: модальное окно и страницу контактов.",
+  "$comment": "Fields of the sign-up form. One form in two places: the modal window and the contacts page.",
   "fields": [
     {
       "key": "name",

@@ -3,12 +3,12 @@
  * всё внешнее приходит аргументами.
  */
 
-import { entityPage, page, sectionHead, form, priceLine, isPast } from './render.mjs';
+import { entityPage, page, sectionHead, form, priceLine, isPast, ageText } from './render.mjs';
 import { buildBlock, buildElement, sessionTime, CONTENTS, PAGE_LEVEL, KINDS } from './blocks.mjs';
 import { t, tf } from './lang.mjs';
 
 /** Сумма со знаком валюты: знак объявлен в словаре языка. */
-const money = сумма => `${сумма}${t('ui.currency', ' \u20bd')}`;
+const money = сумма => `${сумма}${t('ui.currency', ' $')}`;
 
 export const substitute = (t, з) => String(t).replace(/\{([^}]+)\}/g, (_, k) => з[k] ?? '');
 
@@ -37,9 +37,9 @@ export function checkTypes(types, structure) {
   const noMeta = o => Object.keys(o).filter(k => !k.startsWith('$'));
   const verify = (что, объявлено, реализовано) => {
     объявлено.filter(t => !реализовано.includes(t))
-      .forEach(t => беды.push(`${что}: «${t}» объявлен в types.json, но не реализован`));
+      .forEach(t => беды.push(`${что}: “${t}” is declared in types.json but not implemented`));
     реализовано.filter(t => !объявлено.includes(t))
-      .forEach(t => беды.push(`${что}: «${t}» реализован, но не объявлен в types.json`));
+      .forEach(t => беды.push(`${что}: “${t}” is implemented but not declared in types.json`));
   };
 
   verify('blockType', noMeta(types.blockTypes),
@@ -47,16 +47,16 @@ export function checkTypes(types, structure) {
 
   const виды = String((types.blockTypes.cards.fields || {}).kind || '')
     .split('|').map(x => x.trim()).filter(Boolean);
-  verify('вид карточки', виды, Object.keys(KINDS));
+  verify('card kind', виды, Object.keys(KINDS));
 
   const сущности = noMeta(types.entities);
-  verify('сущность', сущности, noMeta(structure.templates));
+  verify('record kind', сущности, noMeta(structure.templates));
   for (const вид of сущности) {
     const о = types.entities[вид], ш = structure.templates[вид];
     if (ш && о.folder !== ш.folder)
-      беды.push(`сущность «${вид}»: папка в словаре «${о.folder}», в шаблоне «${ш.folder}»`);
+      беды.push(`record kind “${вид}”: folder “${о.folder}” in types.json, “${ш.folder}” in the template`);
     if (!виды.includes(вид))
-      беды.push(`сущность «${вид}»: нет одноимённого вида карточки`);
+      беды.push(`record kind “${вид}”: no card kind of the same name`);
   }
 
   return беды;
@@ -126,15 +126,21 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
 
   const read = отн => {
     const s = text(отн);
-    if (s == null) { замечания.push(`нет файла ${отн}`); return ''; }
+    if (s == null) { замечания.push(`no file ${отн}`); return ''; }
     return String(s).replace(/\n$/, '');
   };
+
+  // Имя человека живёт один раз — в справочнике людей. Скрытые в него тоже
+  // входят: приглашённый куратор на странице команды не показывается, но
+  // назван по имени там, где ведёт занятие.
+  const люди = new Map((catalog.team || []).map(р => [р.id, р.name]));
+  const person = id => (Array.isArray(id) ? id.map(person).join(', ') : (люди.get(id) || id || ''));
 
   const context = (сущность, values, путь) => ({
     depth: путь.split('/').length - 1, up: '../'.repeat(путь.split('/').length - 1),
     href: путь, sizes: sizes, values,
     прошло: x => isPast((x.date || x.dates || {}).to || x, TODAY),
-    name, dictionary: dict,
+    name, dictionary: dict, person,
     lessonTime: (c, о) => sessionTime(c, { ...о, room: id => name('room', id) }),
     payment: c => priceLine(planBy(c.plan)),
     text: путь => read(substitute(путь, values)),
@@ -145,15 +151,15 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
                      т.trial ? money(т.trial) : '—',
                      т.single ? money(т.single) : '—',
                      т.packages.map(п => `${п.tableLabel} — ${money(п.price)}`).join(', ')]);
-        return { columns: [t('ui.direction', 'Направление'), t('ui.planTrial', 'Пробное'),
-                  t('ui.planSingle', 'Разовое'), t('ui.planPackage', 'Абонемент / модуль')], rows,
+        return { columns: [t('ui.direction'), t('ui.planTrial'),
+                  t('ui.planSingle'), t('ui.planPackage', 'Package / module')], rows,
                  widths: ['33.3333%', '16.6667%', '16.6667%', '33.3333%'],
                  headNoScope: true, note: prices.note };
       }
       if (б.source === 'camp.routine')
-        return { columns: [t('ui.time', 'Время'), t('ui.whatHappens', 'Что происходит')], rows: camp.routine.rows,
+        return { columns: [t('ui.time'), t('ui.whatHappens', 'What happens')], rows: camp.routine.rows,
                  widths: ['22%', '78%'], note: camp.routine.note };
-      throw new Error(`неизвестный источник таблицы: ${б.source}`);
+      throw new Error(`unknown table source: ${б.source}`);
     },
   });
 
@@ -171,10 +177,12 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
     }
   };
 
-  buildEntities('course', courses, c => ({ ...c, date: '', direction: name('direction', c.direction) }));
-  buildEntities('event', events, e => ({ ...e, date: e.date.caption, type: name('event-kind', e.type) }));
+  buildEntities('course', courses, c => ({ ...c, date: '', age: ageText(c.age),
+    curator: person(c.curator), direction: name('direction', c.direction) }));
+  buildEntities('event', events, e => ({ ...e, date: e.date.caption, age: ageText(e.age),
+    curators: person(e.curators), type: name('event-kind', e.type) }));
   buildEntities('session', camp.sessions, s => ({ ...s, year: camp.year, date: s.dates.caption,
-    type: name('session-kind', s.type) }));
+    age: ageText(s.age), curator: person(s.curator), type: name('session-kind', s.type) }));
   buildEntities('post', blog, п => ({ ...п }));
 
   const СПРАВОЧНИКИ = { courses, events, camp: camp.sessions, blog,
@@ -186,14 +194,14 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
     const ctx = { ...context({ id: '' }, {}, путь),
       выборка: б => {
         const list = СПРАВОЧНИКИ[б.source];
-        if (!list) throw new Error(`неизвестный источник «${б.source}» на ${путь}`);
+        if (!list) throw new Error(`unknown source “${б.source}” on ${путь}`);
         const видно = visibleRecords(list);
         if (!б.filter) return inOrder(б.source, видно);
         const past = x => isPast((x.date || x.dates).to, TODAY);
         // Прошедшее читается от недавнего к давнему, предстоящее — от ближайшего.
         if (б.filter === 'past') return inOrder(б.source, видно.filter(past), true);
         if (б.filter === 'upcoming') return inOrder(б.source, видно.filter(x => !past(x)));
-        throw new Error(`неизвестный фильтр «${б.filter}» на ${путь}`);
+        throw new Error(`unknown filter “${б.filter}” on ${путь}`);
       },
       rating: () => site.reviews, contacts: () => site.contacts,
       banner: оп => {
@@ -208,7 +216,7 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
         } else if (оп.source) {
           папка = оп.source;
           сущ = (СПРАВОЧНИКИ[оп.source] || []).find(x => x.id === оп.id);
-          if (!сущ) замечания.push(`banner: в справочнике «${оп.source}» нет «${оп.id}»`);
+          if (!сущ) замечания.push(`banner: “${оп.id}” is not in “${оп.source}”`);
         }
         const подпись = сущ && сущ.description
           ? `${сущ.description}<br>${сущ.place || ''}` : (сущ ? сущ.place || '' : '');
@@ -219,14 +227,14 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
         const итог = { ...из, ...Object.fromEntries(Object.entries(оп).filter(([k, v]) =>
           v != null && !['source', 'id'].includes(k))) };
         if (сущ && isPast((сущ.date || сущ.dates).to, TODAY))
-          замечания.push(`баннер указывает на «${сущ.title}» — оно прошло ${(сущ.date || сущ.dates).caption}`);
+          замечания.push(`banner points at “${сущ.title}” — it is past ${(сущ.date || сущ.dates).caption}`);
         return итог.heading ? итог : null;
       },
       schedule: () => visibleRecords(courses).flatMap(c => visibleRecords(c.lessons).map(з => ({
-        day: з.day, time: з.time, course: c.title, age: з.age,
+        day: з.day, time: з.time, course: c.title, age: ageText(з.age),
         direction: name('direction', c.direction), directionId: c.direction,
         hall: name('room', з.room),
-        curator: c.curator }))),
+        curator: person(c.curator) }))),
       frames: б => (б.source === 'site.gallery' ? site.gallery : [])
         .map(к => ({ ...к, ...(sizes[к.base] || { width: 400, height: 600 }) })),
       form: () => form('contacts', structure.form.fields) };

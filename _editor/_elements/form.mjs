@@ -273,7 +273,8 @@ function field(владелец, ключ, path, ctx) {
     // данных нет: в файл уходит то же, что там и лежало.
     э = el('input');
     э.type = 'text';
-    э.placeholder = 'дд.мм.гггг';
+    // Образец даты — тоже слово: у другого языка порядок частей свой.
+    э.placeholder = t('form.datePattern', 'dd.mm.yyyy');
     э.value = localized(значение);
     э.addEventListener('input', () => {
       владелец[ключ] = toMachine(э.value);
