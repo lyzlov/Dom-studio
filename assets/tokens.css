@@ -279,7 +279,6 @@
 /* Планшет: колонок вдвое больше, поля и средник шире. */
 @media (min-width: 600px) {
   :root {
-    --grid-columns: 8;
     --grid-margin: 24px;
     --grid-gutter: 24px;
     --gallery-visible: 2;
@@ -302,9 +301,7 @@
 
     --space-md: 40px;
     --space-lg: 64px;
-    --space-xl: 96px;
 
-    --grid-columns: 12;
     --grid-margin: 80px;
     --grid-gutter: 24px;
     --gallery-visible: 4;
