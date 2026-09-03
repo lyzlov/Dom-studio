@@ -23,7 +23,7 @@
 import { chromium } from 'playwright';
 import { readFileSync } from 'fs';
 import { parseSet } from '../_elements/template.mjs';
-import { parseMarkup, serializeMarkup } from './markup.mjs';
+import { parseMarkup, serializeMarkup } from './_elements/markup.mjs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -34,7 +34,7 @@ const bad = (что, подробно) => беды.push(`${что}: ${подро
 
 // 4. Литералы в css. Числа с единицами и цвета обязаны приходить из токенов.
 function checkCSS() {
-  const текст = readFileSync(join(здесь, 'editor.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const текст = readFileSync(join(здесь, '_theme/style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   текст.split('\n').forEach((строка, i) => {
     const без = строка.replace(/var\([^)]*\)/g, '');
     if (/@media/.test(строка)) return;

@@ -4,10 +4,10 @@
  * Страницы собираются тем же assemble.mjs, что и сборка из командной строки.
  */
 
-import { buildSite, imageBases } from '../_elements/assemble.mjs';
-import { setMarkup, parseSet, replaceTemplate } from '../_elements/template.mjs';
-import { setLang } from '../_elements/lang.mjs';
-import { splitCaptions, mergeCaptions, captionFields } from '../_elements/captions.mjs';
+import { buildSite, imageBases } from '../../_elements/assemble.mjs';
+import { setMarkup, parseSet, replaceTemplate } from '../../_elements/template.mjs';
+import { setLang } from '../../_elements/lang.mjs';
+import { splitCaptions, mergeCaptions, captionFields } from '../../_elements/captions.mjs';
 import { form, node, plainList, recordForm, recordName, dragHandle, eyeButton, deleteButton,
          eyeIcon, fieldRow, iconButton, chevron, TECHNICAL,
          loadIcons, icon } from './form.mjs';
@@ -1698,7 +1698,7 @@ function sourcesHelp() {
   const м = S.project.media || {};
   if (м.folder) строки.push(['media', м.folder]);
   строки.push(['layouts', layouts().folder]);
-  строки.push(['locale', `_editor/locale/${lang()}.json`]);
+  строки.push(['locale', `_editor/_lang/${lang()}.json`]);
 
   // Папка — уже готовая группировка: она в самом пути, и второго деления по
   // смыслу не заводится.

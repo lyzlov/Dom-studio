@@ -6,7 +6,7 @@
 
 import { t, tokenLabel, lang, humanize } from './locale.mjs';
 import { fieldRow, iconButton, chevron, node, plainList } from './form.mjs';
-import { setMarkup, parseSet, replaceTemplate } from '../_elements/template.mjs';
+import { setMarkup, parseSet, replaceTemplate } from '../../_elements/template.mjs';
 import { parseMarkup, serializeMarkup, showNode, humanAttributes } from './markup.mjs';
 import { parseTokens, replaceTokens, colorOf } from './tokens.mjs';
 import { $, S, FILES, el, row, apply, accept, go, crumbs, inGrid, group,

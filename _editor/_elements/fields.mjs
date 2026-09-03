@@ -7,7 +7,7 @@
 
 import { t, humanize, lang } from './locale.mjs';
 import { fieldRow, iconButton, icon, recordName, TECHNICAL } from './form.mjs';
-import { imageBases } from '../_elements/assemble.mjs';
+import { imageBases } from '../../_elements/assemble.mjs';
 import { resize, frameCatalog, translit } from './media.mjs';
 import { captureLayout, toSVG, parseSVG, compare } from './layout.mjs';
 import { $, S, TARGETS, el, button, ask, apply, accept, check, load, login,

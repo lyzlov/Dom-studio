@@ -110,7 +110,7 @@ export async function loadLocale(язык) {
   dict = {};
   if (текущий !== 'en') {
     try {
-      const о = await fetch(`locale/${текущий}.json`, { cache: 'no-store' });
+      const о = await fetch(`_lang/${текущий}.json`, { cache: 'no-store' });
       if (о.ok) dict = await о.json();
     } catch { dict = {}; }
   }
