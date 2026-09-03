@@ -18,7 +18,7 @@
 </template>
 <template id="head">
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ui.htmlLang}}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,7 +33,7 @@
   <link rel="canonical" href="{{canonical}}">
   <meta name="theme-color" content="#ffffff">
   <meta property="og:type" content="website">
-  <meta property="og:locale" content="ru_RU">
+  <meta property="og:locale" content="{{ui.ogLocale}}">
   <meta property="og:site_name" content="{{org}}">
   <meta property="og:title" content="{{title}}">
   <meta property="og:description" content="{{description}}">
@@ -44,13 +44,13 @@
 </template>
 <template id="header">
 <body>
-  <a class="skip-link" href="#main">К содержимому</a>
+  <a class="skip-link" href="#main">{{ui.skipToContent}}</a>
   <header class="site-header">
     <div class="container bar">
 {{{barHtml}}}
     </div>
     <div class="container breadcrumbs-row">
-      <nav class="breadcrumbs" aria-label="Хлебные крошки">{{#refs}}{{#notFirst}} / {{/notFirst}}<a href="{{link}}">{{name}}</a>{{/refs}}<span class="current" aria-current="page">{{#hasLinks}} / {{/hasLinks}}{{last}}</span></nav>
+      <nav class="breadcrumbs" aria-label="{{ui.breadcrumbs}}">{{#refs}}{{#notFirst}} / {{/notFirst}}<a href="{{link}}">{{name}}</a>{{/refs}}<span class="current" aria-current="page">{{#hasLinks}} / {{/hasLinks}}{{last}}</span></nav>
     </div>
   </header>
 </template>
@@ -59,8 +59,8 @@
       <a class="logo" href="{{u}}index.html"><img src="{{u}}_theme/brand/logo-dark.svg" alt="{{org}}" width="533" height="300"></a>
 </template>
 <template id="header-menu">
-      <button type="button" class="nav-toggle" aria-label="Меню" aria-expanded="false" aria-controls="site-nav"><img src="{{u}}_theme/icons/menu.svg" alt="" width="24" height="24"></button>
-      <nav class="site-nav" id="site-nav" aria-label="Основная навигация">
+      <button type="button" class="nav-toggle" aria-label="{{ui.menu}}" aria-expanded="false" aria-controls="site-nav"><img src="{{u}}_theme/icons/menu.svg" alt="" width="24" height="24"></button>
+      <nav class="site-nav" id="site-nav" aria-label="{{ui.mainNav}}">
         <ul class="nav-list">
 {{#menu}}
         {{>nav-item}}
@@ -70,7 +70,7 @@
 </template>
 <template id="header-social">
       <div class="header-actions">
-        <div class="social-icons" aria-label="Соцсети">
+        <div class="social-icons" aria-label="{{ui.social}}">
 {{#social}}          <a href="{{href}}" aria-label="{{name}}" target="_blank" rel="noopener"><img src="{{u}}_theme/icons/{{icon}}.svg" alt="" width="20" height="20"></a>
 {{/social}}
         </div>
@@ -116,7 +116,7 @@
 </template>
 <template id="footer-contacts">
         <div>
-          <h2>Контакты</h2>
+          <h2>{{ui.contacts}}</h2>
           <p><a href="{{contacts}}">{{address}}</a></p>
           <p><a href="tel:{{telHref}}">{{phone}}</a></p>
 {{#social}}          <p><a href="{{href}}" target="_blank" rel="noopener">{{label}}</a></p>
@@ -125,7 +125,7 @@
 </template>
 <template id="footer-sections">
         <div>
-          <h2>Разделы</h2>
+          <h2>{{ui.sections}}</h2>
 {{#sections}}
           <p><a href="{{link}}">{{name}}</a></p>
 {{/sections}}
@@ -143,8 +143,8 @@
   <div class="modal" id="signup-modal" data-modal hidden>
     <div class="modal-backdrop" data-modal-close></div>
     <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <button type="button" class="modal-close" data-modal-close aria-label="Закрыть">×</button>
-      <h2 id="modal-title">Записаться</h2>
+      <button type="button" class="modal-close" data-modal-close aria-label="{{ui.close}}">×</button>
+      <h2 id="modal-title">{{ui.enroll}}</h2>
 {{{form}}}
     </div>
   </div>
@@ -159,13 +159,13 @@
 {{/fields}}
       </div>
       <div class="signup-context" data-signup-context hidden>
-        <span class="contact-label">Занятие</span>
+        <span class="contact-label">{{ui.formLesson}}</span>
         <p class="signup-context-title" data-signup-title></p>
         <p class="signup-context-meta" data-signup-meta></p>
       </div>
       <input type="hidden" name="lesson" data-signup-value>
-      <label class="form-consent"><input type="checkbox" required> Согласен(на) на обработку персональных данных</label>
-      <button type="submit" class="btn">Отправить заявку</button>
+      <label class="form-consent"><input type="checkbox" required> {{ui.formConsent}}</label>
+      <button type="submit" class="btn">{{ui.formSubmit}}</button>
     </form>
 </template>
 <template id="form-row">
@@ -207,7 +207,7 @@
 <p>{{{.}}}</p>
 {{/paragraphs}}
 {{#button}}
-<p class="head-actions"><button type="button" class="btn" data-modal-open>Записаться</button></p>
+<p class="head-actions"><button type="button" class="btn" data-modal-open>{{ui.enroll}}</button></p>
 {{/button}}
 {{#extra}}
 {{{extra}}}
@@ -294,7 +294,7 @@
 <button type="button" class="filter-tab-label" data-filter-toggle><span class="filter-tab-title">{{caption}}</span><span class="filter-current" data-filter-current></span></button>
 <div class="dropdown filter-dropdown">
 <ul class="dropdown-inner">
-<li><button type="button" data-value="">Все</button></li>
+<li><button type="button" data-value="">{{ui.filterAll}}</button></li>
 {{#values}}
 <li><button type="button" data-value="{{value}}">{{caption}}</button></li>
 {{/values}}
@@ -324,19 +324,19 @@
 <div class="gallery" data-gallery{{#mode}} data-default-mode="{{mode}}"{{/mode}}>
   <div class="gallery-bar">
     <div class="gallery-nav">
-      <button type="button" class="icon-btn" data-gallery-prev aria-label="Предыдущий кадр"><img src="{{u}}_theme/icons/chevron-left.svg" alt="" width="20" height="20"></button>
+      <button type="button" class="icon-btn" data-gallery-prev aria-label="{{ui.galleryPrev}}"><img src="{{u}}_theme/icons/chevron-left.svg" alt="" width="20" height="20"></button>
       <span class="gallery-counter" data-gallery-counter aria-live="polite"></span>
-      <button type="button" class="icon-btn" data-gallery-next aria-label="Следующий кадр"><img src="{{u}}_theme/icons/chevron-right.svg" alt="" width="20" height="20"></button>
+      <button type="button" class="icon-btn" data-gallery-next aria-label="{{ui.galleryNext}}"><img src="{{u}}_theme/icons/chevron-right.svg" alt="" width="20" height="20"></button>
     </div>
-    <div class="gallery-modes" role="group" aria-label="Вид галереи">
-      <button type="button" class="icon-btn" data-mode="strip" aria-pressed="{{strip}}" aria-label="Лента"><img src="{{u}}_theme/icons/view-strip.svg" alt="" width="20" height="20"></button>
-      <button type="button" class="icon-btn" data-mode="grid" aria-pressed="{{grid}}" aria-label="Плитка"><img src="{{u}}_theme/icons/view-grid.svg" alt="" width="20" height="20"></button>
+    <div class="gallery-modes" role="group" aria-label="{{ui.galleryModes}}">
+      <button type="button" class="icon-btn" data-mode="strip" aria-pressed="{{strip}}" aria-label="{{ui.galleryStrip}}"><img src="{{u}}_theme/icons/view-strip.svg" alt="" width="20" height="20"></button>
+      <button type="button" class="icon-btn" data-mode="grid" aria-pressed="{{grid}}" aria-label="{{ui.galleryGrid}}"><img src="{{u}}_theme/icons/view-grid.svg" alt="" width="20" height="20"></button>
     </div>
   </div>
   <div class="gallery-view" data-gallery-view>{{#frames}}<button type="button" class="gallery-item" data-lightbox-open data-full="{{full}}" aria-label="{{caption}}"><picture><source type="image/webp" srcset="{{base}}-400.webp 400w, {{base}}-800.webp 800w" sizes="{{sizes}}"><img src="{{base}}-400.jpg" srcset="{{base}}-400.jpg 400w, {{base}}-800.jpg 800w" sizes="{{sizes}}" {{{classAttr}}} alt="{{caption}}" width="{{width}}" height="{{height}}"{{#eager}} loading="eager" fetchpriority="high" decoding="async"{{/eager}}{{^eager}} loading="lazy" decoding="async"{{/eager}}></picture></button>{{/frames}}</div>
   <div class="lightbox" data-lightbox hidden>
     <div class="lightbox-backdrop" data-lightbox-close></div>
-    <button type="button" class="icon-btn lightbox-close" data-lightbox-close aria-label="Закрыть"><img src="{{u}}_theme/icons/close.svg" alt="" width="20" height="20"></button>
+    <button type="button" class="icon-btn lightbox-close" data-lightbox-close aria-label="{{ui.close}}"><img src="{{u}}_theme/icons/close.svg" alt="" width="20" height="20"></button>
     <figure class="lightbox-figure"><img class="lightbox-img" data-lightbox-img alt=""></figure>
   </div>
 </div>
@@ -345,7 +345,7 @@
 <div class="map-block">
 <iframe src="https://yandex.ru/map-widget/v1/?ll={{lng}}%2C{{lat}}&amp;z=17&amp;pt={{lng}},{{lat}},pm2rdm" title="{{caption}}" loading="lazy" allowfullscreen></iframe>
 </div>
-<p class="map-actions"><a class="btn" href="{{{route}}}" target="_blank" rel="noopener" aria-label="Маршрут в Яндекс.Картах, откроется в новой вкладке">Маршрут в Яндекс.Картах</a></p>
+<p class="map-actions"><a class="btn" href="{{{route}}}" target="_blank" rel="noopener" aria-label="{{ui.routeAria}}">Маршрут в Яндекс.Картах</a></p>
 </template>
 <!-- #endregion -->
 
@@ -355,8 +355,8 @@
 </template>
 <template id="contacts">
 {{#paragraphs}}
-<p><strong>Адрес:</strong> {{address}}</p>
-<p><strong>Телефон / Telegram:</strong> {{{phone}}} · {{{socials}}}</p>
+<p><strong>{{ui.addressLabel}}</strong> {{address}}</p>
+<p><strong>{{ui.phoneLabel}}</strong> {{{phone}}} · {{{socials}}}</p>
 {{/paragraphs}}
 {{^paragraphs}}
 <div class="contact-grid">
@@ -370,14 +370,14 @@
 <a href="tel:{{num}}">{{phone}}</a>
 </template>
 <template id="social-link">
-<a href="{{href}}" target="_blank" rel="noopener" aria-label="{{name}} школы, откроется в новой вкладке">{{label}}</a>
+<a href="{{href}}" target="_blank" rel="noopener" aria-label="{{schoolNewTab}}">{{label}}</a>
 </template>
 <template id="rating">
 <div class="rating">
 <span class="rating-value">{{rating}}</span>
 <span class="rating-meta">{{caption}}</span>
 </div>
-<p class="map-actions"><a class="btn" href="{{{link}}}" target="_blank" rel="noopener" aria-label="{{button}}, откроется в новой вкладке">{{button}}</a></p>
+<p class="map-actions"><a class="btn" href="{{{link}}}" target="_blank" rel="noopener" aria-label="{{routeLabel}}">{{button}}</a></p>
 </template>
 <!-- #endregion -->
 
@@ -417,7 +417,7 @@
         </div>
         <p class="hero-slogan">{{{slogan}}}</p>
         <p class="hero-facts">{{facts}}</p>
-        <p class="head-actions"><button type="button" class="btn" data-modal-open>Записаться</button></p>
+        <p class="head-actions"><button type="button" class="btn" data-modal-open>{{ui.enroll}}</button></p>
       </div>{{{banner}}}
     </div>
   </section>

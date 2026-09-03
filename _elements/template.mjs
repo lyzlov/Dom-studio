@@ -15,6 +15,8 @@
  * вставка получает отступ той строки, где стоит её тег.
  */
 
+import { lang } from './lang.mjs';
+
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
 export const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ESC[c]);
 
@@ -160,4 +162,20 @@ export const setMarkup = шаблоны => { SET = шаблоны; };
 
 export const names = () => Object.keys(SET);
 
-export const R = (имя, данные) => render(имя, данные, SET);
+/**
+ * Словарь языка виден каждому шаблону под именем `ui`: слово в разметке
+ * пишется ключом (`{{ui.enroll}}`), а какими это буквами — решает словарь.
+ * Подмешивается здесь, а не в каждом вызове: иначе про него забудут.
+ */
+let ветка = null, откуда = null;
+/** Ветка `ui` из плоского словаря: `ui.enroll` → `ui: { enroll }`. */
+function словарьUI() {
+  const сл = lang();
+  if (сл !== откуда) {
+    откуда = сл;
+    ветка = Object.fromEntries(Object.entries(сл)
+      .filter(([к]) => к.startsWith('ui.')).map(([к, з]) => [к.slice(3), з]));
+  }
+  return ветка;
+}
+export const R = (имя, данные) => render(имя, { ui: словарьUI(), ...данные }, SET);

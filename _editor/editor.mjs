@@ -6,6 +6,7 @@
 
 import { buildSite, imageBases } from '../_elements/assemble.mjs';
 import { setMarkup, parseSet, replaceTemplate } from '../_elements/template.mjs';
+import { setLang } from '../_elements/lang.mjs';
 import { form, node, plainList, recordForm, recordName, dragHandle, eyeButton, deleteButton,
          eyeIcon, fieldRow, iconButton, chevron, TECHNICAL,
          loadIcons, icon } from './form.mjs';
@@ -27,6 +28,9 @@ export const PRODUCT = { name: 'Enfilade', version: '0.4.0', contract: 1 };
 const МАНИФЕСТ = 'project.json';
 const КЛЮЧ = 'enfilade.token';
 const ПРЕВЬЮ = 'enfilade.preview';
+const ЧЕРНОВИК = 'enfilade.draft';
+const СКРИПТ_ИСХОДНИК = '_elements/script.src.js';
+const СКРИПТ = '_elements/script.js';
 
 const $ = id => document.getElementById(id);
 const el = (тег, класс, text) => {
@@ -78,7 +82,13 @@ const pick = async путь => {
 const fetchJSON = async путь => {
   const text = await pick(путь);
   S.sources.set(путь, text);
-  return JSON.parse(text);
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // Разбор говорит про позицию в тексте, но молчит про файл. Файлов два
+    // десятка, и без имени чинить нечего.
+    throw new Error(`${путь}: ${e.message}`);
+  }
 };
 
 /** Какие файлы каталога грузить — выводится из словаря типов, не из кода. */
@@ -145,6 +155,9 @@ async function load() {
   S.templateNames = набор.имена;
   S.templates = набор.шаблоны;
   setMarkup(S.templates);
+  // Скрипт страницы — такой же продукт сборки, как и сами страницы: слова в
+  // него подставляются из словаря языка, поэтому исходник нужен и здесь.
+  S.scriptSrc = await pick(СКРИПТ_ИСХОДНИК).catch(() => '');
 
   step(t('load.theme', 'Theme…'));
   if (FILES().styles) {
@@ -184,6 +197,9 @@ async function load() {
   }));
   build();
   S.loaded = true;
+  // Черновик читается здесь: дальше первая же сверка состояния сотрёт его как
+  // лишний, потому что правок в памяти ещё нет.
+  S.draft = readDraft();
 
 }
 
@@ -194,10 +210,19 @@ async function load() {
  * чем они пришли, ждёт этот же обещанный ответ, а не второй заход.
  */
 function loadPages() {
-  if (!S.pagesPromise) S.pagesPromise = Promise.all(S.built.map(async ([путь]) => {
-    try { S.pagesWere.set(путь, await pick(путь)); } catch { /* новой страницы ещё нет */ }
-  })).then(() => { S.pagesReady = true; });
+  if (!S.pagesPromise) S.pagesPromise = Promise.all([...S.built.map(([путь]) => путь), СКРИПТ]
+    .map(async путь => {
+      try { S.pagesWere.set(путь, await pick(путь)); } catch { /* новой страницы ещё нет */ }
+    })).then(() => { S.pagesReady = true; });
   return S.pagesPromise;
+}
+
+/** Скрипт страницы со словами из словаря языка — как его пишет сборка. */
+function buildScript() {
+  if (!S.scriptSrc) return null;
+  const ветка = Object.fromEntries(Object.entries(S.names || {})
+    .filter(([к]) => к.startsWith('ui.')).map(([к, з]) => [к.slice(3), з]));
+  return S.scriptSrc.replace('__UI__', JSON.stringify(ветка, null, 2).replace(/\n/g, '\n  '));
 }
 
 function build(повтор = false) {
@@ -406,9 +431,12 @@ function changes() {
   for (const [путь, содержимое] of S.texts) compare(путь, содержимое);
   for (const [путь, байты] of S.media) compare(путь, байты);
   for (const [путь, text] of S.layouts) compare(путь, text);
-  if (S.pagesReady)
+  if (S.pagesReady) {
     for (const [путь, html] of S.built)
       if (S.pagesWere.get(путь) !== html) список.push([путь, html]);
+    const скрипт = buildScript();
+    if (скрипт != null && S.pagesWere.get(СКРИПТ) !== скрипт) список.push([СКРИПТ, скрипт]);
+  }
   return список;
 }
 
@@ -1621,8 +1649,8 @@ function chooseType(готово) {
     кн.type = 'button';
     кн.append(el('span', 'ed-name', т.name));
     кн.addEventListener('click', () => { д.close(); готово(т.key); });
-    список.append(fieldRow({ имя: кн, id: т.key,
-      значение: el('span', 'ed-hint', т.description) }));
+    список.append(fieldRow({ name: кн, id: т.key,
+      value: el('span', 'ed-hint', т.description) }));
   });
   д.append(список);
   const действия = el('div', 'ed-actions');
@@ -1804,13 +1832,13 @@ function formScreen(у) {
     if (владелец) поля.append(recordForm(владелец, i, ctx()));
     S.recordKind = null;
     const кадры = blockFrames(у.data);
-    if (кадры) поля.append(fieldRow({ имя: t('field.gallery'), значение: galleryField(кадры) }));
+    if (кадры) поля.append(fieldRow({ name: t('field.gallery'), value: galleryField(кадры) }));
   } else if (у.data && typeof у.data === 'object' && !Array.isArray(у.data)) {
     // Элемент списка — вкладка, ссылка, раздел меню — правится всеми своими
     // полями, а не одним именем: у вкладки внутри лежит ещё и её наполнение.
     поля.append(...fieldByField(у.data));
   } else if (у.поле) {
-    поля.append(fieldRow({ имя: t('field.name', 'name'), значение: nameField(у) }));
+    поля.append(fieldRow({ name: t('field.name', 'name'), value: nameField(у) }));
   } else if (у.key === 'menu' || у.kind === 'menu') {
     // Меню — это его пункты: правится список, а не абстрактное «меню».
     поля.append(node(S.data.structure.navigation, 'menu', ['menu'], ctx()));
@@ -1851,7 +1879,7 @@ function nameField(у) {
  */
 function markupPartForm(о) {
   const итог = [];
-  if (о.media) итог.push(fieldRow({ имя: t('media.file', 'file'), значение: fileField(о.media) }));
+  if (о.media) итог.push(fieldRow({ name: t('media.file', 'file'), value: fileField(о.media) }));
   if (!о.data) return итог;
   const [владелец, ключ] = byPath(о.data);
   if (!владелец) return итог;
@@ -2067,12 +2095,12 @@ function typesHelp() {
         значение.append(placeLink(м));
       });
     } else значение.append(el('span', 'ed-hint', t('type.unused', 'nowhere yet')));
-    блок.append(fieldRow({ имя, id: ключ, значение }));
+    блок.append(fieldRow({ name: имя, id: ключ, value: значение }));
     // Из чего тип состоит — там же, где он описан. Обозначения полей в
     // types.json машинные; человеческое имя обозначения даёт словарь имён.
     for (const п of поля)
-      блок.append(fieldRow({ имя: п.name, id: п.key, уровень: 1,
-        значение: el('span', 'ed-hint', п.type) }));
+      блок.append(fieldRow({ name: п.name, id: п.key, level: 1,
+        value: el('span', 'ed-hint', п.type) }));
   };
 
   // Раздел называет весь сортамент элементов, значит и показывает весь: то,
@@ -2168,7 +2196,7 @@ function sourcesHelp() {
       if (!isWritten(ключ))
         место.append(el('span', 'ed-hint', t('source.readonly', 'read only')));
       место.append(el('span', 'ed-hint', t('about.' + ключ, '')));
-      блок.append(fieldRow({ имя: t('source.' + ключ, ключ), id: ключ, значение: место }));
+      блок.append(fieldRow({ name: t('source.' + ключ, ключ), id: ключ, value: место }));
     }
   }
   return блок;
@@ -2219,12 +2247,12 @@ function pageForm(путь) {
 const row = (подпись, контрол) => {
   const об = el('div', 'ed-control');
   об.append(контрол);
-  return fieldRow({ имя: подпись, значение: об });
+  return fieldRow({ name: подпись, value: об });
 };
 
 function technicalGroup(узлы) {
   const g = el('details', 'ed-group ed-tech');
-  const шапка = fieldRow({ имя: t('ui.technical'), тег: 'summary' });
+  const шапка = fieldRow({ name: t('ui.technical'), tag: 'summary' });
   шапка.classList.add('ed-head');
   const внутри = el('div', 'ed-node');
   узлы.forEach(у => внутри.append(у));
@@ -2595,9 +2623,9 @@ function archiveForm() {
   if (!строки.length) { блок.append(el('p', 'ed-hint', t('nav.archiveEmpty', 'The archive is empty.'))); return блок; }
   строки.forEach((с, i) => {
     блок.append(fieldRow({
-      имя: с.name || recordName(с.record, i),
-      значение: el('span', 'ed-hint', с.at || ''),
-      инструменты: [iconButton('undo', t('btn.restore'), () => fromArchive(i))],
+      name: с.name || recordName(с.record, i),
+      value: el('span', 'ed-hint', с.at || ''),
+      tools: [iconButton('undo', t('btn.restore'), () => fromArchive(i))],
     }));
   });
   return блок;
@@ -3026,9 +3054,9 @@ function spellingProps(имя) {
     const т = tokenOptions(`--type-${имя}-${свойство}`)[0];
     if (!т) continue;
     внутри.append(fieldRow({
-      имя: t('type.' + свойство), id: т.name,
-      значение: propertyField(т, свойство, вид),
-      инструменты: [discard([т])],
+      name: t('type.' + свойство), id: т.name,
+      value: propertyField(т, свойство, вид),
+      tools: [discard([т])],
     }));
   }
   return внутри;
@@ -3184,7 +3212,7 @@ function markupForm() {
   выбор.addEventListener('change', () => { S.template = выбор.value; drawMain(); });
   const обёртка = el('div', 'ed-control');
   обёртка.append(выбор);
-  блок.append(fieldRow({ имя: t('ui.element', 'элемент'), значение: обёртка }));
+  блок.append(fieldRow({ name: t('ui.element', 'элемент'), value: обёртка }));
 
   const исходный = S.templates[S.template] || '';
   const дерево = parseMarkup(исходный);
@@ -3203,7 +3231,7 @@ function markupForm() {
   };
 
   дерево.дети.forEach(у => drawMarkupNode(у, блок, 0, write));
-  блок.append(fieldRow({ имя: t('markup.source', 'Source'), значение: код }));
+  блок.append(fieldRow({ name: t('markup.source', 'Source'), value: код }));
   return блок;
 }
 
@@ -3247,7 +3275,7 @@ function drawMarkupNode(у, куда, уровень, write) {
     значение = el('span', 'ed-hint', fieldName(у.имя));
   }
 
-  куда.append(fieldRow({ имя, id: у.имя || у.тег, значение, уровень }));
+  куда.append(fieldRow({ name: имя, id: у.имя || у.тег, value: значение, level: уровень }));
   (у.дети || []).forEach(д => drawMarkupNode(д, куда, уровень + 1, write));
 }
 
@@ -3494,6 +3522,58 @@ function apply(структурно) {
 }
 
 /**
+ * Черновик правок. Правки живут в памяти вкладки, и закрытый браузер стирал
+ * час работы: предупреждения при закрытии хватает не на всякий случай.
+ * Пишется то, что правит человек; кадры не пишутся — им не место в хранилище
+ * браузера, и они переживают перезагрузку только заново выбранными.
+ */
+function saveDraft() {
+  try {
+    localStorage.setItem(ЧЕРНОВИК, JSON.stringify({
+      время: Date.now(),
+      сайт: S.project.name || '',
+      data: S.data,
+      project: S.project,
+      markup: S.markup,
+      theme: S.theme.css,
+      settings: S.settings.css,
+      styles: S.styles,
+      texts: [...S.texts],
+    }));
+  } catch { /* хранилище переполнено или закрыто — работаем без черновика */ }
+}
+
+/** Черновик этого же сайта, если он есть и новее загруженного. */
+function readDraft() {
+  try {
+    const ч = JSON.parse(localStorage.getItem(ЧЕРНОВИК) || 'null');
+    return ч && ч.сайт === (S.project.name || '') ? ч : null;
+  } catch { return null; }
+}
+
+const dropDraft = () => { try { localStorage.removeItem(ЧЕРНОВИК); } catch { /* нечего убирать */ } };
+
+/** Черновик ложится поверх загруженного: данные те же, правки — свои. */
+function useDraft(ч) {
+  S.data = ч.data;
+  S.project = ч.project;
+  S.markup = ч.markup;
+  S.styles = ч.styles;
+  S.texts = new Map(ч.texts);
+  const набор = parseSet(S.markup);
+  S.templateNames = набор.имена;
+  S.templates = набор.шаблоны;
+  setMarkup(S.templates);
+  S.dict = createDict(S.data.types, S.data, (ключ, запасное) => t(ключ, humanize(запасное)));
+  S.theme.css = ч.theme;
+  S.theme.tokens = parseTokens(S.theme.css);
+  S.settings.css = ч.settings;
+  if (S.settings.css) S.settings.tokens = parseTokens(S.settings.css);
+  projectNames();
+  build();
+}
+
+/**
  * Замечание, у которого есть адрес, — кнопка: она открывает тот самый элемент
  * и раскрывает его форму. Читать текст и потом искать элемент руками человеку
  * не приходится.
@@ -3562,6 +3642,9 @@ function placeInTree(ключ) {
 
 function updateState() {
   const сп = changes();
+  // Черновик держится ровно там, где есть что держать: чистое состояние
+  // черновика не оставляет, иначе редактор предложит вернуть пустоту.
+  if (S.loaded) (сп.length ? saveDraft : dropDraft)();
   const беды = check();
   $('status').textContent = беды.length ? `${t('app.problems', 'Problems')}: ${беды.length}` : '';
   $('status').dataset.kind = беды.length ? 'error' : '';
@@ -3680,25 +3763,37 @@ async function save() {
   const отмена = button(t('btn.cancel'), () => д.close());
   действия.append(отмена);
 
+  // Целей может быть несколько, и запись обрывается на любой. Повтор идёт
+  // только в те, что не записались: писать заново в записанную — плодить
+  // пустой коммит и снова упираться в сверку ветки.
+  let осталось = TARGETS();
   const главная = button(t('btn.save'), async () => {
     главная.disabled = true;
+    const записаны = [];
     try {
       отчёт.textContent = t('save.writing', 'Writing…');
       await writeToGitHub(файлы, {
         token: S.token,
         message: S.project.commit.message || `${PRODUCT.name} ${PRODUCT.version}`,
-        targets: TARGETS(),
+        targets: осталось,
         base: S.heads || {},
-      }, ш => { отчёт.textContent = ш; });
+      }, ш => { отчёт.textContent = ш; },
+         (ключ, sha, цель) => {
+           записаны.push(цель);
+           S.heads = { ...(S.heads || {}), [ключ]: sha };
+         });
       accept(файлы);
-      // Голова ушла вперёд нашим же коммитом: перечитываем, иначе вторая
-      // запись в этой же вкладке упрётся в сверку.
-      S.heads = await branchHeads(TARGETS(), S.token).catch(() => null);
+      осталось = [];
+      dropDraft();
       д.close();
       markSaved();
     } catch (e) {
+      осталось = осталось.filter(ц => !записаны.includes(ц));
       главная.disabled = false;
-      отчёт.textContent = t('save.failed', 'Not written') + ': ' + e.message;
+      const где = записаны.map(ц => `${ц.owner}/${ц.repo}`).join(', ');
+      отчёт.textContent = t('save.failed', 'Not written') + ': ' + e.message
+        + (где ? ` \u2014 ${t('save.written', 'already written')}: ${где}; `
+                 + t('save.retryRest', 'press Save again to write the rest') : '');
     }
   });
   действия.append(главная);
@@ -3734,7 +3829,7 @@ function accept(файлы) {
 async function acceptKey(токен) {
   try {
     const р = await checkAccess(токен, TARGETS()[0]);
-    if (!р.commit) return { ок: false, причина: `${р.пользователь}: ${t('login.noWrite', 'this key cannot write to the repository')}` };
+    if (!р.commit) return { ок: false, причина: `${р.user}: ${t('login.noWrite', 'this key cannot write to the repository')}` };
     S.token = токен;
     S.canWrite = true;
     S.heads = await branchHeads(TARGETS(), токен).catch(() => null);
@@ -3839,21 +3934,27 @@ function labelColumns() {
  * `_elements/names.<язык>.json`, имена оформления — в манифесте. Английского
  * словаря нет: по-английски вещь называется так, как называется её ключ.
  */
-const projectNames = () => setProjectNames({
-  ...((((S.project || {}).theme || {}).names || {})[lang()] || {}),
-  ...(S.names || {}),
-});
+const projectNames = () => setProjectNames(S.names || {});
 
-/** Словарь имён читается на своём языке; нет словаря — остаются ключи. */
+/**
+ * Словарь языка: слова сайта, имена сущностей и имена оформления — один файл
+ * на язык. Он же уходит в сборку: предпросмотр обязан говорить теми же
+ * словами, что и записанная страница.
+ */
 async function loadNames() {
   S.names = {};
-  const шаблон = FILES().names;
-  if (!шаблон) return projectNames();
-  try {
-    S.names = JSON.parse(await pick(шаблон.replace('{lang}', lang())));
-  } catch { S.names = {}; }
+  const шаблон = FILES().lang;
+  if (шаблон) {
+    try {
+      S.names = JSON.parse(await pick(шаблон.replace('{lang}', siteLang())));
+    } catch { S.names = {}; }
+  }
+  setLang(S.names);
   projectNames();
 }
+
+/** Язык сайта объявлен в манифесте; язык редактора — свой, он у locale.mjs. */
+const siteLang = () => (S.project && S.project.lang) || 'ru';
 
 /**
  * Настройки редактора: тот же сортамент, только его собственный. Правка видна
@@ -3881,7 +3982,7 @@ function editorSettings() {
     поле.title = т.caption || т.name;
     const обёртка = el('div', 'ed-control');
     обёртка.append(поле);
-    поля.append(fieldRow({ имя: tokenLabel(т.name, ''), id: т.name, значение: обёртка }));
+    поля.append(fieldRow({ name: tokenLabel(т.name, ''), id: т.name, value: обёртка }));
   });
   д.append(поля);
   const действия = el('div', 'ed-actions');
@@ -3892,7 +3993,7 @@ function editorSettings() {
 
 /** Ключ доступа меняется тем же окном, что показано при первом входе. */
 function setupKey() {
-  $('key').addEventListener('click', () => login({ показать: true }).then(updateState));
+  $('key').addEventListener('click', () => login({ show: true }).then(updateState));
   $('settings').addEventListener('click', editorSettings);
 }
 
@@ -3908,9 +4009,6 @@ function setupLanguage() {
   show();
   кн.addEventListener('click', async () => {
     await loadLocale(nextLang());
-    // Словарь имён проекта тоже на своём языке: имена сущностей переключаются
-    // вместе с подписями редактора, а не остаются на прежнем языке.
-    await loadNames();
     labelColumns();
     show();
     drawPagePicker();
@@ -4007,6 +4105,16 @@ const ЗНАЧКИ_РЕДАКТОРА = ['alert', 'key', 'save', 'settings', 'ex
   // показу, и держать открытие ради них незачем.
   loadPages().then(updateState);
   $('save').addEventListener('click', save);
+  // Черновик прошлой вкладки предлагается своим окном, а не окном браузера:
+  // окно у редактора одно на все вопросы.
+  const ч = S.draft;
+  if (ч) {
+    const когда = new Date(ч.время).toTimeString().slice(0, 5);
+    ask(`${t('draft.found', 'Unsaved edits from a previous tab')} (${когда})`,
+        t('draft.restore', 'Restore'),
+        () => { S.draftUsed = true; useDraft(ч); draw(); followSection(); show(); showChecks(); updateState(); });
+    $('dialog').addEventListener('close', () => { if (!S.draftUsed) dropDraft(); }, { once: true });
+  }
   // Правки живут в памяти вкладки: закрыть её — потерять их. Браузер спросит
   // сам, но только если мы сказали, что терять есть что.
   window.addEventListener('beforeunload', е => {

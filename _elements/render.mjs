@@ -3,8 +3,12 @@
  */
 
 import { R as render, esc } from './template.mjs';
+import { t, tf } from './lang.mjs';
 
 const R = (имя, данные) => render(имя, данные).replace(/\n$/, '');
+
+/** Сумма со знаком валюты: знак объявлен в словаре языка. */
+const money = сумма => `${сумма}${t('ui.currency', ' ₽')}`;
 
 /* #region Вспомогательное */
 export { esc };
@@ -184,27 +188,27 @@ const substitute = (шаблон, знач) => String(шаблон).replace(/\{(
 
 export const HEAD_FIELDS = {
   course: (c, ctx) => [
-    ['Возраст', esc(c.age)],
-    ['Время', esc(ctx.lessonTime(c, { withRoom: true }))],
-    ['Куратор', esc(c.curator)],
-    ['Оплата', esc(ctx.payment(c))],
+    [t('ui.age', 'Возраст'), esc(c.age)],
+    [t('ui.time', 'Время'), esc(ctx.lessonTime(c, { withRoom: true }))],
+    [t('ui.curator', 'Куратор'), esc(c.curator)],
+    [t('ui.payment', 'Оплата'), esc(ctx.payment(c))],
   ],
   event: e => [
-    ['Дата', esc(e.date.caption)],
-    ['Время', esc(e.date.time)],
-    ['Возраст', esc(e.age)],
-    ['Место', esc(e.place)],
-    [e.curators.length > 1 ? 'Кураторы' : 'Куратор', esc(e.curators.join(', '))],
-    ['Цена', esc(e.price)],
+    [t('ui.date', 'Дата'), esc(e.date.caption)],
+    [t('ui.time', 'Время'), esc(e.date.time)],
+    [t('ui.age', 'Возраст'), esc(e.age)],
+    [t('ui.place', 'Место'), esc(e.place)],
+    [e.curators.length > 1 ? t('ui.curators', 'Кураторы') : t('ui.curator', 'Куратор'), esc(e.curators.join(', '))],
+    [t('ui.price', 'Цена'), esc(e.price)],
   ],
   post: () => [],
   session: s => [
-    ['Даты', esc(s.dates.caption)],
-    ['Время', esc(s.dates.time)],
-    ['Возраст', esc(s.age)],
-    ['Место', esc(s.place)],
-    ['Куратор', esc(s.curator)],
-    ['Цена', esc(s.price)],
+    [t('ui.dates', 'Даты'), esc(s.dates.caption)],
+    [t('ui.time', 'Время'), esc(s.dates.time)],
+    [t('ui.age', 'Возраст'), esc(s.age)],
+    [t('ui.place', 'Место'), esc(s.place)],
+    [t('ui.curator', 'Куратор'), esc(s.curator)],
+    [t('ui.price', 'Цена'), esc(s.price)],
   ],
 };
 
@@ -212,14 +216,16 @@ const ПОДПИСЬ_КАДРА = {
   course: c => c.title,
   event: e => e.title,
   post: п => п.heading,
-  session: s => `Афиша смены «${s.title}»`,
+  session: s => tf('ui.sessionPoster', 'Афиша смены «{title}»', { title: s.title }),
 };
 
 export const priceLine = тариф => [
-  тариф.trial ? `Пробное — ${тариф.trial} ₽` : 'Пробного нет',
-  тариф.single ? `разовое — ${тариф.single} ₽` : 'разового занятия нет',
+  тариф.trial ? tf('ui.priceTrial', 'Пробное — {price}', { price: money(тариф.trial) })
+              : t('ui.priceNoTrial', 'Пробного нет'),
+  тариф.single ? tf('ui.priceSingle', 'разовое — {price}', { price: money(тариф.single) })
+               : t('ui.priceNoSingle', 'разового занятия нет'),
 ].join(', ') + '. '
-  + тариф.packages.map((п, i) => `${i && п.short ? п.short : п.title} — ${п.price} ₽`).join(', ') + '.';
+  + тариф.packages.map((п, i) => `${i && п.short ? п.short : п.title} — ${money(п.price)}`).join(', ') + '.';
 
 export function entityPage({ вид, сущность, шаблон, site, структура, элементы, ctx, blocks }) {
   const путь = `${шаблон.folder}/${сущность.id}/index.html`;
@@ -247,12 +253,12 @@ export function entityPage({ вид, сущность, шаблон, site, ст�
   ].join('\n');
 
   return page({
-    site, структура, элементы, depth, body,
+    site, структура, элементы, body,
     title: substitute(шаблон.metaTitle, ctx.values),
     description: substitute(шаблон.metaDescription, ctx.values),
     путь,
     active: шаблон.parent,
-    path: [{ name: 'Главная', href: 'index.html' },
+    path: [{ name: t('ui.home', 'Главная'), href: 'index.html' },
              { name: шаблон.section, href: шаблон.parent },
              { name: сущность.title || сущность.heading }],
   });

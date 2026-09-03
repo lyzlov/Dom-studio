@@ -62,26 +62,26 @@ export function icon(name) {
  * заполняет. Поэтому строка не может съехать относительно соседей: съехать
  * может разве что весь список целиком.
  */
-export function fieldRow({ name, id, значение, метка, инструменты, тег = 'div', уровень = 0 }) {
-  const с = el(тег, 'ed-row');
+export function fieldRow({ name, id, value, mark, tools, tag = 'div', level = 0 }) {
+  const с = el(tag, 'ed-row');
 
   const подпись = el('span', 'ed-row-name');
   // Вложенность видна отступом подписи — тем же, что и в дереве. Отступ живёт
   // на подписи, а не на группе: сдвигать саму группу значит рвать колонки,
   // по которым выровнена вся форма.
-  if (уровень) подпись.style.paddingLeft = `calc(${уровень} * var(--size-cell))`;
+  if (level) подпись.style.paddingLeft = `calc(${level} * var(--size-cell))`;
   if (name instanceof Node) подпись.append(name);
   else if (name != null) подпись.append(el('span', 'ed-name', name));
   if (id) подпись.title = String(id);
   с.append(подпись);
 
   const место = el('span', 'ed-row-value');
-  if (значение) место.append(значение);
-  if (метка) место.append(метка);
+  if (value) место.append(value);
+  if (mark) место.append(mark);
   с.append(место);
 
   const кнопки = el('span', 'ed-row-tools');
-  (инструменты || []).forEach(к => кнопки.append(к || el('span', 'ed-cell')));
+  (tools || []).forEach(к => кнопки.append(к || el('span', 'ed-cell')));
   с.append(кнопки);
   return с;
 }
@@ -208,7 +208,7 @@ function toLine(владелец, ключ, path, ctx) {
     ряд.append(я);
   });
   linkCaption(о, поля, ctx);
-  return fieldRow({ имя: ctx.caption(ключ), значение: ряд, уровень: pathLevel(path) });
+  return fieldRow({ name: ctx.caption(ключ), value: ряд, level: pathLevel(path) });
 }
 
 /**
@@ -314,7 +314,7 @@ function simple(владелец, ключ, path, ctx) {
   // говорит, что блок делает, а не какого вида его значение.
   if (ключ === 'type' && description && !/\|/.test(description))
     обёртка.append(el('span', 'ed-hint', description));
-  const строка = fieldRow({ имя: ctx.caption(ключ), значение: обёртка, уровень: pathLevel(path) });
+  const строка = fieldRow({ name: ctx.caption(ключ), value: обёртка, level: pathLevel(path) });
   строка.querySelector('.ed-row-name').title = String(ключ);
   if (ключ === 'type' && владелец && 'type' in владелец) строка.classList.add('ed-type');
   return строка;
@@ -334,8 +334,8 @@ function group(заголовок, внутри, { открыта = false, ин�
   const g = el('details', ('ed-group ' + класс).trim());
   g.open = открыта;
   const шапка = fieldRow({
-    имя: заголовок, id, значение, тег: 'summary', уровень,
-    инструменты: инструменты ? [инструменты] : [],
+    name: заголовок, id, value: значение, tag: 'summary', level: уровень,
+    tools: инструменты ? [инструменты] : [],
   });
   шапка.classList.add('ed-head');
   if (скрыто) шапка.dataset.hidden = 'true';
@@ -427,8 +427,8 @@ function simpleList(список, path, ctx) {
     const обёртка = el('div', 'ed-control');
     обёртка.append(э);
     тело.append(fieldRow({
-      имя: null, значение: обёртка,
-      инструменты: [deleteButton(список, i, ctx, список[i])],
+      name: null, value: обёртка,
+      tools: [deleteButton(список, i, ctx, список[i])],
     }));
   });
   return тело;

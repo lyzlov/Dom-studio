@@ -5,6 +5,10 @@
 
 import { entityPage, page, sectionHead, form, priceLine, isPast } from './render.mjs';
 import { buildBlock, buildElement, sessionTime, CONTENTS, PAGE_LEVEL, KINDS } from './blocks.mjs';
+import { t, tf } from './lang.mjs';
+
+/** Сумма со знаком валюты: знак объявлен в словаре языка. */
+const money = сумма => `${сумма}${t('ui.currency', ' \u20bd')}`;
 
 export const substitute = (t, з) => String(t).replace(/\{([^}]+)\}/g, (_, k) => з[k] ?? '');
 
@@ -138,15 +142,16 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
       if (б.source === 'prices') {
         const rows = visibleRecords(prices.plans).filter(т => т.tableLabel)
           .map(т => [т.tableLabel,
-                     т.trial ? `${т.trial} ₽` : '—',
-                     т.single ? `${т.single} ₽` : '—',
-                     т.packages.map(п => `${п.tableLabel} — ${п.price} ₽`).join(', ')]);
-        return { columns: ['Направление', 'Пробное', 'Разовое', 'Абонемент / модуль'], rows,
+                     т.trial ? money(т.trial) : '—',
+                     т.single ? money(т.single) : '—',
+                     т.packages.map(п => `${п.tableLabel} — ${money(п.price)}`).join(', ')]);
+        return { columns: [t('ui.direction', 'Направление'), t('ui.planTrial', 'Пробное'),
+                  t('ui.planSingle', 'Разовое'), t('ui.planPackage', 'Абонемент / модуль')], rows,
                  widths: ['33.3333%', '16.6667%', '16.6667%', '33.3333%'],
                  headNoScope: true, note: prices.note };
       }
       if (б.source === 'camp.routine')
-        return { columns: ['Время', 'Что происходит'], rows: camp.routine.rows,
+        return { columns: [t('ui.time', 'Время'), t('ui.whatHappens', 'Что происходит')], rows: camp.routine.rows,
                  widths: ['22%', '78%'], note: camp.routine.note };
       throw new Error(`неизвестный источник таблицы: ${б.source}`);
     },
