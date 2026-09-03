@@ -114,6 +114,9 @@
           "data": "structure.navigation.menu",
           "template": "header-menu"
         },
+        "lang": {
+          "template": "header-lang"
+        },
         "social": {
           "data": "site.contacts.social",
           "template": "header-social"

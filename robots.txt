@@ -1,8 +1,8 @@
 # Черновик закрыт от индексации целиком.
-# Перед запуском: убрать строку «Disallow: /», оставить «Disallow: /_»
-# и раскомментировать Sitemap.
+# Перед запуском: убрать строку «Disallow: /», оставить «Disallow: /_».
+# Адрес карты сайта — тот же, что site.url в _data/site.json.
 User-agent: *
 Disallow: /
 Disallow: /_
 
-# Sitemap: https://dom-arch.ru/sitemap.xml
+Sitemap: https://lyzlov.github.io/Dom-studio/sitemap.xml

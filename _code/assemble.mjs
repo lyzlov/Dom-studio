@@ -78,7 +78,8 @@ export function inOrder(имя, list, наоборот = false) {
   return наоборот ? s.reverse() : s;
 }
 
-export function buildSite({ data, sizes = {}, text = () => '', today }) {
+export function buildSite({ data, sizes = {}, text = () => '', today,
+                            langDepth = 0, prefix = '', alternates = () => [] }) {
   const { site, catalog, structure, types } = data;
   const { courses, events, camp, prices, blog } = catalog;
   const TODAY = today;
@@ -138,6 +139,9 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
 
   const context = (сущность, values, путь) => ({
     depth: путь.split('/').length - 1, up: '../'.repeat(путь.split('/').length - 1),
+    // Страницы адресуются от корня языка, общие ресурсы — от корня сайта.
+    assets: '../'.repeat(путь.split('/').length - 1 + langDepth),
+    langDepth, prefix, alternates,
     href: путь, sizes: sizes, values,
     прошло: x => isPast((x.date || x.dates || {}).to || x, TODAY),
     name, dictionary: dict, person,
@@ -252,6 +256,7 @@ export function buildSite({ data, sizes = {}, text = () => '', today }) {
     if (оп.wrapper) body = `  <div class="${оп.wrapper}">\n${body}\n  </div>`;
     собрано.push([путь, page({ site, структура, элементы: types.pageElements,
       путь, body, title: оп.metaTitle, description: оп.metaDescription,
+      langDepth, prefix, alternates: alternates(путь),
       active: оп.active || путь,
       // Последнее звено крошек — сама страница: её имя берётся у неё же.
       path: (оп.path || []).map(з => (з.href ? withName(з)

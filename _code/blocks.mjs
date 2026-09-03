@@ -16,12 +16,12 @@ export const innerBlocks = (html, путь) =>
 const SIZES = '(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw';
 const SIZES_TEAM = '(min-width: 600px) 260px, 45vw';
 
-const picture = ({ base, caption, width, height, up, lazy = true, sizes = SIZES, class: cls = 'card-image' }) =>
-  R('picture', { base: up + base, sizes, caption, width, height, lazy,
+const picture = ({ base, caption, width, height, root, lazy = true, sizes = SIZES, class: cls = 'card-image' }) =>
+  R('picture', { base: root + base, sizes, caption, width, height, lazy,
                  classAttr: cls ? ` class="${cls}"` : '' });
 
 export function card({ linkTo, heading, linkLabel, meta, subheading, description, note,
-                           image, frameCaption, sizes, up, attrs = {}, action, wide }) {
+                           image, frameCaption, sizes, root, attrs = {}, action, wide }) {
   const parts = [];
   const add = (вид, value) => { if (value) parts.push({ [вид]: true, value }); };
   if (wide) { add('meta', meta); add('heading', heading); }
@@ -35,7 +35,7 @@ export function card({ linkTo, heading, linkLabel, meta, subheading, description
     attrs: Object.entries(attrs).filter(([, v]) => v).map(([k, v]) => ` data-${k}="${esc(v)}"`).join(''),
     linkTo, linkLabel: linkLabel || heading,
     picture: image
-      ? picture({ base: image, caption: frameCaption || heading, up,
+      ? picture({ base: image, caption: frameCaption || heading, root,
                    ...(sizes[image] || { width: 400, height: 300 }) })
       : '',
     parts,
@@ -83,7 +83,7 @@ export const KINDS = {
     meta: [`<span class="type-${esc(c.direction)}">${esc(ctx.name('direction', c.direction))}</span>`,
            `${t('ui.age')}: ${esc(ageText(c.age))}`, esc(ctx.lessonTime(c, { withRoom: false })),
            `${t('ui.curator')}: ${esc(ctx.person(c.curator))}`].join('<br>'),
-    image: c.image, sizes: ctx.sizes, up: ctx.up,
+    image: c.image, sizes: ctx.sizes, root: ctx.assets,
     attrs: { age: ageBuckets(c.age).join(' '),
                 day: [...new Set(c.lessons.map(з => з.day))].join(', '),
                 direction: c.direction },
@@ -99,7 +99,7 @@ export const KINDS = {
         ? [`${t('ui.age')}: ${esc(ageText(e.age))}`, `${t('ui.date')}: ${esc(e.date.caption)}`].filter(x => !/: $/.test(x)).join('<br>')
         : [esc(e.date.caption), esc(e.date.time), esc(e.place)].filter(Boolean).join(' · '),
       description: прошедшее ? null : e.description,
-      image: e.image, sizes: ctx.sizes, up: ctx.up, wide: ctx.wide,
+      image: e.image, sizes: ctx.sizes, root: ctx.assets, wide: ctx.wide,
       action: прошедшее ? null : t('ui.enroll'),
     });
   },
@@ -108,19 +108,19 @@ export const KINDS = {
     linkLabel: tf('ui.sessionLink', { title: s.title, dates: s.dates.caption }),
     meta: [esc(s.dates.caption), esc(s.dates.time), esc(ageText(s.age))].filter(Boolean).join(' · '),
     image: s.image, frameCaption: tf('ui.sessionPoster', { title: s.title }),
-    sizes: ctx.sizes, up: ctx.up,
+    sizes: ctx.sizes, root: ctx.assets,
   }),
   post: (п, ctx) => card({
     linkTo: linkHtml(ctx.href, href('blog', п.id)), heading: п.heading,
     meta: [esc(п.date), esc(п.readTime)].join(' · '),
-    image: п.cover, sizes: ctx.sizes, up: ctx.up,
+    image: п.cover, sizes: ctx.sizes, root: ctx.assets,
   }),
   service: (u, ctx) => card({ heading: u.title, description: innerBlocks(u.description, ctx.href),
-    sizes: ctx.sizes, up: ctx.up }),
+    sizes: ctx.sizes, root: ctx.assets }),
   university: (v, ctx) => card({
     heading: v.title, subheading: esc(v.subheading),
     description: v.description, note: v.note,
-    sizes: ctx.sizes, up: ctx.up,
+    sizes: ctx.sizes, root: ctx.assets,
   }),
 };
 
@@ -161,7 +161,7 @@ const teamBlock = (б, ctx) => R('team', {
   people: ctx.выборка(б).map(т => ({
     name: т.name, role: т.role, bio: т.bio || '',
     frame: т.photo
-      ? picture({ base: т.photo, caption: т.name, up: ctx.up, sizes: SIZES_TEAM, class: null,
+      ? picture({ base: т.photo, caption: т.name, root: ctx.assets, sizes: SIZES_TEAM, class: null,
                    ...(ctx.sizes[т.photo] || { width: 400, height: 400 }) })
       : R('placeholder', { name: т.name }),
   })),
@@ -188,7 +188,7 @@ const tableBlock = (б, ctx) => {
 };
 
 const galleryBlock = (б, ctx) => {
-  const html = galleryHtml({ frames: ctx.frames(б), depth: ctx.depth, mode: б.mode,
+  const html = galleryHtml({ frames: ctx.frames(б), root: ctx.assets, mode: б.mode,
     firstEager: false, full: '-1400', sizes: '(min-width: 1024px) 25vw, 45vw', class: null });
   return б.collapsed
     ? R('disclosure', { class: 'disclosure-control', caption: б.collapsed, inner: html })
@@ -235,7 +235,7 @@ const blockTabs = (б, ctx) => R('tabs', {
     key: в.key, name: в.name, first: i === 0,
     bar: CONTENTS[в.blockType.type](в.blockType, ctx),
   })),
-  action: б.action ? '\n' + R('tab-action', { ...б.action, u: ctx.up }) : '',
+  action: б.action ? '\n' + R('tab-action', { ...б.action, root: ctx.assets }) : '',
 });
 
 export const CONTENTS = {
@@ -254,7 +254,7 @@ export const CONTENTS = {
 const heroBlock = (б, ctx) => {
   const b = ctx.banner(б.banner);
   return R('hero', {
-    u: ctx.up, heading: б.heading, subheading: б.subheading,
+    root: ctx.assets, heading: б.heading, subheading: б.subheading,
     slogan: б.slogan, facts: б.facts,
     banner: b ? '\n' + R('banner', {
       link: linkHtml(ctx.href, b.link), date: b.date,

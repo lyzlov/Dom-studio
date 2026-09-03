@@ -24,13 +24,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{title}}</title>
   <meta name="description" content="{{description}}">
-  <link rel="icon" href="{{u}}favicon.ico">
-  <link rel="preload" href="{{u}}_assets/fonts/golos-text-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="{{u}}_assets/fonts/roboto-mono-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="{{u}}_assets/fonts.css">
-  <link rel="stylesheet" href="{{u}}_assets/tokens.css">
-  <link rel="stylesheet" href="{{u}}_assets/style.css">
+  <link rel="icon" href="{{root}}favicon.ico">
+  <link rel="preload" href="{{root}}_assets/fonts/golos-text-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{root}}_assets/fonts/roboto-mono-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{root}}_assets/fonts.css">
+  <link rel="stylesheet" href="{{root}}_assets/tokens.css">
+  <link rel="stylesheet" href="{{root}}_assets/style.css">
   <link rel="canonical" href="{{canonical}}">
+{{#alternates}}
+  <link rel="alternate" hreflang="{{hreflang}}" href="{{href}}">
+{{/alternates}}
   <meta name="theme-color" content="#ffffff">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="{{ui.ogLocale}}">
@@ -56,10 +59,10 @@
 </template>
 <!-- Части шапки: состав и порядок берутся из данных, вид — из этих шаблонов. -->
 <template id="header-logo">
-      <a class="logo" href="{{u}}index.html"><img src="{{u}}_assets/brand/logo-dark.svg" alt="{{org}}" width="533" height="300"></a>
+      <a class="logo" href="{{u}}index.html"><img src="{{root}}_assets/brand/logo-dark.svg" alt="{{org}}" width="533" height="300"></a>
 </template>
 <template id="header-menu">
-      <button type="button" class="nav-toggle" aria-label="{{ui.menu}}" aria-expanded="false" aria-controls="site-nav"><img src="{{u}}_assets/icons/menu.svg" alt="" width="24" height="24"></button>
+      <button type="button" class="nav-toggle" aria-label="{{ui.menu}}" aria-expanded="false" aria-controls="site-nav"><img src="{{root}}_assets/icons/menu.svg" alt="" width="24" height="24"></button>
       <nav class="site-nav" id="site-nav" aria-label="{{ui.mainNav}}">
         <ul class="nav-list">
 {{#menu}}
@@ -68,16 +71,19 @@
         </ul>
       </nav>
 </template>
+<template id="header-lang">
+      <nav class="lang-switch" aria-label="{{ui.language}}">{{#languages}}<a href="{{link}}" hreflang="{{code}}" lang="{{code}}"{{#current}} aria-current="true"{{/current}}>{{name}}</a>{{/languages}}</nav>
+</template>
 <template id="header-social">
       <div class="header-actions">
         <div class="social-icons" aria-label="{{ui.social}}">
-{{#social}}          <a href="{{href}}" aria-label="{{name}}" target="_blank" rel="noopener"><img src="{{u}}_assets/icons/{{icon}}.svg" alt="" width="20" height="20"></a>
+{{#social}}          <a href="{{href}}" aria-label="{{name}}" target="_blank" rel="noopener"><img src="{{root}}_assets/icons/{{icon}}.svg" alt="" width="20" height="20"></a>
 {{/social}}
         </div>
       </div>
 </template>
 <template id="nav-item">
-{{#group}}
+{{#isGroup}}
 <li class="nav-group">
   <button type="button" class="nav-group-label" aria-expanded="false">{{group}}</button>
   <div class="dropdown">
@@ -88,10 +94,10 @@
     </ul>
   </div>
 </li>
-{{/group}}
-{{^group}}
+{{/isGroup}}
+{{^isGroup}}
 {{>nav-link}}
-{{/group}}
+{{/isGroup}}
 </template>
 <template id="nav-link">
 <li><a href="{{link}}"{{#current}} aria-current="page"{{/current}}>{{name}}</a></li>
@@ -110,7 +116,7 @@
      Часть, которой нет в составе, не выводится. -->
 <template id="footer-brand">
         <div>
-          <img class="footer-logo" src="{{u}}_assets/brand/logo.svg" alt="{{title}}" width="533" height="300">
+          <img class="footer-logo" src="{{root}}_assets/brand/logo.svg" alt="{{title}}" width="533" height="300">
           <p>{{slogan}}</p>
         </div>
 </template>
@@ -324,19 +330,19 @@
 <div class="gallery" data-gallery{{#mode}} data-default-mode="{{mode}}"{{/mode}}>
   <div class="gallery-bar">
     <div class="gallery-nav">
-      <button type="button" class="icon-btn" data-gallery-prev aria-label="{{ui.galleryPrev}}"><img src="{{u}}_assets/icons/chevron-left.svg" alt="" width="20" height="20"></button>
+      <button type="button" class="icon-btn" data-gallery-prev aria-label="{{ui.galleryPrev}}"><img src="{{root}}_assets/icons/chevron-left.svg" alt="" width="20" height="20"></button>
       <span class="gallery-counter" data-gallery-counter aria-live="polite"></span>
-      <button type="button" class="icon-btn" data-gallery-next aria-label="{{ui.galleryNext}}"><img src="{{u}}_assets/icons/chevron-right.svg" alt="" width="20" height="20"></button>
+      <button type="button" class="icon-btn" data-gallery-next aria-label="{{ui.galleryNext}}"><img src="{{root}}_assets/icons/chevron-right.svg" alt="" width="20" height="20"></button>
     </div>
     <div class="gallery-modes" role="group" aria-label="{{ui.galleryModes}}">
-      <button type="button" class="icon-btn" data-mode="strip" aria-pressed="{{strip}}" aria-label="{{ui.galleryStrip}}"><img src="{{u}}_assets/icons/view-strip.svg" alt="" width="20" height="20"></button>
-      <button type="button" class="icon-btn" data-mode="grid" aria-pressed="{{grid}}" aria-label="{{ui.galleryGrid}}"><img src="{{u}}_assets/icons/view-grid.svg" alt="" width="20" height="20"></button>
+      <button type="button" class="icon-btn" data-mode="strip" aria-pressed="{{strip}}" aria-label="{{ui.galleryStrip}}"><img src="{{root}}_assets/icons/view-strip.svg" alt="" width="20" height="20"></button>
+      <button type="button" class="icon-btn" data-mode="grid" aria-pressed="{{grid}}" aria-label="{{ui.galleryGrid}}"><img src="{{root}}_assets/icons/view-grid.svg" alt="" width="20" height="20"></button>
     </div>
   </div>
   <div class="gallery-view" data-gallery-view>{{#frames}}<button type="button" class="gallery-item" data-lightbox-open data-full="{{full}}" aria-label="{{caption}}"><picture><source type="image/webp" srcset="{{base}}-400.webp 400w, {{base}}-800.webp 800w" sizes="{{sizes}}"><img src="{{base}}-400.jpg" srcset="{{base}}-400.jpg 400w, {{base}}-800.jpg 800w" sizes="{{sizes}}" {{{classAttr}}} alt="{{caption}}" width="{{width}}" height="{{height}}"{{#eager}} loading="eager" fetchpriority="high" decoding="async"{{/eager}}{{^eager}} loading="lazy" decoding="async"{{/eager}}></picture></button>{{/frames}}</div>
   <div class="lightbox" data-lightbox hidden>
     <div class="lightbox-backdrop" data-lightbox-close></div>
-    <button type="button" class="icon-btn lightbox-close" data-lightbox-close aria-label="{{ui.close}}"><img src="{{u}}_assets/icons/close.svg" alt="" width="20" height="20"></button>
+    <button type="button" class="icon-btn lightbox-close" data-lightbox-close aria-label="{{ui.close}}"><img src="{{root}}_assets/icons/close.svg" alt="" width="20" height="20"></button>
     <figure class="lightbox-figure"><img class="lightbox-img" data-lightbox-img alt=""></figure>
   </div>
 </div>
@@ -404,13 +410,13 @@
   </section>
 </template>
 <template id="tab-action">
-        <button type="button" class="icon-btn" {{{attr}}} aria-label="{{caption}}" title="{{caption}}"><img src="{{u}}_assets/icons/{{icon}}.svg" alt="" width="20" height="20"></button>
+        <button type="button" class="icon-btn" {{{attr}}} aria-label="{{caption}}" title="{{caption}}"><img src="{{root}}_assets/icons/{{icon}}.svg" alt="" width="20" height="20"></button>
 </template>
 <template id="hero">
   <section class="hero">
     <div class="container hero-row">
       <div class="hero-copy">
-        <img class="hero-circle" src="{{u}}_assets/brand/hero.svg" alt="" width="658" height="658" aria-hidden="true">
+        <img class="hero-circle" src="{{root}}_assets/brand/hero.svg" alt="" width="658" height="658" aria-hidden="true">
         <div class="hero-title-group">
           <h1 class="hero-title">{{heading}}</h1>
           <p class="hero-subtitle">{{subheading}}</p>

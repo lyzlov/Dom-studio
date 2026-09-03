@@ -1,7 +1,10 @@
 {
-  "$comment": "The project manifest for the Enfilade editor: where the files live, where to write, how to cut images, how the tokens are grouped. The project is addressed by id; the name shown to a human lives in its words, _lang/<language>/project.json. No project names live in the editor's code.",
+  "$comment": "The project manifest for the Enfilade editor: where the files live, where to write, how to cut images, how the tokens are grouped. The project is addressed by id; the name shown to a human lives in its words, _lang/<language>/project.json. lang is the main language and lies at the site root; languages lists the published languages in the order they are offered, and the main one is among them. No project names live in the editor's code.",
   "id": "dom",
   "lang": "ru",
+  "languages": [
+    "ru"
+  ],
   "contract": 1,
   "files": {
     "site": "_data/site.json",

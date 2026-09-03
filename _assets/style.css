@@ -210,6 +210,10 @@ table.schedule, table.table-simple {
   text-decoration: none;
 }
 .social-icons img { width: var(--site-icon); height: var(--site-icon); display: block; }
+.lang-switch { display: flex; gap: var(--space-2xs); font-size: var(--type-mono-meta-size); }
+.lang-switch a { color: var(--role-muted); text-decoration: none; }
+.lang-switch a:hover { color: var(--role-text); }
+.lang-switch a[aria-current] { color: var(--role-text); }
 .breadcrumbs-row { padding-top: 0; padding-bottom: var(--space-2xs); }
 .breadcrumbs {
   font-size: var(--type-mono-meta-size);

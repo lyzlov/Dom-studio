@@ -64,11 +64,12 @@ export function ageBuckets(промежутки) {
 }
 
 /* #region Каркас: head, шапка, подвал, модальное окно */
-function head({ site, title, description, путь, depth, image }) {
+function head({ site, title, description, путь, depth, root, prefix, alternates, image }) {
   const abs = p => site.site.url.replace(/\/$/, '') + '/' + p.replace(/(^|\/)index\.html$/, '$1');
   return R('head', {
-    u: up(depth), title, description,
-    canonical: abs(путь),
+    u: up(depth), root, title, description,
+    canonical: abs(prefix + путь),
+    alternates,
     org: site.org.fullName,
     cover: abs(image || '_assets/media/og-cover.jpg'),
   });
@@ -81,19 +82,25 @@ const hidden = (структура, что) =>
  * Шапка собирается из частей так же, как подвал: состав и порядок — в данных,
  * вид части — в её шаблоне. Меню — такая же часть, как логотип и соцсети.
  */
-function header({ site, структура, depth, путь, active, path, части }) {
+function header({ site, структура, depth, root, путь, active, path, части, prefix = '', alternates = [] }) {
   const L = цель => linkHtml(путь, цель);
+  // Та же страница на других языках. Пока язык один, версий нет — и части с
+  // переключателем в шапке тоже.
+  const здесь = prefix + путь;
+  const языки = alternates.filter(в => в.name).map(в => ({
+    name: в.name, code: в.code, link: linkHtml(здесь, в.path), current: в.path === здесь }));
   const item = p => ({ name: p.name, link: L(p.href), current: p.href === active });
   const ссылки = path.slice(0, -1).map((к, i) => ({ name: к.name, link: L(к.href), notFirst: i > 0 }));
   const значения = {
-    u: up(depth),
+    u: up(depth), root,
     org: site.org.fullName,
     social: site.contacts.social || [],
-    menu: структура.navigation.menu.map(г => г.group
-      ? { group: г.group, items: г.items.map(item) }
-      : item(г)),
+    menu: структура.navigation.menu.map(г => (г.items
+      ? { isGroup: true, group: г.group, items: г.items.map(item) }
+      : item(г))),
     refs: ссылки, hasLinks: ссылки.length > 0,
     last: path[path.length - 1].name,
+    languages: языки,
   };
   const barHtml = partList(структура, 'header', части)
     .map(({ имя, о }) => R(о.template || `header-${имя}`, значения).replace(/\n$/, ''))
@@ -106,10 +113,10 @@ function header({ site, структура, depth, путь, active, path, ча�
  * данных (`navigation.layout.footer`), как выглядит часть — в её шаблоне, а в
  * какую зону она встаёт — в словаре. Скрытая часть просто не попадает в список.
  */
-function footer({ site, структура, depth, путь, части }) {
+function footer({ site, структура, depth, root, путь, части }) {
   const L = цель => linkHtml(путь, цель);
   const значения = {
-    u: up(depth),
+    u: up(depth), root,
     title: site.org.title,
     slogan: site.org.slogan,
     contacts: L('contacts/index.html'),
@@ -160,17 +167,16 @@ const modal = поля => R('modal', { form: form('modal', поля) });
 /* #region Галерея — один элемент на весь сайт, два режима */
 const SIZES = '(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw';
 
-export function galleryHtml({ frames, depth, mode, firstEager = true, full = '-800', sizes = SIZES, class: cls = 'card-image' }) {
+export function galleryHtml({ frames, root, mode, firstEager = true, full = '-800', sizes = SIZES, class: cls = 'card-image' }) {
   if (!frames.length) return '';
-  const u = up(depth);
   return R('gallery', {
-    u, mode, sizes,
+    root, mode, sizes,
     strip: String((mode || 'strip') === 'strip'),
     grid: String(mode === 'grid'),
     classAttr: cls ? ` class="${cls}"` : '',
     frames: frames.map((к, i) => ({
-      base: u + к.base,
-      full: `${u}${к.base}${к.full || full}.jpg`,
+      base: root + к.base,
+      full: `${root}${к.base}${к.full || full}.jpg`,
       caption: к.caption, width: к.width, height: к.height,
       eager: firstEager && i === 0,
     })),
@@ -199,17 +205,21 @@ export function plainTable({ columns, rows, widths, headNoScope }) {
 }
 
 /* #region Страница целиком */
-export function page({ site, структура, элементы, title, description, путь, image, active, path, body }) {
+export function page({ site, структура, элементы, title, description, путь, image, active, path, body,
+                       langDepth = 0, prefix = '', alternates = [] }) {
   const depth = pathDepth(путь);
+  // Страницы лежат в папке языка, общие ресурсы — в корне сайта: у основного
+  // языка это одно и то же место, у остальных — на уровень выше.
+  const root = up(depth + langDepth);
   return render('page', {
     u: up(depth),
     body,
-    head: head({ site, title, description, путь, depth, image }),
+    head: head({ site, title, description, путь, depth, root, prefix, alternates, image }),
     // Шапку, меню и подвал можно спрятать целиком: признак лежит там же, где
     // сама навигация, и читается сборкой, а не только редактором.
-    header: hidden(структура, 'header') ? '' : header({ site, структура, depth, путь, active, path,
-      части: ((элементы || {}).header || {}).parts }),
-    footer: hidden(структура, 'footer') ? '' : footer({ site, структура, depth, путь,
+    header: hidden(структура, 'header') ? '' : header({ site, структура, depth, root, путь, active, path,
+      prefix, alternates, части: ((элементы || {}).header || {}).parts }),
+    footer: hidden(структура, 'footer') ? '' : footer({ site, структура, depth, root, путь,
       части: ((элементы || {}).footer || {}).parts }),
     modal: modal(структура.form.fields),
   });
@@ -269,7 +279,7 @@ export function entityPage({ вид, сущность, шаблон, site, ст�
     ...(ctx.sizes[сущность.image] || { width: 400, height: 300 }),
   }] : [];
   const illustration = frames.length
-    ? galleryHtml({ frames, depth, mode: 'grid' })
+    ? galleryHtml({ frames, root: ctx.assets, mode: 'grid' })
     : шаблон.button === 'none' && вид === 'post' ? ''
     : '';
 
@@ -289,7 +299,7 @@ export function entityPage({ вид, сущность, шаблон, site, ст�
     site, структура, элементы, body,
     title: substitute(шаблон.metaTitle, ctx.values),
     description: substitute(шаблон.metaDescription, ctx.values),
-    путь,
+    путь, langDepth: ctx.langDepth, prefix: ctx.prefix, alternates: ctx.alternates(путь),
     active: шаблон.parent,
     path: [{ name: t('ui.home'), href: 'index.html' },
              { name: шаблон.section, href: шаблон.parent },

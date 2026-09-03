@@ -41,6 +41,8 @@
     "hallOf": ", {room} зал",
     "home": "Главная",
     "htmlLang": "ru",
+    "langName": "Русский",
+    "language": "Язык",
     "legalName": "Архитектурная школа ДОМ",
     "lesson": "Занятие",
     "mainNav": "Основная навигация",
