@@ -16,7 +16,7 @@
       }
     ]
   },
-  "about/privacy/index.html": {
+  "privacy/index.html": {
     "heading": {},
     "path": [
       {
@@ -32,7 +32,7 @@
     ],
     "wrapper": "doc"
   },
-  "about/offer/index.html": {
+  "offer/index.html": {
     "heading": {},
     "path": [
       {
@@ -48,7 +48,7 @@
     ],
     "wrapper": "doc"
   },
-  "about/principles/index.html": {
+  "principles/index.html": {
     "heading": {},
     "path": [
       {
@@ -74,7 +74,7 @@
       }
     ]
   },
-  "about/team/index.html": {
+  "team/index.html": {
     "heading": {},
     "path": [
       {
@@ -90,7 +90,7 @@
       }
     ]
   },
-  "about/faq/index.html": {
+  "faq/index.html": {
     "heading": {},
     "path": [
       {
@@ -123,7 +123,7 @@
       }
     ]
   },
-  "services/admissions/index.html": {
+  "admissions/index.html": {
     "heading": {},
     "path": [
       {
@@ -140,7 +140,7 @@
       }
     ]
   },
-  "about/studio/index.html": {
+  "studio/index.html": {
     "heading": {
       "extra": [
         {
@@ -172,7 +172,7 @@
       }
     ]
   },
-  "about/contacts/index.html": {
+  "contacts/index.html": {
     "heading": {},
     "path": [
       {
@@ -381,7 +381,7 @@
             "href": "events/index.html"
           },
           {
-            "href": "about/studio/index.html"
+            "href": "studio/index.html"
           }
         ]
       }

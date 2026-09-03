@@ -503,7 +503,7 @@ function changes() {
 const tabs = () => [['site', t('tab.site')], ['design', t('tab.design')]];
 
 /**
- * Ключ страницы выводится из её адреса: `index.html` → main, `about/team/…` →
+ * Ключ страницы выводится из её адреса: `index.html` → main, `team/…` →
  * about-team. Отдельного поля нет — адрес и так уникален.
  */
 function pageKey(путь) {

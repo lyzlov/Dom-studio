@@ -28,7 +28,7 @@
           "href": "services/index.html"
         },
         {
-          "href": "services/admissions/index.html"
+          "href": "admissions/index.html"
         },
         {
           "href": "camp/index.html"
@@ -39,13 +39,13 @@
       "id": "about",
       "items": [
         {
-          "href": "about/studio/index.html"
+          "href": "studio/index.html"
         },
         {
-          "href": "about/team/index.html"
+          "href": "team/index.html"
         },
         {
-          "href": "about/principles/index.html"
+          "href": "principles/index.html"
         }
       ]
     },
@@ -54,7 +54,7 @@
     },
     {
       "name": "FAQ",
-      "href": "about/faq/index.html"
+      "href": "faq/index.html"
     }
   ],
   "footer": [
@@ -68,7 +68,7 @@
       "href": "services/index.html"
     },
     {
-      "href": "about/studio/index.html"
+      "href": "studio/index.html"
     }
   ]
 }

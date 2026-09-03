@@ -110,14 +110,14 @@ function footer({ site, структура, depth, путь, части }) {
     u: up(depth),
     title: site.org.title,
     slogan: site.org.slogan,
-    contacts: L('about/contacts/index.html'),
+    contacts: L('contacts/index.html'),
     address: site.contacts.address,
     telHref: site.contacts.phone.replace(/[^\d+]/g, ''),
     phone: site.contacts.phone,
     social: site.contacts.social || [],
     sections: структура.navigation.footer.map(р => ({ name: р.name, link: L(р.href) })),
-    privacy: L('about/privacy/index.html'),
-    offer: L('about/offer/index.html'),
+    privacy: L('privacy/index.html'),
+    offer: L('offer/index.html'),
   };
   const собранные = partList(структура, 'footer', части).map(({ имя, о }) => ({
     zone: о.zone || 'grid',
