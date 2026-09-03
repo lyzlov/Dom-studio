@@ -47,7 +47,18 @@
   <a class="skip-link" href="#main">К содержимому</a>
   <header class="site-header">
     <div class="container bar">
+{{{barHtml}}}
+    </div>
+    <div class="container breadcrumbs-row">
+      <nav class="breadcrumbs" aria-label="Хлебные крошки">{{#refs}}{{#notFirst}} / {{/notFirst}}<a href="{{link}}">{{name}}</a>{{/refs}}<span class="current" aria-current="page">{{#hasLinks}} / {{/hasLinks}}{{last}}</span></nav>
+    </div>
+  </header>
+</template>
+<!-- Части шапки: состав и порядок берутся из данных, вид — из этих шаблонов. -->
+<template id="header-logo">
       <a class="logo" href="{{u}}index.html"><img src="{{u}}_theme/brand/logo-dark.svg" alt="{{org}}" width="533" height="300"></a>
+</template>
+<template id="header-menu">
       <button type="button" class="nav-toggle" aria-label="Меню" aria-expanded="false" aria-controls="site-nav"><img src="{{u}}_theme/icons/menu.svg" alt="" width="24" height="24"></button>
       <nav class="site-nav" id="site-nav" aria-label="Основная навигация">
         <ul class="nav-list">
@@ -56,17 +67,14 @@
 {{/menu}}
         </ul>
       </nav>
+</template>
+<template id="header-social">
       <div class="header-actions">
         <div class="social-icons" aria-label="Соцсети">
 {{#social}}          <a href="{{href}}" aria-label="{{name}}" target="_blank" rel="noopener"><img src="{{u}}_theme/icons/{{icon}}.svg" alt="" width="20" height="20"></a>
 {{/social}}
         </div>
       </div>
-    </div>
-    <div class="container breadcrumbs-row">
-      <nav class="breadcrumbs" aria-label="Хлебные крошки">{{#refs}}{{#notFirst}} / {{/notFirst}}<a href="{{link}}">{{name}}</a>{{/refs}}<span class="current" aria-current="page">{{#hasLinks}} / {{/hasLinks}}{{last}}</span></nav>
-    </div>
-  </header>
 </template>
 <template id="nav-item">
 {{#group}}
@@ -92,10 +100,21 @@
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
+{{{gridHtml}}}
+      </div>
+{{{rowHtml}}}
+    </div>
+  </footer>
+</template>
+<!-- Части подвала: состав и порядок берутся из данных, вид — из этих шаблонов.
+     Часть, которой нет в составе, не выводится. -->
+<template id="footer-brand">
         <div>
           <img class="footer-logo" src="{{u}}_theme/brand/logo.svg" alt="{{title}}" width="533" height="300">
           <p>{{slogan}}</p>
         </div>
+</template>
+<template id="footer-contacts">
         <div>
           <h2>Контакты</h2>
           <p><a href="{{contacts}}">{{address}}</a></p>
@@ -103,21 +122,22 @@
 {{#social}}          <p><a href="{{href}}" target="_blank" rel="noopener">{{label}}</a></p>
 {{/social}}
         </div>
+</template>
+<template id="footer-sections">
         <div>
           <h2>Разделы</h2>
 {{#sections}}
           <p><a href="{{link}}">{{name}}</a></p>
 {{/sections}}
         </div>
-      </div>
+</template>
+<template id="footer-legal">
       <div class="footer-legal">
 <!-- TODO: реквизиты не согласованы — ТЗ/Сводные вопросы (согласовать).md, группа 2 -->
       <span>Архитектурная школа ДОМ</span>
       <a href="{{privacy}}">Политика обработки данных</a>
       <a href="{{offer}}">Договор-оферта</a>
       </div>
-    </div>
-  </footer>
 </template>
 <template id="modal">
   <div class="modal" id="signup-modal" data-modal hidden>

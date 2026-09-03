@@ -8,6 +8,7 @@
   <link rel="icon" href="../favicon.ico">
   <link rel="stylesheet" href="../_theme/fonts.css">
   <link rel="stylesheet" href="../_theme/tokens.css">
+  <link rel="stylesheet" href="../_theme/editor.css">
   <link rel="stylesheet" href="editor.css">
 </head>
 <body>
@@ -25,6 +26,7 @@
       </span>
       <span class="ed-cell ed-icon-btn ed-alert" id="dirty"></span>
       <button class="ed-cell ed-icon-btn ed-lang" id="lang-toggle" type="button">EN</button>
+      <button class="ed-cell ed-icon-btn" id="settings" type="button"></button>
       <button class="ed-cell ed-icon-btn" id="key" type="button"></button>
       <button class="ed-cell ed-icon-btn" id="save" type="button" disabled></button>
     </span>
@@ -71,7 +73,9 @@
       <section class="ed-column ed-right" id="preview">
         <div class="ed-checks" id="checks" hidden></div>
         <div class="ed-stage" id="stage">
-          <iframe class="ed-frame" id="frame" title=""></iframe>
+          <!-- Просмотр обходится клавишей: Tab ведёт по правке, а не по копии
+               сайта внутри рамки, где обводки фокуса не видно. -->
+          <iframe class="ed-frame" id="frame" title="" tabindex="-1"></iframe>
         </div>
       </section>
     </div>

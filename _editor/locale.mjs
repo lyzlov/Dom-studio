@@ -25,7 +25,7 @@ export const setAbbreviations = список => {
     СОКРАЩЕНИЯ = new Set(список.map(s => String(s).toLowerCase()));
 };
 
-let словарь = {};
+let dict = {};
 let проект = {};
 let текущий = 'en';
 
@@ -38,7 +38,7 @@ export function setProjectNames(о) {
 }
 
 /** Ключ вида 'form.save' ищется и как вложенный путь, и как плоский ключ. */
-function взять(о, ключ) {
+function pick(о, ключ) {
   if (о == null) return undefined;
   if (Object.prototype.hasOwnProperty.call(о, ключ)) return о[ключ];
   let узел = о;
@@ -46,12 +46,12 @@ function взять(о, ключ) {
     if (узел == null || typeof узел !== 'object') return undefined;
     узел = узел[часть];
   }
-  return типСтрока(узел) ? узел : undefined;
+  return isString(узел) ? узел : undefined;
 }
 
-const типСтрока = v => typeof v === 'string';
+const isString = v => typeof v === 'string';
 
-const слово = с => (СОКРАЩЕНИЯ.has(с.toLowerCase())
+const word = с => (СОКРАЩЕНИЯ.has(с.toLowerCase())
   ? с.toUpperCase() : с.charAt(0).toUpperCase() + с.slice(1));
 
 /**
@@ -60,10 +60,10 @@ const слово = с => (СОКРАЩЕНИЯ.has(с.toLowerCase())
  * Косая черта в имени токена сохраняется: `fill-mint` приходит уже как
  * `Fill/Mint`, потому что делит группу и член группы.
  */
-export function человечно(имя) {
+export function humanize(имя) {
   return String(имя).split('/').map(часть => часть
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .split(/[-_\s]+/).filter(Boolean).map(слово)
+    .split(/[-_\s]+/).filter(Boolean).map(word)
     .join(' ')).join('/');
 }
 
@@ -72,12 +72,12 @@ export function человечно(имя) {
  * нет и его — сам ключ, написанный по-человечески.
  */
 export function t(ключ, запасной) {
-  const свой = взять(проект, ключ);
+  const свой = pick(проект, ключ);
   if (свой != null) return свой;
-  const v = взять(словарь, ключ);
+  const v = pick(dict, ключ);
   if (v != null) return v;
   if (запасной != null) return запасной;
-  return человечно(String(ключ).split('.').pop());
+  return humanize(String(ключ).split('.').pop());
 }
 
 /**
@@ -88,11 +88,11 @@ export function tokenLabel(имя) {
   const чистое = String(имя).replace(/^--/, '');
   const [группа, ...остаток] = чистое.split('-');
   const член = остаток.join('-');
-  const своё = взять(проект, 'token.' + чистое);
-  if (!член) return своё != null ? своё : человечно(группа);
-  const имяЧлена = своё != null ? своё : человечно(член);
-  const имяГруппы = взять(проект, 'token.' + группа);
-  return `${имяГруппы != null ? имяГруппы : человечно(группа)}/${имяЧлена}`;
+  const своё = pick(проект, 'token.' + чистое);
+  if (!член) return своё != null ? своё : humanize(группа);
+  const имяЧлена = своё != null ? своё : humanize(член);
+  const имяГруппы = pick(проект, 'token.' + группа);
+  return `${имяГруппы != null ? имяГруппы : humanize(группа)}/${имяЧлена}`;
 }
 
 /** Подпись поля данных: перевод, если он есть, иначе само имя ключа. */
@@ -114,12 +114,12 @@ export function preferredLang() {
 export async function loadLocale(язык) {
   текущий = ЯЗЫКИ.includes(язык) ? язык : 'en';
   localStorage.setItem(ХРАНИЛИЩЕ, текущий);
-  словарь = {};
+  dict = {};
   if (текущий !== 'en') {
     try {
       const о = await fetch(`locale/${текущий}.json`, { cache: 'no-store' });
-      if (о.ok) словарь = await о.json();
-    } catch { словарь = {}; }
+      if (о.ok) dict = await о.json();
+    } catch { dict = {}; }
   }
   document.documentElement.lang = текущий;
   return текущий;

@@ -5,16 +5,53 @@
 
 const noMeta = о => Object.entries(о || {}).filter(([k]) => !k.startsWith('$'));
 
-export function createDict(types, данные) {
+export function createDict(types, данные, назвать = (ключ, запасное) => запасное) {
   const byPath = путь => String(путь || '').split('.')
     .reduce((о, к) => (о == null ? о : о[к]), данные);
 
   /** Все kinds записей: с собственной страницей, без неё и словари значений. */
+  /**
+   * Имя вида приходит из словаря имён, а не из словаря устройства: в types.json
+   * лежит, из чего вид состоит, а как он называется — на языке проекта.
+   */
+  const name_ = (ключ, запасное) => назвать(ключ, запасное);
+  const withName = (key, о, kind) => ({
+    key, ...о, kind,
+    name: name_(`kind.${key}.name`, key),
+    plural: name_(`kind.${key}.plural`, key),
+  });
+
   const kinds = () => [
-    ...noMeta(types.entities).map(([key, о]) => ({ key, ...о, kind: 'entity' })),
-    ...noMeta(types.records).map(([key, о]) => ({ key, ...о, kind: 'record' })),
-    ...noMeta(types.dictionaries || {}).map(([key, о]) => ({ key, ...о, kind: 'dictionary' })),
+    ...noMeta(types.entities).map(([key, о]) => withName(key, о, 'entity')),
+    ...noMeta(types.records).map(([key, о]) => withName(key, о, 'record')),
+    ...noMeta(types.dictionaries || {}).map(([key, о]) => withName(key, о, 'dictionary')),
   ];
+
+  /**
+   * Обозначение поля по-человечески. Сначала целиком — `nearest | catalog |
+   * none` названо одной фразой; иначе по частям, и часть может оказаться
+   * видом записи: `course | event` → «Курс / Событие».
+   */
+  const valueTypeName = значение => {
+    const т = String(значение == null ? '' : значение);
+    const целиком = name_(`valueType.${т}`, '');
+    if (целиком) return целиком;
+    return т.split('|').map(ч => ч.trim())
+      .map(ч => name_(`valueType.${ч}`, '') || name_(`kind.${ч}.name`, ч))
+      .join(' / ');
+  };
+
+  /** Семейство элементов одним списком: ключ, имя, описание и поля. */
+  const family = (раздел, префикс) => noMeta(types[раздел] || {}).map(([key, о]) => ({
+    key,
+    name: name_(`${префикс}.${key}.name`, key),
+    description: name_(`${префикс}.${key}.description`, ''),
+    fields: Object.entries((о && о.fields) || {}).map(([к, з]) => ({
+      key: к,
+      name: name_(`field.${к}`, к),
+      type: valueTypeName(з),
+    })),
+  }));
 
   const byKey = key => kinds().find(в => в.key === key) || null;
   const byData = путь => kinds().find(в => в.data === путь) || null;
@@ -37,8 +74,8 @@ export function createDict(types, данные) {
       return в ? byPath(в.data) : null;
     },
 
-    /** Подпись fields: словарь, иначе сам key — русский key подписью и остаётся. */
-    caption: key => (types.fields || {})[key] || String(key),
+    /** Подпись поля — из словаря имён; нет её — остаётся сам ключ. */
+    caption: key => name_('field.' + key, String(key)),
 
     /** Название по адресу внутри словаря. */
     name: (kindKey, id) => {
@@ -49,9 +86,11 @@ export function createDict(types, данные) {
 
     /** Что может показывать блок: справочники плюс особые источники. */
     sources: () => [
-      ...kinds().filter(в => в.kind !== 'dictionary')
+      // Показывать блок может любой справочник из каталога, в каком бы разделе
+      // словаря он ни был объявлен: источник — файл, а не вид записи.
+      ...kinds().filter(в => String(в.data || '').startsWith('catalog.'))
         .map(в => ({ value: sourceOf(в), caption: в.plural })),
-      ...noMeta(types.sources || {}).map(([value, caption]) => ({ value, caption })),
+      ...noMeta(types.sources || {}).map(([value]) => ({ value, caption: name_('source.' + value, value) })),
     ],
 
     /** Поле-link: адрес хранится, название показывается. Объявлено у вида. */
@@ -77,16 +116,47 @@ export function createDict(types, данные) {
 
     fieldOrder: key => (byKey(key) || {}).fields || null,
 
+    /**
+     * Что можно написать в поле: `string?` → «Строка, необязательно»,
+     * `course | event` → «Курс / Событие». В types.json обозначение машинное,
+     * человеческое имя — в словаре имён, как и всё языковое.
+     */
+    valueType: valueTypeName,
+
     /** Как поле показывается человеку: объявлено в types.json, раздел «formats». */
     formatOf: ключ => (types.formats || {})[ключ] || null,
+
+    /** Имена месяцев для подписи даты: из словаря имён, как и всё языковое. */
+    months: () => {
+      const м = Array.from({ length: 12 }, (_, i) => name_(`month.${i + 1}`, ''));
+      return м.every(Boolean) ? м : null;
+    },
 
     /** Из чего состоит строка списка: объявлено в types.json, раздел «rows». */
     rowOf: ключ => {
       const о = (types.rows || {})[ключ];
       return Array.isArray(о) && о.length ? о : null;
     },
-    typeDescription: тип => ((types.blockTypes || {})[тип] || {}).description || '',
-    blockTypes: () => noMeta(types.blockTypes)
-      .map(([key, о]) => ({ key, name: о.name || key, description: о.description || '' })),
+    typeDescription: тип => name_(`blockType.${тип}.description`, ''),
+    blockTypes: () => family('blockTypes', 'blockType'),
+
+    /**
+     * Тот же перечень для остальных семейств элементов: частей страницы и
+     * элементов поверх неё. Одно устройство описания — один способ читать.
+     */
+    elementTypes: раздел => family(раздел, раздел === 'overlayElements' ? 'overlay' : 'part'),
+
+    /**
+     * Кто что открывает: `[ключ окна, [ключи элементов]]`. Читается из тех же
+     * `opens`, по которым в дереве стоит переход к открываемому.
+     */
+    openedBy: () => {
+      const из = new Map();
+      for (const раздел of ['blockTypes', 'pageElements', 'overlayElements'])
+        for (const [ключ, о] of noMeta(types[раздел] || {}))
+          for (const ч of Object.values((о && о.parts) || {}))
+            if (ч && ч.opens) из.set(ч.opens, [...(из.get(ч.opens) || []), ключ]);
+      return из;
+    },
   };
 }

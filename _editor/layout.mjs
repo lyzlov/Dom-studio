@@ -14,7 +14,7 @@
 
 const ЭКРАНИРОВАТЬ = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ЭКРАНИРОВАТЬ[c]);
-const ц = n => Math.round(n * 100) / 100;
+const v = n => Math.round(n * 100) / 100;
 
 /** Что считаем слоем и как называем. Классы приходят из разметки проекта. */
 const РОЛИ = [
@@ -32,55 +32,55 @@ const РОЛИ = [
 ];
 
 /** Карточка — элемент с классом card или *-card: имя класса задаёт проект. */
-const этоКарточка = у => !!у.classList
+const isCard = у => !!у.classList
   && [...у.classList].some(к => к === 'card' || /-card$/.test(к));
 
-const роль = у => {
-  if (этоКарточка(у)) return 'card';
+const role = у => {
+  if (isCard(у)) return 'card';
   for (const [сел, имя] of РОЛИ) if (у.matches(сел)) return имя;
   return null;
 };
 
-const адресКарточки = у => {
+const cardHref = у => {
   const a = у.querySelector('a[href]');
   const h = a && a.getAttribute('href');
   return h ? h.replace(/\/index\.html$/, '').replace(/\/$/, '').split('/').pop() : null;
 };
 
-const номер = n => String(n).padStart(2, '0');
+const number = n => String(n).padStart(2, '0');
 
-const пусто = з => !з || з === 'transparent' || /rgba\([^)]*,\s*0\s*\)$/.test(з);
+const empty = з => !з || з === 'transparent' || /rgba\([^)]*,\s*0\s*\)$/.test(з);
 
 /**
  * Линейный градиент из вычисленного стиля: угол и остановки. Плоским цветом
  * его не заменить — цветная полоска бренда и есть градиент.
  */
-export function разобратьГрадиент(фон) {
+export function parseGradient(фон) {
   const m = /linear-gradient\(([^]*)\)\s*$/.exec(String(фон || ''));
   if (!m) return null;
-  const части = делитьЗапятыми(m[1]);
+  const части = splitCommas(m[1]);
   if (!части.length) return null;
   let угол = 180;
   if (/deg\s*$/.test(части[0])) { угол = parseFloat(части[0]); части.shift(); }
-  else if (/^to\s/.test(части[0])) { угол = кУглу(части.shift()); }
-  const остановки = части.map((ч, i) => {
-    const мп = /(-?\d+(?:\.\d+)?)%\s*$/.exec(ч);
-    return { color: (мп ? ч.slice(0, мп.index) : ч).trim(),
+  else if (/^to\s/.test(части[0])) { угол = toCorner(части.shift()); }
+  const остановки = части.map((num, i) => {
+    const мп = /(-?\d+(?:\.\d+)?)%\s*$/.exec(num);
+    return { color: (мп ? num.slice(0, мп.index) : num).trim(),
              at: мп ? parseFloat(мп[1]) / 100 : i / Math.max(1, части.length - 1) };
   });
   return остановки.length >= 2 ? { угол, остановки } : null;
 }
 
-const кУглу = слова => ({ 'to top': 0, 'to right': 90, 'to bottom': 180, 'to left': 270 })[слова.trim()] ?? 180;
+const toCorner = слова => ({ 'to top': 0, 'to right': 90, 'to bottom': 180, 'to left': 270 })[слова.trim()] ?? 180;
 
 /** Запятые внутри rgb(...) не делят список. */
-function делитьЗапятыми(текст) {
+function splitCommas(текст) {
   const итог = [];
-  let глубина = 0, текущее = '';
+  let pathDepth = 0, текущее = '';
   for (const с of текст) {
-    if (с === '(') глубина++;
-    if (с === ')') глубина--;
-    if (с === ',' && !глубина) { итог.push(текущее.trim()); текущее = ''; continue; }
+    if (с === '(') pathDepth++;
+    if (с === ')') pathDepth--;
+    if (с === ',' && !pathDepth) { итог.push(текущее.trim()); текущее = ''; continue; }
     текущее += с;
   }
   if (текущее.trim()) итог.push(текущее.trim());
@@ -88,41 +88,41 @@ function делитьЗапятыми(текст) {
 }
 
 /** Угол CSS (сверху по часовой) в две точки на единичном квадрате для SVG. */
-export function концыГрадиента(угол) {
+export function gradientStops(угол) {
   const р = (угол % 360) * Math.PI / 180;
   const x = Math.sin(р), y = -Math.cos(р);
   const к = Math.max(Math.abs(x), Math.abs(y)) || 1;
-  return { x1: ц(0.5 - x / к / 2), y1: ц(0.5 - y / к / 2),
-           x2: ц(0.5 + x / к / 2), y2: ц(0.5 + y / к / 2) };
+  return { x1: v(0.5 - x / к / 2), y1: v(0.5 - y / к / 2),
+           x2: v(0.5 + x / к / 2), y2: v(0.5 + y / к / 2) };
 }
 
 /**
  * Снимок страницы: слои со своими прямоугольниками и краски внутри них.
  * Скрытое не снимается — его нет и на странице.
  */
-export async function снятьМакет(документ, имена = []) {
+export async function captureLayout(документ, имена = []) {
   const корень = документ.body;
   const сдвиг = корень.getBoundingClientRect();
   const окно = документ.defaultView;
-  const стиль = у => окно.getComputedStyle(у);
+  const style = у => окно.getComputedStyle(у);
 
-  const прямоугольник = у => {
+  const rect = у => {
     const к = у.getBoundingClientRect();
     return { x: Math.round(к.left - сдвиг.left), y: Math.round(к.top - сдвиг.top),
              w: Math.round(к.width), h: Math.round(к.height) };
   };
-  const точно = к => ({ x: ц(к.left - сдвиг.left), y: ц(к.top - сдвиг.top),
-                        w: ц(к.width), h: ц(к.height) });
-  const видно = у => {
+  const exact = к => ({ x: v(к.left - сдвиг.left), y: v(к.top - сдвиг.top),
+                        w: v(к.width), h: v(к.height) });
+  const visible = у => {
     const к = у.getBoundingClientRect();
-    const с = стиль(у);
+    const с = style(у);
     return к.width > 0 && к.height > 0 && с.visibility !== 'hidden' && с.opacity !== '0';
   };
 
   // Порядок наложения: у отрицательного z-index элемент уходит под соседей.
   // Без этого круг бренда лёг бы поверх заголовка, а не за ним.
-  const глубина = у => {
-    const z = стиль(у).zIndex;
+  const pathDepth = у => {
+    const z = style(у).zIndex;
     return z === 'auto' ? 0 : (parseInt(z, 10) || 0);
   };
 
@@ -130,17 +130,17 @@ export async function снятьМакет(документ, имена = []) {
    * Заливка, рамка, скругление и картинка самого элемента. Свой фон всегда
    * ложится под содержимое: z-index спорит с соседями, а не со своими детьми.
    */
-  function краски(у, свой = false) {
-    const глубь = свой ? -1e6 : глубина(у);
-    const с = стиль(у);
-    const к = точно(у.getBoundingClientRect());
+  function paints(у, свой = false) {
+    const глубь = свой ? -1e6 : pathDepth(у);
+    const с = style(у);
+    const к = exact(у.getBoundingClientRect());
     // Полупрозрачность — свойство элемента, а не цвета: кольцо бренда стоит
     // на странице сквозным, и в макете оно должно быть таким же.
     const сквозь = Math.round((parseFloat(с.opacity) || 1) * 100) / 100;
     const итог = [];
     const толщина = parseFloat(с.borderTopWidth) || 0;
-    const заливка = !пусто(с.backgroundColor);
-    const обводка = толщина > 0 && !пусто(с.borderTopColor);
+    const заливка = !empty(с.backgroundColor);
+    const обводка = толщина > 0 && !empty(с.borderTopColor);
     if (заливка || обводка)
       итог.push({ вид: 'rect', ...к, z: глубь, opacity: сквозь,
                   fill: заливка ? с.backgroundColor : null,
@@ -152,7 +152,7 @@ export async function снятьМакет(документ, имена = []) {
       итог.push({ вид: 'image', ...к, z: глубь, opacity: сквозь, href: у.currentSrc });
     if (у.tagName.toLowerCase() === 'svg')
       итог.push({ вид: 'svg', ...к, z: глубь, opacity: сквозь, markup: у.outerHTML });
-    итог.push(...псевдо(у, глубь));
+    итог.push(...pseudo(у, глубь));
     return итог;
   }
 
@@ -161,18 +161,18 @@ export async function снятьМакет(документ, имена = []) {
    * нет. Цветная полоска баннера и черта под заголовком раздела нарисованы
    * именно ими; без этого макет отличался бы от экрана.
    */
-  function псевдо(у, глубь) {
+  function pseudo(у, глубь) {
     const итог = [];
     for (const место of ['::before', '::after']) {
       const с = окно.getComputedStyle(у, место);
       if (!с || с.content === 'none' || с.content === 'normal') continue;
       if (с.display === 'none' || с.visibility === 'hidden' || с.opacity === '0') continue;
-      const заливка = !пусто(с.backgroundColor);
-      const градиент = разобратьГрадиент(с.backgroundImage);
+      const заливка = !empty(с.backgroundColor);
+      const градиент = parseGradient(с.backgroundImage);
       const толщина = parseFloat(с.borderTopWidth) || 0;
-      const обводка = толщина > 0 && !пусто(с.borderTopColor);
+      const обводка = толщина > 0 && !empty(с.borderTopColor);
       if (!заливка && !градиент && !обводка) continue;
-      const к = коробкаПсевдо(у, с, место);
+      const к = pseudoBox(у, с, место);
       if (!к || к.w <= 0 || к.h <= 0) continue;
       итог.push({ вид: 'rect', ...к, z: глубь,
                   fill: заливка ? с.backgroundColor : null, gradient: градиент,
@@ -187,57 +187,57 @@ export async function снятьМакет(документ, имена = []) {
    * вычисляется по его же свойствам: у absolute — от внутреннего края
    * владельца, у блока в потоке — сверху или снизу его содержимого.
    */
-  function коробкаПсевдо(у, с, место) {
+  function pseudoBox(у, с, место) {
     const рк = у.getBoundingClientRect();
-    const рс = стиль(у);
-    const ч = v => parseFloat(v) || 0;
-    const бл = ч(рс.borderLeftWidth), бв = ч(рс.borderTopWidth);
-    const бп = ч(рс.borderRightWidth), бн = ч(рс.borderBottomWidth);
+    const рс = style(у);
+    const num = v => parseFloat(v) || 0;
+    const бл = num(рс.borderLeftWidth), бв = num(рс.borderTopWidth);
+    const бп = num(рс.borderRightWidth), бн = num(рс.borderBottomWidth);
 
     if (с.position === 'absolute' || с.position === 'fixed') {
       const вн = { l: рк.left + бл, t: рк.top + бв,
                    w: рк.width - бл - бп, h: рк.height - бв - бн };
-      const ось = (нач, кон, размер, нол, длина) => {
-        let a = нач === 'auto' ? null : нол + ч(нач);
-        const b = кон === 'auto' ? null : нол + длина - ч(кон);
-        let w = размер === 'auto' ? null : ч(размер);
+      const axis = (нач, кон, размер, нол, длина) => {
+        let a = нач === 'auto' ? null : нол + num(нач);
+        const b = кон === 'auto' ? null : нол + длина - num(кон);
+        let w = размер === 'auto' ? null : num(размер);
         if (a == null && b != null && w != null) a = b - w;
         if (a != null && b != null && w == null) w = b - a;
         if (a == null) a = нол;
         if (w == null) w = длина;
         return [a, w];
       };
-      const [x, w] = ось(с.left, с.right, с.width, вн.l, вн.w);
-      const [y, h] = ось(с.top, с.bottom, с.height, вн.t, вн.h);
-      return { x: ц(x - сдвиг.left), y: ц(y - сдвиг.top), w: ц(w), h: ц(h) };
+      const [x, w] = axis(с.left, с.right, с.width, вн.l, вн.w);
+      const [y, h] = axis(с.top, с.bottom, с.height, вн.t, вн.h);
+      return { x: v(x - сдвиг.left), y: v(y - сдвиг.top), w: v(w), h: v(h) };
     }
 
     // В потоке: ::before стоит первым внутри владельца, ::after последним.
-    const л = бл + ч(рс.paddingLeft), в = бв + ч(рс.paddingTop);
-    const н = бн + ч(рс.paddingBottom);
+    const л = бл + num(рс.paddingLeft), в = бв + num(рс.paddingTop);
+    const н = бн + num(рс.paddingBottom);
     const w = с.width === 'auto'
-      ? рк.width - л - ч(рс.paddingRight) - бп : ч(с.width);
-    const h = ч(с.height);
+      ? рк.width - л - num(рс.paddingRight) - бп : num(с.width);
+    const h = num(с.height);
     if (!h) return null;
-    const x = рк.left + л + ч(с.marginLeft);
+    const x = рк.left + л + num(с.marginLeft);
     const y = место === '::before'
-      ? рк.top + в + ч(с.marginTop)
-      : рк.bottom - н - ч(с.marginBottom) - h;
-    return { x: ц(x - сдвиг.left), y: ц(y - сдвиг.top), w: ц(w), h: ц(h) };
+      ? рк.top + в + num(с.marginTop)
+      : рк.bottom - н - num(с.marginBottom) - h;
+    return { x: v(x - сдвиг.left), y: v(y - сдвиг.top), w: v(w), h: v(h) };
   }
 
-  const превратить = (т, как) => (как === 'uppercase' ? т.toUpperCase()
+  const convert = (т, как) => (как === 'uppercase' ? т.toUpperCase()
     : как === 'lowercase' ? т.toLowerCase() : т);
 
   /** Текст элемента построчно: строку даёт сам браузер, а не наш перенос. */
-  function надписи(у) {
-    const с = стиль(у);
+  function labels(у) {
+    const с = style(у);
     const итог = [];
     for (const узел of у.childNodes) {
       if (узел.nodeType !== 3 || !узел.textContent.trim()) continue;
-      for (const л of строки(узел)) итог.push({
-        вид: 'text', z: глубина(у), x: ц(л.left - сдвиг.left), y: ц(л.base - сдвиг.top),
-        text: превратить(л.text, с.textTransform),
+      for (const л of lines(узел)) итог.push({
+        вид: 'text', z: pathDepth(у), x: v(л.left - сдвиг.left), y: v(л.base - сдвиг.top),
+        text: convert(л.text, с.textTransform),
         font: с.fontFamily, size: parseFloat(с.fontSize) || 16,
         weight: с.fontWeight, fill: с.color,
         tracking: parseFloat(с.letterSpacing) || 0,
@@ -247,7 +247,7 @@ export async function снятьМакет(документ, имена = []) {
   }
 
   /** Слова текстового узла, сгруппированные по строкам вёрстки. */
-  function строки(узел) {
+  function lines(узел) {
     const текст = узел.textContent;
     const диапазон = документ.createRange();
     const итог = [];
@@ -268,44 +268,44 @@ export async function снятьМакет(документ, имена = []) {
   }
 
   /** Обход: у именованной роли свой слой, у прочего краски идут в слой выше. */
-  function обойти(у, приставка, дети, ops) {
+  function walk(у, приставка, дети, ops) {
     for (const р of у.children) {
-      if (!видно(р)) continue;
-      const роль_ = роль(р);
+      if (!visible(р)) continue;
+      const роль_ = role(р);
       if (роль_) {
-        const имя = уникальное(дети, роль_ === 'card'
-          ? `${приставка}/card-${адресКарточки(р) || дети.length + 1}`
+        const имя = unique(дети, роль_ === 'card'
+          ? `${приставка}/card-${cardHref(р) || дети.length + 1}`
           : `${приставка}/${роль_}`);
-        const свои = [...краски(р, true), ...надписи(р)];
-        дети.push({ name: имя, ...прямоугольник(р), ops: свои, z: глубина(р),
+        const свои = [...paints(р, true), ...labels(р)];
+        дети.push({ name: имя, ...rect(р), ops: свои, z: pathDepth(р),
                     text: (р.textContent || '').trim().slice(0, 120),
-                    size: Math.round(parseFloat(стиль(р).fontSize) || 16) });
-        обойти(р, имя, дети, свои);
+                    size: Math.round(parseFloat(style(р).fontSize) || 16) });
+        walk(р, имя, дети, свои);
         continue;
       }
-      ops.push(...краски(р), ...надписи(р));
-      обойти(р, приставка, дети, ops);
+      ops.push(...paints(р), ...labels(р));
+      walk(р, приставка, дети, ops);
     }
   }
 
   const слои = [];
-  const слой = (у, имя) => {
-    if (!у || !видно(у)) return;
+  const layer = (у, имя) => {
+    if (!у || !visible(у)) return;
     const дети = [];
-    const свои = [...краски(у, true), ...надписи(у)];
-    обойти(у, имя, дети, свои);
-    слои.push({ name: имя, ...прямоугольник(у), ops: свои, дети });
+    const свои = [...paints(у, true), ...labels(у)];
+    walk(у, имя, дети, свои);
+    слои.push({ name: имя, ...rect(у), ops: свои, дети });
   };
 
   // Шапка и подвал — такие же слои: без них файл не картинка страницы.
-  слой(документ.querySelector('body > header, header'), '00-header');
+  layer(документ.querySelector('body > header, header'), '00-header');
   const секции = [...документ.querySelectorAll('main > section, main > div > section')];
-  секции.forEach((с, i) => слой(с,
+  секции.forEach((с, i) => layer(с,
     // Секция называется так же, как блок в данных: имя приходит снаружи.
-    `${номер(i + 1)}-${имена[i] || (с.className || 'section').split(' ')[0]}`));
-  слой(документ.querySelector('body > footer, footer'), '99-footer');
+    `${number(i + 1)}-${имена[i] || (с.className || 'section').split(' ')[0]}`));
+  layer(документ.querySelector('body > footer, footer'), '99-footer');
 
-  await встроитьКартинки(слои, документ);
+  await embedImages(слои, документ);
 
   return { width: документ.documentElement.clientWidth,
            height: Math.round(корень.getBoundingClientRect().height), слои };
@@ -315,16 +315,16 @@ export async function снятьМакет(документ, имена = []) {
  * Картинки уезжают в файл растром: внешняя ссылка в Figma не откроется, а
  * файл должен быть самодостаточным.
  */
-async function встроитьКартинки(слои, документ) {
+async function embedImages(слои, документ) {
   const кэш = new Map();
   const все = [];
-  const собрать = о => {
+  const build = о => {
     (о.ops || []).forEach(x => { if (x.вид === 'image') все.push(x); });
-    (о.дети || []).forEach(собрать);
+    (о.дети || []).forEach(build);
   };
-  слои.forEach(собрать);
+  слои.forEach(build);
   for (const оп of все) {
-    if (!кэш.has(оп.href)) кэш.set(оп.href, await взять(оп.href, документ).catch(() => null));
+    if (!кэш.has(оп.href)) кэш.set(оп.href, await pick(оп.href, документ).catch(() => null));
     const что = кэш.get(оп.href);
     if (!что) continue;
     if (что.вид === 'svg') { оп.вид = 'svg'; оп.markup = что.markup; } else оп.data = что.data;
@@ -335,38 +335,38 @@ async function встроитьКартинки(слои, документ) {
  * Векторную картинку вкладываем как вектор — в Figma она останется правкой.
  * Растровую перекодируем: PNG там, где нужна прозрачность, иначе JPEG.
  */
-async function взять(адрес, документ) {
+async function pick(адрес, документ) {
   if (/\.svg(\?|$)/i.test(адрес)) {
     const о = await fetch(адрес);
     if (!о.ok) throw new Error(адрес);
     return { вид: 'svg', markup: await о.text() };
   }
   const тип = /\.(png|webp|gif)(\?|$)/i.test(адрес) ? 'image/png' : 'image/jpeg';
-  return { вид: 'raster', data: await вДанные(адрес, документ, тип) };
+  return { вид: 'raster', data: await toData(адрес, документ, тип) };
 }
 
-function вДанные(адрес, документ, тип) {
-  return new Promise((готово, беда) => {
+function toData(адрес, документ, тип) {
+  return new Promise((готово, reject) => {
     const и = документ.createElement('img');
     и.onload = () => {
       const холст = документ.createElement('canvas');
       холст.width = и.naturalWidth;
       холст.height = и.naturalHeight;
       холст.getContext('2d').drawImage(и, 0, 0);
-      try { готово(холст.toDataURL(тип, 0.82)); } catch (e) { беда(e); }
+      try { готово(холст.toDataURL(тип, 0.82)); } catch (e) { reject(e); }
     };
-    и.onerror = () => беда(new Error(адрес));
+    и.onerror = () => reject(new Error(адрес));
     и.src = адрес;
   });
 }
 
 /** Слой = группа с именем; имя переживает Figma и Illustrator. */
-export function вSVG(макет, { страница, устройство }) {
+export function toSVG(макет, { страница, устройство }) {
   const части = [];
   // Градиенты объявляются один раз в defs и зовутся по имени: одинаковая
   // полоска в трёх местах — одна заливка, а не три.
   const градиенты = new Map();
-  const имяГрадиента = г => {
+  const gradientName = г => {
     const ключ = JSON.stringify(г);
     if (!градиенты.has(ключ)) градиенты.set(ключ, { имя: 'g' + (градиенты.size + 1), г });
     return градиенты.get(ключ).имя;
@@ -381,17 +381,17 @@ export function вSVG(макет, { страница, устройство }) {
 
   for (const с of макет.слои) {
     части.push(`<g id="${esc(с.name)}">`);
-    части.push(коробка(с));
+    части.push(box(с));
     // Краски секции и её слои идут одним списком, упорядоченным по z-index:
     // так лежащее «под» на странице лежит под и в файле.
     const всё = [...(с.ops || []), ...(с.дети || []).map(д => ({ вид: 'слой', ...д }))];
     всё.sort((a, b) => (a.z || 0) - (b.z || 0));
     for (const о of всё) {
-      if (о.вид !== 'слой') { части.push(нарисовать(о, имяГрадиента)); continue; }
+      if (о.вид !== 'слой') { части.push(draw(о, gradientName)); continue; }
       части.push(`<g id="${esc(о.name)}">`);
-      части.push(коробка(о));
+      части.push(box(о));
       const внутри = [...(о.ops || [])].sort((a, b) => (a.z || 0) - (b.z || 0));
-      внутри.forEach(x => части.push(нарисовать(x, имяГрадиента)));
+      внутри.forEach(x => части.push(draw(x, gradientName)));
       части.push('</g>');
     }
     части.push('</g>');
@@ -400,10 +400,10 @@ export function вSVG(макет, { страница, устройство }) {
   if (градиенты.size) {
     const defs = ['<defs>'];
     for (const { имя, г } of градиенты.values()) {
-      const к = концыГрадиента(г.угол);
+      const к = gradientStops(г.угол);
       defs.push(`<linearGradient id="${имя}" x1="${к.x1}" y1="${к.y1}" x2="${к.x2}" y2="${к.y2}">`);
       г.остановки.forEach(о => defs.push(
-        `<stop offset="${ц(о.at * 100)}%" stop-color="${цвет(о.color)}"/>`));
+        `<stop offset="${v(о.at * 100)}%" stop-color="${colorOf(о.color)}"/>`));
       defs.push('</linearGradient>');
     }
     defs.push('</defs>');
@@ -416,31 +416,31 @@ export function вSVG(макет, { страница, устройство }) {
  * Первый прямоугольник группы — её габарит. Он же читается обратно при сверке,
  * поэтому стоит первым и всегда с целыми числами.
  */
-const коробка = с => `<rect x="${с.x}" y="${с.y}" width="${с.w}" height="${с.h}" fill="none"/>`;
+const box = с => `<rect x="${с.x}" y="${с.y}" width="${с.w}" height="${с.h}" fill="none"/>`;
 
 /** Полупрозрачность элемента, если она есть. */
-const мутность = о => (о.opacity != null && о.opacity < 1 ? ` opacity="${о.opacity}"` : '');
+const opacityAttr = о => (о.opacity != null && о.opacity < 1 ? ` opacity="${о.opacity}"` : '');
 
-function нарисовать(о, имяГрадиента) {
+function draw(о, gradientName) {
   if (о.вид === 'rect') {
     const атр = [`x="${о.x}"`, `y="${о.y}"`, `width="${о.w}"`, `height="${о.h}"`];
-    if (о.r) атр.push(`rx="${ц(о.r)}"`);
-    if (о.gradient && имяГрадиента) атр.push(`fill="url(#${имяГрадиента(о.gradient)})"`);
-    else атр.push(`fill="${о.fill ? цвет(о.fill) : 'none'}"`);
-    if (!о.gradient && о.fill && прозрачность(о.fill) < 1)
-      атр.push(`fill-opacity="${прозрачность(о.fill)}"`);
-    if (о.stroke) атр.push(`stroke="${цвет(о.stroke)}"`, `stroke-width="${ц(о.sw)}"`);
-    return `<rect ${атр.join(' ')}${мутность(о)}/>`;
+    if (о.r) атр.push(`rx="${v(о.r)}"`);
+    if (о.gradient && gradientName) атр.push(`fill="url(#${gradientName(о.gradient)})"`);
+    else атр.push(`fill="${о.fill ? colorOf(о.fill) : 'none'}"`);
+    if (!о.gradient && о.fill && opacity(о.fill) < 1)
+      атр.push(`fill-opacity="${opacity(о.fill)}"`);
+    if (о.stroke) атр.push(`stroke="${colorOf(о.stroke)}"`, `stroke-width="${v(о.sw)}"`);
+    return `<rect ${атр.join(' ')}${opacityAttr(о)}/>`;
   }
   if (о.вид === 'image')
     return о.data ? `<image x="${о.x}" y="${о.y}" width="${о.w}" height="${о.h}" `
-      + `preserveAspectRatio="xMidYMid slice"${мутность(о)} xlink:href="${о.data}"/>` : '';
-  if (о.вид === 'svg') return вложенныйSVG(о);
+      + `preserveAspectRatio="xMidYMid slice"${opacityAttr(о)} xlink:href="${о.data}"/>` : '';
+  if (о.вид === 'svg') return nestedSVG(о);
   if (о.вид === 'text') {
     const атр = [`x="${о.x}"`, `y="${о.y}"`, `font-family="${esc(о.font)}"`,
-                 `font-size="${ц(о.size)}"`, `font-weight="${о.weight}"`,
-                 `fill="${цвет(о.fill)}"`];
-    if (о.tracking) атр.push(`letter-spacing="${ц(о.tracking)}"`);
+                 `font-size="${v(о.size)}"`, `font-weight="${о.weight}"`,
+                 `fill="${colorOf(о.fill)}"`];
+    if (о.tracking) атр.push(`letter-spacing="${v(о.tracking)}"`);
     return `<text ${атр.join(' ')} xml:space="preserve">${esc(о.text)}</text>`;
   }
   return '';
@@ -450,18 +450,18 @@ function нарисовать(о, имяГрадиента) {
  * Чужой svg вкладывается как есть, но встаёт в свой прямоугольник: у него
  * переписываются только x, y, width и height, viewBox остаётся его.
  */
-function вложенныйSVG(о) {
+function nestedSVG(о) {
   // До самого <svg> в файле бывают пролог и комментарии — они не нужны.
   const начало = о.markup.search(/<svg\b/i);
   if (начало < 0) return '';
   const конец = о.markup.indexOf('>', начало);
   const атрибуты = о.markup.slice(начало + 4, конец).replace(/\s(x|y|width|height)="[^"]*"/gi, '');
   const тело = о.markup.slice(конец + 1).replace(/<\/svg>[\s\S]*$/i, '');
-  return `<svg${атрибуты} x="${о.x}" y="${о.y}" width="${о.w}" height="${о.h}"${мутность(о)}>${тело}</svg>`;
+  return `<svg${атрибуты} x="${о.x}" y="${о.y}" width="${о.w}" height="${о.h}"${opacityAttr(о)}>${тело}</svg>`;
 }
 
 /** rgb(a) в #rrggbb: Figma понимает и то и другое, но hex читается человеком. */
-function цвет(значение) {
+function colorOf(значение) {
   const m = String(значение).match(/rgba?\(([^)]+)\)/);
   if (!m) return значение;
   const [r, g, b] = m[1].split(',').map(x => Math.round(parseFloat(x)));
@@ -469,12 +469,12 @@ function цвет(значение) {
   return `#${h(r)}${h(g)}${h(b)}`;
 }
 
-const прозрачность = значение => {
+const opacity = значение => {
   const m = String(значение).match(/rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\s*\)/);
-  return m ? ц(parseFloat(m[1])) : 1;
+  return m ? v(parseFloat(m[1])) : 1;
 };
 
-function уникальное(список, имя) {
+function unique(список, имя) {
   if (!список.some(с => с.name === имя)) return имя;
   let n = 2;
   while (список.some(с => с.name === `${имя}-${n}`)) n++;
@@ -482,7 +482,7 @@ function уникальное(список, имя) {
 }
 
 /** Обратное чтение: какие слои есть в файле и какими прямоугольниками. */
-export function разобратьSVG(текст) {
+export function parseSVG(текст) {
   const слои = new Map();
   const re = /<g id="([^"]+)">\s*<rect x="(-?\d+)" y="(-?\d+)" width="(\d+)" height="(\d+)"/g;
   let m;
@@ -492,7 +492,7 @@ export function разобратьSVG(текст) {
 }
 
 /** Что изменилось в макете относительно текущей страницы. */
-export function сравнить(текущий, изФайла) {
+export function compare(текущий, изФайла) {
   const было = new Map();
   текущий.слои.forEach(с => {
     было.set(с.name, с);

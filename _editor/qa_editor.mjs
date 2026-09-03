@@ -13,7 +13,8 @@
  *   9. обводок фокуса нет: рамка вокруг поля читается как ошибка;
  *  10. у каждой страницы из списка есть непустая структура;
  *  11. поля и списки одной ширины — она не зависит от того, что в них написано;
- *  12. прошедшие события уходят из афиши в «Прошедшие» сами, по дате.
+ *  12. прошедшие события уходят из афиши в «Прошедшие» сами, по дате;
+ *  13. разметка читается деревом и склеивается обратно байт в байт.
  *
  * Запуск:  node qa_editor.mjs [адрес]
  * По умолчанию http://127.0.0.1:8099/_editor/
@@ -21,36 +22,65 @@
 
 import { chromium } from 'playwright';
 import { readFileSync } from 'fs';
+import { parseSet } from '../_elements/template.mjs';
+import { parseMarkup, serializeMarkup } from './markup.mjs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-const адрес = process.argv[2] || 'http://127.0.0.1:8099/_editor/';
+const href = process.argv[2] || 'http://127.0.0.1:8099/_editor/';
 const здесь = dirname(fileURLToPath(import.meta.url));
 const беды = [];
-const плохо = (что, подробно) => беды.push(`${что}: ${подробно}`);
+const bad = (что, подробно) => беды.push(`${что}: ${подробно}`);
 
 // 4. Литералы в css. Числа с единицами и цвета обязаны приходить из токенов.
-function проверитьCSS() {
+function checkCSS() {
   const текст = readFileSync(join(здесь, 'editor.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   текст.split('\n').forEach((строка, i) => {
     const без = строка.replace(/var\([^)]*\)/g, '');
     if (/@media/.test(строка)) return;
     if (/(?<![\w-])\d+(?:\.\d+)?(px|rem|em|ms)\b/.test(без))
-      плохо('css', `строка ${i + 1}: число мимо сортамента — ${строка.trim().slice(0, 70)}`);
+      bad('css', `строка ${i + 1}: число мимо сортамента — ${строка.trim().slice(0, 70)}`);
     if (/#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(без))
-      плохо('css', `строка ${i + 1}: цвет мимо палитры — ${строка.trim().slice(0, 70)}`);
+      bad('css', `строка ${i + 1}: цвет мимо палитры — ${строка.trim().slice(0, 70)}`);
   });
+}
+
+// 13. Разметка. Дерево — это показ разметки, а не вторая её запись: разбор
+// обязан склеиваться обратно в тот же байт. Иначе правка текста в дереве
+// молча портит шаблон, которого человек в глаза не видел.
+function checkMarkup() {
+  const set = parseSet(readFileSync(join(здесь, '../_elements/markup.html'), 'utf8'));
+  const count = (у, из = { тегов: 0 }) => {
+    if (у.вид === 'тег') из.тегов++;
+    (у.дети || []).forEach(д => count(д, из));
+    return из;
+  };
+  for (const имя of set.имена) {
+    const было = set.шаблоны[имя];
+    if (serializeMarkup(parseMarkup(было)) !== было) {
+      bad('разметка', `шаблон «${имя}» после разбора собирается иначе`);
+      continue;
+    }
+    // Склейка сходится и у неразобранного текста, поэтому считается ещё и то,
+    // что разбор увидел: пропущенный тег — это строка, которой в дереве нет.
+    // Подстановки не считаются: те, что стоят в свойствах тега, живут в самом
+    // теге, а не отдельным узлом.
+    const в = count(parseMarkup(было));
+    const тегов = (было.match(/<[a-zA-Z][a-zA-Z0-9-]*/g) || []).length;
+    if (в.тегов !== тегов) bad('разметка', `шаблон «${имя}»: тегов ${тегов}, в дереве ${в.тегов}`);
+  }
 }
 
 const бр = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const стр = await бр.newPage({ viewport: { width: 1600, height: 1000 } });
-стр.on('pageerror', e => плохо('js', e.message));
-await стр.goto(адрес);
+стр.on('pageerror', e => bad('js', e.message));
+await стр.goto(href);
 await стр.waitForTimeout(900);
 await стр.locator('#login .ed-btn').last().click();
 await стр.waitForTimeout(8000);
 
-проверитьCSS();
+checkCSS();
+checkMarkup();
 
 // 3. Цвета на экране. Любой цвет обязан совпадать с одним из токенов темы.
 const чужие = await стр.evaluate(() => {
@@ -74,7 +104,7 @@ const чужие = await стр.evaluate(() => {
   }
   return [...найдено].map(([c, где]) => `${c} — ${где.trim().slice(0, 60)}`);
 });
-чужие.forEach(x => плохо('цвет', x));
+чужие.forEach(x => bad('цвет', x));
 
 // 8 и 9. Отключённых кнопок и обводок фокуса на экране быть не должно.
 const лишнее = await стр.evaluate(() => {
@@ -88,18 +118,18 @@ const лишнее = await стр.evaluate(() => {
   }
   return итог;
 });
-лишнее.forEach(x => плохо('лишнее', x));
+лишнее.forEach(x => bad('лишнее', x));
 
 // 11. Ширина управления не зависит от содержимого: у одинаковых по назначению
 // элементов она одна и та же.
 const ширины = await стр.evaluate(() => {
-  const набор = сел => [...new Set([...document.querySelectorAll(сел)]
+  const set = сел => [...new Set([...document.querySelectorAll(сел)]
     .filter(e => e.getClientRects().length)
     .map(e => Math.round(e.getBoundingClientRect().width)))];
-  return { выборСтраницы: набор('.ed-pick') };
+  return { выборСтраницы: set('.ed-pick') };
 });
 for (const [что, ш] of Object.entries(ширины))
-  if (ш.length > 1) плохо('ширина', `${что}: ${ш.length} разных ширин — ${ш}`);
+  if (ш.length > 1) bad('ширина', `${что}: ${ш.length} разных ширин — ${ш}`);
 
 // 12. Прошедшее событие показывается в «Прошедших», а не в афише: отбор идёт
 // по дате, и календарь не должен требовать ручной правки данных.
@@ -107,10 +137,10 @@ const афиша = await стр.evaluate(() => {
   const рамка = document.querySelector('#frame');
   const д = рамка && рамка.contentDocument;
   if (!д) return null;
-  const секция = сел => [...д.querySelectorAll('section')].find(с => с.id === сел);
-  const имена = с => (с ? [...с.querySelectorAll('.card-title, h3, .card-link')]
+  const section = сел => [...д.querySelectorAll('section')].find(с => с.id === сел);
+  const names = с => (с ? [...с.querySelectorAll('.card-title, h3, .card-link')]
     .map(э => э.textContent.trim()) : []);
-  return { было: !!секция('afisha'), прошло: имена(секция('past')).length };
+  return { было: !!section('afisha'), прошло: names(section('past')).length };
 });
 
 // 1 и 2. Однотипные строки: одна вертикаль кнопок и одна высота.
@@ -130,8 +160,8 @@ const списки = await стр.evaluate(() => {
   return итог;
 });
 for (const [имя, с] of Object.entries(списки)) {
-  if (с.вертикалей.length > 1) плохо('вертикаль', `${имя}: кнопки на ${с.вертикалей.length} вертикалях — ${с.вертикалей}`);
-  if (с.высот.length > 1) плохо('высота', `${имя}: строки ${с.высот.length} разных высот — ${с.высот}`);
+  if (с.вертикалей.length > 1) bad('вертикаль', `${имя}: кнопки на ${с.вертикалей.length} вертикалях — ${с.вертикалей}`);
+  if (с.высот.length > 1) bad('высота', `${имя}: строки ${с.высот.length} разных высот — ${с.высот}`);
 }
 
 // 5 и 6. Каждый элемент каждой страницы: имя, карандаш, непустая форма.
@@ -152,27 +182,27 @@ for (const р of разделы) {
     ключ: r.dataset.key, имя: (r.querySelector('.ed-name')?.textContent || '').trim(),
     x: Math.round(r.querySelector('.ed-name').getBoundingClientRect().left),
   })));
-  if (!строки.length) плохо('структура', `${где}: пустая`);
+  if (!строки.length) bad('структура', `${где}: пустая`);
   // 7. Вложенность видна отступом: у детей левый край имени больше, чем у
   // родителя, ровно на одну ячейку. Все строки на одной вертикали — дефект.
   const вертикали = [...new Set(строки.map(с => с.x))].sort((a, b) => a - b);
   if (строки.length > 3 && вертикали.length < 2)
-    плохо('отступ', `${где}: все имена на одной вертикали — вложенность не видна`);
+    bad('отступ', `${где}: все имена на одной вертикали — вложенность не видна`);
   const шаг = await стр.evaluate(() => parseFloat(
     getComputedStyle(document.documentElement).getPropertyValue('--size-cell')));
   вертикали.slice(1).forEach((x, i) => {
     const д = Math.round(x - вертикали[i]);
-    if (д % шаг !== 0) плохо('отступ', `${где}: ступень ${д}px не кратна ячейке ${шаг}px`);
+    if (д % шаг !== 0) bad('отступ', `${где}: ступень ${д}px не кратна ячейке ${шаг}px`);
   });
   for (const { ключ, имя } of строки) {
-    if (!имя || /^\d+$/.test(имя)) плохо('имя', `${где} ${ключ}: «${имя}»`);
+    if (!имя || /^\d+$/.test(имя)) bad('имя', `${где} ${ключ}: «${имя}»`);
     await стр.evaluate(k => {
       const r = [...document.querySelectorAll('#tree .ed-nav-row')].find(x => x.dataset.key === k);
       if (r) r.querySelector('.ed-item').click();
     }, ключ);
     await стр.waitForTimeout(260);
     const кар = стр.locator('#fields .ed-icon-btn[title="Править"]').first();
-    if (!(await кар.count()) || await кар.isDisabled()) { плохо('карандаш', `${где} ${ключ}`); continue; }
+    if (!(await кар.count()) || await кар.isDisabled()) { bad('карандаш', `${где} ${ключ}`); continue; }
     await кар.click();
     await стр.waitForTimeout(260);
     const св = await стр.evaluate(() => {
@@ -183,9 +213,9 @@ for (const р of разделы) {
         путь: /_content\/(text|media)\//.test(f.textContent || ''),
       };
     });
-    if (!св.полей) плохо('форма', `${где} ${ключ}: пустая`);
-    if (св.путь) плохо('форма', `${где} ${ключ}: виден путь к файлу`);
-    await стр.locator('#bar-form .ed-bar-tools .ed-icon-btn[title="Отмена"]').first()
+    if (!св.полей) bad('форма', `${где} ${ключ}: пустая`);
+    if (св.путь) bad('форма', `${где} ${ключ}: виден путь к файлу`);
+    await стр.locator('#bar-form .ed-bar-tools .ed-icon-btn[title="Вернуть как было"]').first()
       .click({ timeout: 2000 }).catch(() => {});
     await стр.waitForTimeout(120);
   }
@@ -198,15 +228,15 @@ const отбор = await стр.evaluate(() => {
   const д = document.querySelector('#frame').contentDocument;
   if (!д) return null;
   const заголовки = [...д.querySelectorAll('section h2')].map(э => э.textContent.trim());
-  const карточки = с => [...(с ? с.querySelectorAll('.card') : [])].length;
-  const по = имя => карточки([...д.querySelectorAll('section')]
+  const cards = с => [...(с ? с.querySelectorAll('.card') : [])].length;
+  const by = имя => cards([...д.querySelectorAll('section')]
     .find(с => (с.querySelector('h2') || {}).textContent === имя));
-  return { заголовки, афиша: по('Афиша'), прошедшие: по('Прошедшие') };
+  return { заголовки, афиша: by('Афиша'), прошедшие: by('Прошедшие') };
 });
 if (!отбор || !отбор.заголовки.includes('Прошедшие'))
-  плохо('отбор', 'на странице событий нет раздела «Прошедшие»');
+  bad('отбор', 'на странице событий нет раздела «Прошедшие»');
 else if (!отбор.прошедшие)
-  плохо('отбор', 'раздел «Прошедшие» пуст — отбор по дате не сработал');
+  bad('отбор', 'раздел «Прошедшие» пуст — отбор по дате не сработал');
 
 await бр.close();
 if (беды.length) {

@@ -10,7 +10,7 @@ const БУКВЫ = {
   э: 'e', ю: 'yu', я: 'ya',
 };
 
-export const транслит = s => String(s).toLowerCase()
+export const translit = s => String(s).toLowerCase()
   .replace(/[а-яё]/g, б => БУКВЫ[б] ?? '')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
@@ -21,7 +21,7 @@ export const транслит = s => String(s).toLowerCase()
  * директории на статическом сайте нет, а второй индекс завёл бы второй
  * источник правды.
  */
-export async function каталогКадров(папка, { owner, repo }, медиа) {
+export async function frameCatalog(папка, { owner, repo }, медиа) {
   const о = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${медиа.folder}${папка}`,
     { headers: { Accept: 'application/vnd.github+json' } });
   if (!о.ok) throw new Error(`не читается список кадров: ${о.status}`);
@@ -35,7 +35,7 @@ export async function каталогКадров(папка, { owner, repo }, м
 }
 
 /** Ступенчатое уменьшение: один шаг на большом коэффициенте мылит. */
-function уменьшить(источник, ширина) {
+function shrink(источник, ширина) {
   let холст = document.createElement('canvas');
   let w = источник.naturalWidth || источник.width;
   let h = источник.naturalHeight || источник.height;
@@ -55,19 +55,19 @@ function уменьшить(источник, ширина) {
   return холст;
 }
 
-const вБайты = (холст, тип, качество) => new Promise((готово, беда) =>
-  холст.toBlob(б => (б ? б.arrayBuffer().then(a => готово(new Uint8Array(a))) : беда(new Error('не кодируется'))),
+const toBytes = (холст, тип, качество) => new Promise((готово, reject) =>
+  холст.toBlob(б => (б ? б.arrayBuffer().then(a => готово(new Uint8Array(a))) : reject(new Error('не кодируется'))),
     тип, качество));
 
 /**
  * Нарезка одного файла в набор, который ждёт разметка:
  * <основа>-400.jpg/.webp и <основа>-800.jpg/.webp. Без апскейла.
  */
-export async function нарезать(файл, основа, медиа) {
-  const картинка = await new Promise((готово, беда) => {
+export async function resize(файл, основа, медиа) {
+  const картинка = await new Promise((готово, reject) => {
     const и = new Image();
     и.onload = () => готово(и);
-    и.onerror = () => беда(new Error('файл не открывается как изображение'));
+    и.onerror = () => reject(new Error('файл не открывается как изображение'));
     и.src = URL.createObjectURL(файл);
   });
   const исходная = картинка.naturalWidth;
@@ -79,11 +79,11 @@ export async function нарезать(файл, основа, медиа) {
   const файлы = new Map();
   let размер = null;
   for (const ш of нужные) {
-    const холст = уменьшить(картинка, ш);
+    const холст = shrink(картинка, ш);
     if (!размер) размер = { width: холст.width, height: холст.height };
     const к = (медиа.quality || 82) / 100;
-    файлы.set(`${основа}-${ш}.jpg`, await вБайты(холст, 'image/jpeg', к));
-    файлы.set(`${основа}-${ш}.webp`, await вБайты(холст, 'image/webp', к));
+    файлы.set(`${основа}-${ш}.jpg`, await toBytes(холст, 'image/jpeg', к));
+    файлы.set(`${основа}-${ш}.webp`, await toBytes(холст, 'image/webp', к));
   }
   URL.revokeObjectURL(картинка.src);
   return { файлы, размер };

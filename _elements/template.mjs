@@ -21,7 +21,7 @@ export const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ESC[c
 /* #region Разбор */
 const ТЕГ = /\{\{([{&#^/>]?)\s*([^}]*?)\s*\}?\}\}/g;
 
-function разобрать(шаблон) {
+function parse(шаблон) {
   const корень = { дети: [] };
   const стек = [корень];
   let позиция = 0, m;
@@ -69,7 +69,7 @@ function разобрать(шаблон) {
 }
 
 /* #region Отрисовка */
-function найти(стек, имя) {
+function find(стек, имя) {
   if (имя === '.') return стек[стек.length - 1];
   const части = имя.split('.');
   for (let i = стек.length - 1; i >= 0; i--) {
@@ -85,59 +85,59 @@ function найти(стек, имя) {
   return undefined;
 }
 
-const пусто = v => v == null || v === false || v === '' || (Array.isArray(v) && !v.length);
+const empty = v => v == null || v === false || v === '' || (Array.isArray(v) && !v.length);
 
-function рисоватьУзлы(узлы, стек, шаблоны) {
+function renderNodes(узлы, стек, шаблоны) {
   let итог = '';
   for (const у of узлы) {
     if (у.вид === 'текст') { итог += у.значение; continue; }
     if (у.вид === 'значение') {
-      const v = найти(стек, у.имя);
-      итог += пусто(v) && v !== 0 ? '' : (у.сырое ? String(v) : esc(v));
+      const v = find(стек, у.имя);
+      итог += empty(v) && v !== 0 ? '' : (у.сырое ? String(v) : esc(v));
       continue;
     }
     if (у.вид === 'вставка') {
       const ш = шаблоны[у.имя];
       if (!ш) throw new Error(`нет шаблона «${у.имя}»`);
-      const текст = рисоватьУзлы(получить(ш, шаблоны), стек, шаблоны);
+      const текст = renderNodes(lookup(ш, шаблоны), стек, шаблоны);
       итог += у.отступ
         ? текст.split('\n').map(л => л ? у.отступ + л : л).join('\n')
         : текст;
       continue;
     }
-    const v = найти(стек, у.имя);
+    const v = find(стек, у.имя);
     if (у.вид === 'обратная') {
-      if (пусто(v)) итог += рисоватьУзлы(у.дети, стек, шаблоны);
+      if (empty(v)) итог += renderNodes(у.дети, стек, шаблоны);
       continue;
     }
-    if (пусто(v)) continue;
+    if (empty(v)) continue;
     if (Array.isArray(v)) {
-      v.forEach(э => { итог += рисоватьУзлы(у.дети, [...стек, э], шаблоны); });
+      v.forEach(э => { итог += renderNodes(у.дети, [...стек, э], шаблоны); });
     } else if (typeof v === 'object') {
-      итог += рисоватьУзлы(у.дети, [...стек, v], шаблоны);
+      итог += renderNodes(у.дети, [...стек, v], шаблоны);
     } else {
-      итог += рисоватьУзлы(у.дети, стек, шаблоны);
+      итог += renderNodes(у.дети, стек, шаблоны);
     }
   }
   return итог;
 }
 
 const разобранные = new Map();
-function получить(шаблон, шаблоны) {
+function lookup(шаблон, шаблоны) {
   void шаблоны;
-  if (!разобранные.has(шаблон)) разобранные.set(шаблон, разобрать(шаблон).дети);
+  if (!разобранные.has(шаблон)) разобранные.set(шаблон, parse(шаблон).дети);
   return разобранные.get(шаблон);
 }
 
-export function рисовать(имя, данные, шаблоны) {
+export function render(имя, данные, шаблоны) {
   const ш = шаблоны[имя];
   if (ш == null) throw new Error(`нет шаблона «${имя}»`);
-  return рисоватьУзлы(получить(ш, шаблоны), [данные], шаблоны);
+  return renderNodes(lookup(ш, шаблоны), [данные], шаблоны);
 }
 
 /* #region Набор шаблонов сайта */
 /** Разбор markup.html: каждый элемент лежит в <template id="имя">. */
-export function разобратьНабор(текст) {
+export function parseSet(текст) {
   const шаблоны = {}, места = {};
   for (const m of текст.matchAll(/<template id="([^"]+)">\n([\s\S]*?)<\/template>/g)) {
     шаблоны[m[1]] = m[2];
@@ -147,17 +147,17 @@ export function разобратьНабор(текст) {
 }
 
 /** Замена одного шаблона в тексте файла — остальное не трогается. */
-export function заменитьШаблон(текст, имя, новое) {
-  const { места } = разобратьНабор(текст);
+export function replaceTemplate(текст, имя, новое) {
+  const { места } = parseSet(текст);
   const м = места[имя];
   if (!м) throw new Error(`нет шаблона «${имя}»`);
   return текст.slice(0, м[0]) + (новое.endsWith('\n') ? новое : новое + '\n') + текст.slice(м[1]);
 }
 
-let НАБОР = {};
+let SET = {};
 
-export const установитьРазметку = шаблоны => { НАБОР = шаблоны; };
+export const setMarkup = шаблоны => { SET = шаблоны; };
 
-export const имена = () => Object.keys(НАБОР);
+export const names = () => Object.keys(SET);
 
-export const Р = (имя, данные) => рисовать(имя, данные, НАБОР);
+export const R = (имя, данные) => render(имя, данные, SET);

@@ -18,7 +18,7 @@
  *   data  — объект данных, который правит форма.
  */
 
-const узел = (key, name, о = {}) => ({
+const node = (key, name, о = {}) => ({
   key, name,
   kind: о.kind || 'part', depth: о.depth || 0,
   children: о.children || [], data: о.data || null, hidden: !!о.hidden,
@@ -27,42 +27,67 @@ const узел = (key, name, о = {}) => ({
 });
 
 export function createTree(S, t, помощь) {
-  const { ключСтраницы, имяСтраницы, dict, разделыСтраниц, поанглийски, человечно } = помощь;
+  const { pageKey, pageName, dict, pageSections, inEnglish, humanize } = помощь;
 
   /** Собственное имя: по-английски ключ, по-русски значение из данных. */
-  const своё = (ключ, значение) => (поанглийски()
-    ? (ключ ? человечно(ключ) : (значение || null))
-    : (значение || (ключ ? человечно(ключ) : null)));
+  const own = (ключ, значение) => (inEnglish()
+    ? (ключ ? humanize(ключ) : (значение || null))
+    : (значение || (ключ ? humanize(ключ) : null)));
 
   /** Шапка: логотип, меню и связь — одинаковые на всех страницах. */
-  function шапка() {
+  function header() {
+    // Состав и порядок частей — те же, что на странице: они лежат в данных, а
+    // не в коде. Меню — такая же часть, только своих детей строит само.
+    return node('header', t('nav.header'), {
+      kind: 'part', children: elementParts('header'),
+    });
+  }
+
+  /**
+   * Элементы поверх страницы: они есть на каждой странице, но показываются по
+   * действию. В дереве они стоят своим списком — иначе их не выбрать вовсе.
+   */
+  function overlay() {
+    const объявлены = S.data.types.overlayElements || {};
+    return Object.entries(объявлены).filter(([к]) => !к.startsWith('$')).map(([к, о]) => {
+      const список = byPath(о.data);
+      const дети = Array.isArray(список) ? список.map((з, i) => node(`overlay:${к}#${i}`,
+        ownName(з, i) || (з && з.caption) || t('new.record'), {
+          kind: 'record', depth: 1, data: з, hidden: !!(з && з.hidden), поле: nameInput(з),
+        })) : [];
+      return node('overlay:' + к, t(`overlay.${к}.name`, humanize(к)),
+        { kind: 'markup', data: о, depth: 0, children: дети });
+    });
+  }
+
+  /** Дети шапки или подвала: части в том составе и порядке, что в данных. */
+  function elementParts(где) {
+    const части = ((S.data.types.pageElements[где] || {}).parts) || {};
+    const порядок = (((S.data.structure.navigation || {}).layout || {})[где])
+      || Object.keys(части);
+    return порядок.filter(к => части[к]).flatMap(к => (к === 'menu' && где === 'header'
+      ? [menuNode()] : inLayout(части, где, [к])));
+  }
+
+  /** Меню сайта: разделы и пункты, у каждого своя правка. */
+  function menuNode() {
     const меню = S.data.structure.navigation.menu || [];
     const дети = [];
     for (const x of меню) {
       if (x.items) {
-        дети.push(узел('menu:' + x.id, своё(x.id, x.group), {
+        дети.push(node('menu:' + x.id, own(x.id, x.group), {
           kind: 'menu', data: x, поле: { владелец: x, ключ: 'group' },
-          children: x.items.map(пунктМенюУзлом),
+          children: x.items.map(menuItemNode),
         }));
-      } else if (x.href) дети.push(пунктМенюУзлом(x));
+      } else if (x.href) дети.push(menuItemNode(x));
     }
-    // Логотип и связь стоят в разметке, а не в данных: показываем их как есть,
-    // без правки. Список объявлен в types.json, редактор про них ничего не знает.
-    const части = ((S.data.types.pageElements.header || {}).parts) || {};
-    return узел('header', t('nav.header'), {
-      kind: 'part',
-      children: [
-        ...вРазметке(части, 'header', ['logo']),
-        узел('menu', t('nav.siteMenu'), { kind: 'menu', children: дети }),
-        ...вРазметке(части, 'header', Object.keys(части).filter(k => k !== 'logo')),
-      ],
-    });
+    return node('menu', t('nav.siteMenu'), { kind: 'menu', children: дети });
   }
 
-  const пунктМенюУзлом = пункт => {
+  const menuItemNode = пункт => {
     const оп = S.data.structure.pages[пункт.href] || {};
-    return узел('menuitem:' + пункт.href,
-      своё(ключСтраницы(пункт.href), пункт.name || имяСтраницы(пункт.href)), {
+    return node('menuitem:' + пункт.href,
+      own(pageKey(пункт.href), пункт.name || pageName(пункт.href)), {
         kind: 'menuitem', data: пункт, hidden: !!оп.hidden,
         поле: { владелец: пункт, ключ: 'name' },
       });
@@ -73,27 +98,42 @@ export function createTree(S, t, помощь) {
    * Часть объявлена парой имя—адрес: логотип шапки ведёт на главную, и переход
    * по нему берётся оттуда же, откуда имя, а не из кода редактора.
    */
-  const вРазметке = (части, где, ключи) => ключи.filter(к => части[к]).map(к => {
-    const { name, ...своё } = части[к];
-    return узел(`markup:${где}.${к}`, поанглийски() ? человечно(к) : (name || к),
-      { kind: 'markup', data: Object.keys(своё).length ? своё : null });
+  const inLayout = (части, где, ключи) => ключи.filter(к => части[к]).map(к => {
+    const own = части[к];
+    const ключУзла = `markup:${где}.${к}`;
+    // Часть, которая показывает список, — родитель: её дети те же записи, что
+    // и на сайте. Правило одно на все части: список в данных — дети в дереве.
+    const список = byPath(own.data);
+    // Ссылка называется именем своей страницы — тем же, каким она подписана на
+    // сайте: собственное имя у неё стоит только там, где отличается.
+    const дети = Array.isArray(список) ? список.map((з, i) => node(`${ключУзла}#${i}`,
+      ownName(з, i) || (з && з.href ? pageName(з.href) : t('new.record')), {
+        kind: 'record', data: з, hidden: !!(з && з.hidden), поле: nameInput(з),
+      })) : [];
+    // Имя части — из словаря имён проекта, как у всего остального: в словаре
+    // устройства лежит, из чего часть состоит, а не как она называется.
+    return node(ключУзла, t(`part.${где}.${к}.name`, humanize(к)),
+      { kind: 'markup', data: Object.keys(own).length ? own : null, children: дети });
   });
+
+  /** Значение по пути в данных: «site.contacts.social» — это список соцсетей. */
+  const byPath = путь => String(путь || '').split('.').filter(Boolean)
+    .reduce((о, к) => (о == null ? о : о[к]), S.data);
 
   /**
    * Подвал — четыре части, как он и свёрстан: логотип со слоганом, контакты,
    * разделы, правовая строка. Каждая ссылка отдельным элементом ничего не
    * сообщает: человек правит блок подвала, а не десять надписей по одной.
    */
-  function подвал() {
-    const части = ((S.data.types.pageElements.footer || {}).parts) || {};
-    return узел('footer', t('nav.footer'), {
+  function footer() {
+    return node('footer', t('nav.footer'), {
       kind: 'part', data: S.data.structure.navigation,
-      children: вРазметке(части, 'footer', Object.keys(части)),
+      children: elementParts('footer'),
     });
   }
 
   /** Блок с источником разворачивается в записи, которые он показывает. */
-  function карточкиБлока(блок) {
+  function blockCards(блок) {
     // Разворачивается любой блок с источником, не только «карточки»:
     // состав педагогов ничем не отличается от состава курсов.
     if (!блок || !блок.source) return [];
@@ -102,16 +142,17 @@ export function createTree(S, t, помощь) {
     if (!в) return [];
     const список = dict.list(в.key);
     if (!Array.isArray(список)) return [];
-    return список.map((з, i) => узел(`card:${в.key}#${i}`, своё(з && з.id, собственное(з, i)), {
-      kind: 'card', data: з, hidden: !!(з && з.hidden), поле: полеИмени(з),
-    }));
+    return список.map((з, i) => node(`card:${в.key}#${i}`,
+      own(з && з.id, ownName(з, i)) || t('new.record'), {
+        kind: 'card', data: з, hidden: !!(з && з.hidden), поле: nameInput(з),
+      }));
   }
 
   /** Вкладки блока — тоже элементы: у каждой своё имя и своё наполнение. */
-  function вкладкиБлока(блок, ключБлока) {
+  function blockTabs(блок, ключБлока) {
     if (!блок || !Array.isArray(блок.tabs)) return [];
-    return блок.tabs.map((в, i) => узел(`tab:${ключБлока}#${i}`,
-      своё(в && в.key, (в && (в.name || в.title)) || null), {
+    return блок.tabs.map((в, i) => node(`tab:${ключБлока}#${i}`,
+      own(в && в.key, (в && (в.name || в.title)) || null), {
         kind: 'item', data: в, hidden: !!(в && в.hidden),
         поле: в && в.name != null ? { владелец: в, ключ: 'name' } : null,
       }));
@@ -121,7 +162,7 @@ export function createTree(S, t, помощь) {
    * Имя типа блока: по-английски ключ, по-русски слово из types.json. Заголовок
    * страницы типом блока не считается — его имя приходит из словаря редактора.
    */
-  const имяБлока = б => {
+  const blockName = б => {
     // Тип показывается только там, где у блока нет своего имени. Блок с
     // заголовком «Манифест» называется «Манифест», а не «Текст». У первого
     // экрана заголовок — это содержимое страницы, а не имя элемента: тип,
@@ -129,23 +170,23 @@ export function createTree(S, t, помощь) {
     const тип_ = (S.data.types.blockTypes[б && б.type] || {});
     const именуется = тип_.named !== false;
     const своё_ = именуется && б && (б.heading || б.name || б.title || б.collapsed);
-    if (своё_ && !поанглийски()) return своё_;
-    if (поанглийски()) return человечно(б.id || б.type || 'block');
+    if (своё_ && !inEnglish()) return своё_;
+    if (inEnglish()) return humanize(б.id || б.type || 'block');
     const т = dict.blockTypes().find(x => x.key === б.type);
     if (т && т.name) return т.name;
-    return t('design.' + б.type, человечно(б.type || 'block'));
+    return t('design.' + б.type, humanize(б.type || 'block'));
   };
 
-  const имяВида = в => (поанглийски() ? человечно(в.key) : (в.name || в.key));
+  const kindName = в => (inEnglish() ? humanize(в.key) : (в.name || в.key));
 
-  const частиТипа = тип => ((S.data.types.blockTypes[тип] || {}).parts)
+  const typeParts = тип => ((S.data.types.blockTypes[тип] || {}).parts)
     || ((S.data.types.pageElements[тип] || {}).parts) || {};
 
   /** Чем запись называется в данных: заголовок, имя, вопрос. */
-  const собственное = (з, i) => (з && typeof з === 'object'
-    ? (з.title || з.name || з.heading || з.question || null) : String(з ?? i + 1));
+  const ownName = (з, i) => (з && typeof з === 'object'
+    ? (з.title || з.caption || з.name || з.heading || з.question || null) : String(з ?? i + 1));
 
-  const полеИмени = з => {
+  const nameInput = з => {
     if (!з || typeof з !== 'object') return null;
     for (const k of ['title', 'name', 'heading', 'question'])
       if (k in з) return { владелец: з, ключ: k };
@@ -161,7 +202,7 @@ export function createTree(S, t, помощь) {
    * описана: её собирает шаблон из самой записи. Дерево у неё такое же:
    * шапка, сама запись, подвал.
    */
-  function записьПоПути(путь) {
+  function recordByPath(путь) {
     const части = String(путь).replace(/\/?index\.html$/, '').split('/');
     if (части.length < 2) return null;
     const в = dict.kinds().find(x => x.folder === части[0]);
@@ -171,31 +212,31 @@ export function createTree(S, t, помощь) {
     return i < 0 ? null : { вид: в.key, запись: список[i], i };
   }
 
-  function страница(путь) {
+  function page(путь) {
     const оп = S.data.structure.pages[путь];
     if (!оп) {
-      const м = записьПоПути(путь);
+      const м = recordByPath(путь);
       if (!м) return [];
-      return [шапка(), узел(`card:${м.вид}#${м.i}`,
-        своё(м.запись.id, собственное(м.запись, м.i)), {
-          kind: 'card', data: м.запись, hidden: !!м.запись.hidden, поле: полеИмени(м.запись),
-        }), подвал()];
+      return [header(), node(`card:${м.вид}#${м.i}`,
+        own(м.запись.id, ownName(м.запись, м.i)), {
+          kind: 'card', data: м.запись, hidden: !!м.запись.hidden, поле: nameInput(м.запись),
+        }), footer()];
     }
-    const итог = [шапка()];
-    if (оп.heading) итог.push(узел(`head:${путь}`, t('design.section-head'), {
+    const итог = [header()];
+    if (оп.heading) итог.push(node(`head:${путь}`, t('design.section-head'), {
       kind: 'block', data: оп.heading,
     }));
     (оп.blocks || []).forEach((б, i) => {
       const ключ = `block:${путь}#${i}`;
-      итог.push(узел(ключ, имяБлока(б), {
+      итог.push(node(ключ, blockName(б), {
         kind: 'block', data: б, hidden: !!б.hidden,
         // Внутри элемента стоят только элементы: карточки, вкладки и части
         // разметки. Поля блока живут в его форме, а не строками дерева.
-        children: [...карточкиБлока(б), ...вкладкиБлока(б, ключ),
-                   ...вРазметке(частиТипа(б.type), б.type, Object.keys(частиТипа(б.type)))],
+        children: [...blockCards(б), ...blockTabs(б, ключ),
+                   ...inLayout(typeParts(б.type), б.type, Object.keys(typeParts(б.type)))],
       }));
     });
-    итог.push(подвал());
+    итог.push(footer());
     return итог;
   }
 
@@ -203,15 +244,15 @@ export function createTree(S, t, помощь) {
    * Список страниц устроен так же, как выбор страницы в просмотрщике: раздел,
    * внутри — его страницы. Два разных порядка означали бы два разных сайта.
    */
-  function страницы() {
-    return разделыСтраниц().map(р => страницаУзлом(р.свои[0], 0,
-      р.свои.slice(1).map(п => страницаУзлом(п, 1))));
+  function pages() {
+    return pageSections().map(р => pageNode(р.свои[0], 0,
+      р.свои.slice(1).map(п => pageNode(п, 1))));
   }
 
-  const страницаУзлом = (путь, depth, children = []) => {
+  const pageNode = (путь, depth, children = []) => {
     const оп = S.data.structure.pages[путь] || {};
     const крошка = оп.path && оп.path.length ? оп.path[оп.path.length - 1] : null;
-    return узел('page:' + путь, своё(ключСтраницы(путь), имяСтраницы(путь)), {
+    return node('page:' + путь, own(pageKey(путь), pageName(путь)), {
       kind: 'page', depth, data: оп, hidden: !!оп.hidden, children,
       поле: крошка ? { владелец: крошка, ключ: 'name' } : null,
     });
@@ -221,7 +262,7 @@ export function createTree(S, t, помощь) {
    * Общая информация: то, чего нет отдельным элементом ни на одной странице.
    * Курсы, события, педагоги сюда не идут — они выводятся карточками.
    */
-  function общее() {
+  function common() {
     const показаны = new Set();
     for (const оп of Object.values(S.data.structure.pages)) {
       for (const б of (оп && оп.blocks) || []) {
@@ -229,54 +270,55 @@ export function createTree(S, t, помощь) {
         dict.kinds().filter(в => dict.sourceOf(в) === б.source).forEach(в => показаны.add(в.key));
       }
     }
-    const итог = [узел('info:studio', dict.siteName(), { kind: 'part', depth: 0 })];
+    const итог = [node('info:studio', dict.siteName(), { kind: 'part', depth: 0 })];
     for (const в of dict.kinds()) {
       if (показаны.has(в.key)) continue;
       const список = dict.list(в.key);
-      итог.push(узел('kind:' + в.key, поанглийски() ? человечно(в.key) : (в.plural || в.key), {
+      итог.push(node('kind:' + в.key, inEnglish() ? humanize(в.key) : (в.plural || в.key), {
         kind: 'part', depth: 0,
         children: Array.isArray(список)
-          ? список.map((з, i) => узел(`kind:${в.key}#${i}`, своё(з && з.id, собственное(з, i)), {
-              kind: 'record', depth: 1, data: з, hidden: !!(з && з.hidden),
-              поле: полеИмени(з),
-            }))
+          ? список.map((з, i) => node(`kind:${в.key}#${i}`,
+              own(з && з.id, ownName(з, i)) || t('new.record'), {
+                kind: 'record', depth: 1, data: з, hidden: !!(з && з.hidden),
+                поле: nameInput(з),
+              }))
           : [],
       }));
     }
-    итог.push(узел('archive', t('nav.archive'), { kind: 'part', depth: 0 }));
+    итог.push(node('archive', t('nav.archive'), { kind: 'part', depth: 0 }));
     return итог;
   }
 
   /** Плоский обход с учётом того, что раскрыто. */
-  function развернуть(узлы, открыто, глубина = 0) {
+  function expand(узлы, открыто, глубина = 0) {
     const итог = [];
     for (const у of узлы) {
       итог.push({ ...у, depth: глубина });
       if (у.children.length && открыто.has(у.key))
-        итог.push(...развернуть(у.children, открыто, глубина + 1));
+        итог.push(...expand(у.children, открыто, глубина + 1));
     }
     return итог;
   }
 
-  const найти = (узлы, key) => {
+  const find = (узлы, key) => {
     for (const у of узлы) {
       if (у.key === key) return у;
-      const в = найти(у.children, key);
+      const в = find(у.children, key);
       if (в) return в;
     }
     return null;
   };
 
   /** Путь от корня до узла — для крошек. */
-  const путьДо = (узлы, key, накоплено = []) => {
+  const pathTo = (узлы, key, накоплено = []) => {
     for (const у of узлы) {
       const свой = [...накоплено, у];
       if (у.key === key) return свой;
-      const в = путьДо(у.children, key, свой);
+      const в = pathTo(у.children, key, свой);
       if (в) return в;
     }
     return null;
   };
 
-  return { страница, страницы, общее, развернуть, найти, путьДо };
+  return { page, overlay, pages, common, expand, find, pathTo };
 }

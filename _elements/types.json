@@ -1,114 +1,86 @@
 {
-  "$комментарий": "Словарь элементов сайта. Здесь — из чего состоит каждый тип и какими полями описывается; разметка живёт рядом, в render.mjs и blocks.mjs. Сборка падает, если тип объявлен здесь и не реализован в коде или наоборот: два файла — не два источника, а описание и исполнение.",
+  "$комментарий": "Устройство элементов сайта: из чего состоит каждый тип и какими полями описывается. Имён на человеческом языке здесь нет — они в _elements/names.<язык>.json. Сборка падает, если тип объявлен здесь и не реализован в коде или наоборот.",
   "blockTypes": {
     "$комментарий": "Чем наполняется блок. Блок = заголовок + одно наполнение. Список закрыт.",
     "text": {
-      "name": "Текст",
-      "description": "Проза, списки, ссылки. Основное наполнение сайта.",
       "fields": {
-        "heading": "строка, необязательно",
-        "text": "путь к файлу в _content/text/"
+        "heading": "string?",
+        "text": "path: _content/text/"
       }
     },
     "cards": {
-      "name": "Карточки",
-      "description": "Краткие представления сущностей из справочника. Отдельных карточек не бывает: карточка и страница — два вида одной записи.",
       "fields": {
-        "heading": "строка, необязательно",
-        "source": "имя справочника в _content/catalog/",
+        "heading": "string?",
+        "source": "catalog",
         "kind": "course | event | session | post | service | university",
-        "filter": "правило отбора, необязательно",
-        "filters": "список фильтров для посетителя, необязательно",
-        "wide": "да — карточка-баннер во всю ширину"
+        "filter": "rule?",
+        "filters": "list?",
+        "wide": "bool"
       }
     },
     "team": {
-      "name": "Команда",
-      "description": "Сетка педагогов с раскрывающимся био. Применяется там, где у человека нет отдельной страницы.",
       "fields": {
-        "heading": "строка, необязательно",
+        "heading": "string?",
         "source": "team"
       }
     },
     "table": {
-      "name": "Таблица",
-      "description": "Два вида с общей основой.",
       "fields": {
-        "heading": "строка, необязательно",
+        "heading": "string?",
         "kind": "schedule | plain",
-        "source": "откуда строки"
-      },
-      "kinds": {
-        "schedule": "сортировка, фильтры, печать, градиентная шапка",
-        "plain": "без сортировки, шапка в стиле вкладок"
+        "source": "catalog"
       }
     },
     "gallery": {
-      "name": "Галерея",
-      "description": "Один элемент с двумя режимами. При единственном кадре выглядит обычной иллюстрацией.",
       "fields": {
-        "source": "список кадров",
+        "source": "frames",
         "mode": "strip | grid"
       }
     },
     "faq": {
-      "name": "Вопросы и ответы",
-      "description": "Список раскрывающихся вопросов. Из него же собирается разметка для поисковиков.",
       "fields": {
-        "heading": "строка, необязательно",
+        "heading": "string?",
         "source": "faq"
       }
     },
     "rating": {
-      "name": "Оценка",
-      "description": "Оценка школы, число отзывов и ссылка на площадку. Тексты отзывов площадка отдаёт скриптом и забрать их нельзя.",
       "fields": {
-        "heading": "строка, необязательно",
-        "source": "site.отзывы"
+        "heading": "string?",
+        "source": "site.reviews"
       }
     },
     "links": {
-      "name": "Ссылки",
-      "description": "Строка ссылок на разделы. Без пояснений: названия разделов говорят сами за себя.",
       "fields": {
-        "items": "список: имя и путь"
+        "items": "list: name, href"
       }
     },
     "contacts": {
-      "name": "Контакты",
-      "description": "Адрес, телефон, мессенджер и карта проезда.",
       "fields": {
-        "heading": "строка, необязательно",
-        "map": "да — показать карту"
+        "heading": "string?",
+        "map": "bool"
       }
     },
     "form": {
-      "name": "Форма записи",
-      "description": "Запись на занятие. Вне модального окна встречается только на странице контактов.",
       "fields": {
-        "heading": "строка, необязательно"
+        "heading": "string?"
       }
     },
     "tabs": {
-      "name": "Вкладки",
-      "description": "Ряд подписей, внутри каждой — любое наполнение. Единственное место с четвёртым уровнем вложенности.",
       "fields": {
-        "tabs": "список: ключ, имя, наполнение",
-        "action": "иконка справа, необязательно"
+        "tabs": "list: key, name, blocks",
+        "action": "icon?"
       }
     },
     "hero": {
-      "name": "Первый экран",
-      "description": "Только на главной. Кольцо, заголовок, слоган, строка фактов, кнопка и баннер.",
       "named": false,
       "fields": {
-        "slogan": "строка",
-        "facts": "строка",
-        "banner": "см. раздел баннер"
+        "slogan": "string",
+        "facts": "string",
+        "banner": "banner"
       },
       "parts": {
         "button": {
-          "name": "Кнопка записи"
+          "opens": "form"
         }
       }
     }
@@ -116,58 +88,58 @@
   "pageElements": {
     "$комментарий": "Элементы уровня страницы, вне списка блоков.",
     "section-head": {
-      "name": "Заголовок раздела",
-      "description": "Надзаголовок, H1, мета-строка фактов, кнопка записи, иллюстрация или галерея.",
       "fields": {
-        "eyebrow": "строка",
-        "h1": "строка",
-        "fields": "список подпись→значение",
-        "button": "да | нет",
-        "gallery": "кадры"
+        "eyebrow": "string",
+        "h1": "string",
+        "fields": "list: caption, value",
+        "button": "bool",
+        "gallery": "frames"
       },
       "parts": {
         "button": {
-          "name": "Кнопка записи"
+          "opens": "form"
         }
       }
     },
     "header": {
-      "name": "Шапка",
-      "description": "Сквозная шапка: логотип, меню сайта, связь.",
       "parts": {
         "logo": {
-          "name": "Лого",
           "href": "index.html",
-          "media": "_theme/brand/logo-dark.svg"
+          "media": "_theme/brand/logo-dark.svg",
+          "template": "header-logo"
+        },
+        "menu": {
+          "data": "structure.navigation.menu",
+          "template": "header-menu"
         },
         "social": {
-          "name": "Соцсети",
-          "data": "site.contacts.social"
+          "data": "site.contacts.social",
+          "template": "header-social"
         }
       }
     },
     "footer": {
-      "name": "Подвал",
-      "description": "Сквозной подвал: логотип со слоганом, контакты, разделы, правовая строка.",
       "parts": {
         "brand": {
-          "name": "Логотип и слоган",
           "media": "_theme/brand/logo.svg",
           "data": "site.org",
           "fields": [
             "slogan"
-          ]
+          ],
+          "zone": "grid",
+          "template": "footer-brand"
         },
         "contacts": {
-          "name": "Контакты",
-          "data": "site.contacts"
+          "data": "site.contacts",
+          "zone": "grid",
+          "template": "footer-contacts"
         },
         "sections": {
-          "name": "Разделы",
-          "data": "structure.navigation.footer"
+          "data": "structure.navigation.footer",
+          "zone": "grid",
+          "template": "footer-sections"
         },
         "legal": {
-          "name": "Правовая строка",
           "data": "site.org",
           "fields": [
             "fullName",
@@ -175,15 +147,17 @@
             "inn",
             "ogrn",
             "legalAddress"
-          ]
+          ],
+          "zone": "row",
+          "template": "footer-legal"
         }
       }
     }
   },
   "banner": {
     "$комментарий": "Содержимое баннера первого экрана. Связь с сущностью указывается, но не диктует: любое поле можно перебить.",
-    "source": "ближайшее | имя справочника | нет",
-    "id": "если указан конкретный элемент справочника",
+    "source": "nearest | catalog | none",
+    "id": "id?",
     "overrides": [
       "heading",
       "date",
@@ -194,8 +168,6 @@
   "entities": {
     "$комментарий": "То, у чего есть и карточка, и своя страница. Идентификатор задаёт и имя папки, и адрес. Набор полей — то, что показывает форма редактора.",
     "course": {
-      "name": "Курс",
-      "plural": "Курсы",
       "data": "catalog.courses",
       "media": "courses",
       "folder": "courses",
@@ -229,8 +201,6 @@
       }
     },
     "event": {
-      "name": "Событие",
-      "plural": "События",
       "data": "catalog.events",
       "media": "events",
       "folder": "events",
@@ -264,8 +234,6 @@
       }
     },
     "session": {
-      "name": "Смена",
-      "plural": "Лагерь",
       "data": "catalog.camp.sessions",
       "media": "camp",
       "folder": "camp",
@@ -303,8 +271,6 @@
       }
     },
     "post": {
-      "name": "Запись блога",
-      "plural": "Блог",
       "data": "catalog.blog",
       "media": "blog",
       "folder": "blog",
@@ -322,8 +288,6 @@
   "records": {
     "$комментарий": "То, что живёт только карточкой или строкой: своей страницы нет.",
     "service": {
-      "name": "Услуга",
-      "plural": "Услуги",
       "data": "catalog.services",
       "fields": [
         "title",
@@ -331,8 +295,6 @@
       ]
     },
     "university": {
-      "name": "Вуз",
-      "plural": "Вузы",
       "data": "catalog.universities",
       "fields": [
         "title",
@@ -342,8 +304,6 @@
       ]
     },
     "teacher": {
-      "name": "Педагог",
-      "plural": "Педагоги",
       "data": "catalog.team",
       "media": "team",
       "fields": [
@@ -354,17 +314,22 @@
       ]
     },
     "question": {
-      "name": "Вопрос",
-      "plural": "Вопросы",
       "data": "catalog.faq",
       "fields": [
         "question",
         "answer"
       ]
+    }
+  },
+  "dictionaries": {
+    "$комментарий": "Закрытые списки значений: у них нет ни карточки, ни страницы, но на них ссылаются поля. Правится название, ссылка идёт по адресу.",
+    "direction": {
+      "data": "site.directions",
+      "fields": [
+        "title"
+      ]
     },
     "plan": {
-      "name": "Тариф",
-      "plural": "Тарифы",
       "data": "catalog.prices.plans",
       "fields": [
         "title",
@@ -373,45 +338,20 @@
         "single",
         "packages"
       ]
-    }
-  },
-  "dictionaries": {
-    "$комментарий": "Закрытые списки значений: у них нет ни карточки, ни страницы, но на них ссылаются поля. Правится название, ссылка идёт по адресу.",
-    "direction": {
-      "name": "Направление",
-      "plural": "Направления",
-      "data": "site.directions",
-      "fields": [
-        "title"
-      ]
-    },
-    "plan": {
-      "name": "Тариф",
-      "plural": "Тарифы",
-      "data": "catalog.prices.plans",
-      "fields": [
-        "title"
-      ]
     },
     "room": {
-      "name": "Зал",
-      "plural": "Залы",
       "data": "site.rooms",
       "fields": [
         "title"
       ]
     },
     "event-kind": {
-      "name": "Вид события",
-      "plural": "Виды событий",
       "data": "site.eventKinds",
       "fields": [
         "title"
       ]
     },
     "session-kind": {
-      "name": "Вид смены",
-      "plural": "Виды смен",
       "data": "site.sessionKinds",
       "fields": [
         "title"
@@ -420,166 +360,10 @@
   },
   "sources": {
     "$комментарий": "Что может показывать блок помимо справочников.",
-    "site.gallery": "Галерея школы",
-    "camp.routine": "Распорядок дня в лагере",
-    "nearest": "Ближайшее событие",
-    "none": "Ничего"
-  },
-  "fields": {
-    "$комментарий": "Подпись поля в редакторе: латинское имя — русское слово. Пополняется вместе с полями.",
-    "action": "Действие",
-    "active": "Подсветка в меню",
-    "address": "Адрес",
-    "age": "Возраст",
-    "answer": "Ответ",
-    "attr": "Html-атрибут",
-    "banner": "Баннер",
-    "base": "Файл кадра",
-    "bio": "Био",
-    "blockType": "Наполнение",
-    "blockTypes": "Наполнения",
-    "blocks": "Блоки",
-    "button": "Кнопка",
-    "caption": "Подпись",
-    "catalog": "Каталог",
-    "class": "Css-класс",
-    "collapsed": "Свёрнута",
-    "commit": "Запись",
-    "conditions": "Условия",
-    "coords": "Координаты",
-    "cover": "Обложка",
-    "curator": "Куратор",
-    "curators": "Кураторы",
-    "data": "Где лежит",
-    "date": "Дата",
-    "dates": "Даты",
-    "day": "День",
-    "description": "Описание",
-    "devices": "Устройства",
-    "dictionaries": "Словари",
-    "direction": "Направление",
-    "directions": "Направления",
-    "email": "Почта",
-    "enabled": "Включено",
-    "entities": "Сущности",
-    "eventKinds": "ВидыСобытий",
-    "extra": "Дополнительно",
-    "eyebrow": "Надзаголовок",
-    "facts": "Факты",
-    "fallbackFolder": "ЗапаснаяПапка",
-    "field": "Поле",
-    "fields": "Поля",
-    "files": "Файлы",
-    "filter": "Отбор",
-    "filters": "Фильтры для посетителя",
-    "find": "Найти",
-    "folder": "Папка",
-    "folders": "Папки",
-    "footer": "Подвал",
-    "from": "Начало",
-    "fullName": "Полное",
-    "gallery": "Галерея",
-    "group": "Группа",
-    "groups": "Группы",
-    "h1": "Заголовок",
-    "heading": "Заголовок",
-    "hidden": "Скрыто",
-    "href": "Адрес страницы",
-    "icon": "Значок",
-    "id": "Адрес в ссылке",
-    "image": "Изображение",
-    "indexing": "Индексация поисковиками",
-    "inn": "Инн",
-    "items": "Список ссылок",
-    "key": "Ключ поля",
-    "kind": "Вид карточки",
-    "kinds": "Виды",
-    "label": "Подпись",
-    "layouts": "Макеты",
-    "lazy": "Лениво",
-    "lead": "Вводный абзац",
-    "legalAddress": "Юрадрес",
-    "legalEntity": "Юрлицо",
-    "lessons": "Расписание",
-    "link": "Ссылка",
-    "map": "Карта",
-    "mapCaption": "Подпись карты",
-    "media": "Медиа",
-    "menu": "Меню",
-    "message": "Сообщение",
-    "meta": "Мета",
-    "metaDescription": "Описание для поиска",
-    "metaTitle": "Заголовок в браузере",
-    "mode": "Режим",
-    "multiline": "Многострочное поле",
-    "name": "Имя",
-    "note": "Примечание",
-    "ogrn": "Огрн",
-    "options": "Варианты значений",
-    "org": "Организация",
-    "overrides": "Переопределения",
-    "packages": "Пакеты",
-    "pageElements": "Страничные",
-    "palette": "Палитра",
-    "paragraphs": "Абзацы",
-    "parent": "Родитель",
-    "path": "Путь",
-    "pattern": "Маска",
-    "phone": "Телефон",
-    "photo": "Фото",
-    "place": "Место",
-    "plain": "Простая",
-    "plan": "Тариф",
-    "plans": "Тарифы",
-    "plural": "Множественное",
-    "prefix": "Приставка",
-    "price": "Цена",
-    "quality": "Качество",
-    "question": "Вопрос",
-    "readTime": "Чтение",
-    "records": "Записи",
-    "refs": "Ссылки на словари",
-    "replace": "Заменить",
-    "required": "Обязательное",
-    "reviews": "Отзывы",
-    "role": "Роль",
-    "room": "Зал",
-    "rooms": "Залы",
-    "route": "Маршрут",
-    "routine": "Распорядок",
-    "rows": "Строки",
-    "rules": "Правила",
-    "schedule": "Расписание",
-    "section": "Раздел",
-    "sessionKinds": "ВидыСмен",
-    "sessions": "Смены",
-    "short": "Краткое",
-    "single": "Разовое",
-    "site": "Сайт",
-    "slogan": "Слоган",
-    "social": "Соцсети",
-    "source": "Что показывать",
-    "sources": "Источники",
-    "srHeading": "Заголовок для читалки",
-    "subheading": "Подзаголовок",
-    "tableLabel": "Подпись в таблице цен",
-    "targets": "Цели",
-    "template": "Шаблон",
-    "text": "Текст",
-    "texts": "Тексты",
-    "theme": "Оформление",
-    "time": "Время",
-    "timeLabel": "Подпись времени",
-    "title": "Название",
-    "to": "Конец",
-    "token": "Токен",
-    "trial": "Пробное",
-    "type": "Тип",
-    "wide": "Во всю ширину",
-    "width": "Ширина",
-    "widths": "Ширины",
-    "wrapper": "Css-обёртка",
-    "year": "Год"
+    "site.gallery": true,
+    "camp.routine": true,
+    "nearest": true,
+    "none": true
   },
   "rows": {
     "$комментарий": "Из чего состоит строка списка. Нужно, чтобы пустой список показывал свои колонки и чтобы новая строка появлялась с нужными полями, а не пустой строкой.",
@@ -663,16 +447,23 @@
   },
   "mediaFolders": {
     "$комментарий": "Как папки медиатеки называются по-русски. Имена папок латиницей человеку не показываются.",
-    "courses": "Курсы",
-    "events": "События",
-    "camp": "Лагерь",
-    "team": "Команда",
-    "space": "Пространство"
+    "courses": true,
+    "events": true,
+    "camp": true,
+    "team": true,
+    "space": true
   },
   "formats": {
-    "$комментарий": "Как поле показывается человеку. Хранится машинно — датой вида 2026-02-20, — а вводится и показывается по-нашему: 20.02.2026. Пересчёта в данных нет.",
+    "$комментарий": "Как поле показывается человеку. Хранится машинно — датой вида 2026-02-20, — а вводится и показывается по-нашему: 20.02.2026. Подпись даты собирается из имён месяцев, они лежат в словаре имён.",
     "from": "date",
     "to": "date",
     "time": "time"
+  },
+  "overlayElements": {
+    "$комментарий": "Элементы поверх страницы: показываются по действию, а не в потоке. Разметка у них своя, данные — общие для всего сайта.",
+    "form": {
+      "data": "structure.form.fields",
+      "template": "form"
+    }
   }
 }

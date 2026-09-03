@@ -264,19 +264,5 @@
       }
     ],
     "timeLabel": "Ср 16:00 (I поток) / Сб 15:30 и 18:00 (II поток), Большой зал"
-  },
-  {
-    "id": "test",
-    "title": "тест",
-    "direction": "courses",
-    "age": "1-16",
-    "curator": "тест",
-    "plan": "courses",
-    "image": "тест",
-    "lessons": [
-      "тест",
-      "тест"
-    ],
-    "timeLabel": ""
   }
 ]

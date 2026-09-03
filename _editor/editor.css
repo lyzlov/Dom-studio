@@ -153,21 +153,27 @@ body {
   min-width: 0;
   overflow: hidden;
 }
+/* Заголовок колонки стоит на одной высоте во всех барах: место под путь
+   занято всегда, даже когда пути нет. Иначе однострочный бар центрируется
+   сам по себе и его заголовок уезжает вниз. */
 .ed-bar-text {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--space-3xs);
+  height: calc(var(--size-line) * 2 + var(--space-3xs));
   min-width: 0;
 }
 .ed-bar-text > * { height: var(--size-line); }
+/* Значки бара идут одним рядом с одним шагом: группы между собой ничем не
+   отличаются, поэтому и разного шага между ними нет. */
 .ed-bar-tools {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-3xs);
 }
-.ed-bar-tools > .ed-btn-group + .ed-btn-group { margin-left: var(--space-2xs); }
+.ed-btn-group { display: flex; align-items: center; gap: var(--space-3xs); }
 /* Удалить стоит поодаль от остального: разрушающее действие не должно стоять
    вплотную к тем, которыми пользуются каждый раз. */
 .ed-bar-tools > .ed-btn-group:last-child { margin-left: var(--space-md); }
@@ -204,6 +210,15 @@ body {
   color: var(--role-muted);
 }
 .ed-nav > .ed-section-label:first-child { margin-top: 0; }
+/* Заголовок раздела внутри списка занимает всю строку и стоит той же строкой,
+   что и элементы под ним: колонки списка — для элементов, а не для подписи. */
+.ed-lines > .ed-section-label {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  height: var(--size-row);
+  margin: 0;
+}
 .ed-item {
   display: block;
   width: 100%;
@@ -282,7 +297,7 @@ body {
   display: grid;
   /* Колонка подписи задана числом, а не содержимым: иначе она растягивается
      от самой длинной надписи во всей форме, включая вложенные таблицы. */
-  grid-template-columns: var(--measure-label) minmax(0, var(--measure-field)) auto;
+  grid-template-columns: var(--measure-label) minmax(0, 1fr) auto;
   column-gap: var(--space-sm);
   row-gap: var(--space-2xs);
   align-items: center;
@@ -308,10 +323,10 @@ body {
 .ed-fields .ed-flat,
 .ed-fields .ed-values,
 .ed-fields .ed-tools,
-.ed-fields > .ed-section-label { grid-column: 1 / -1; }
+.ed-fields .ed-section-label { grid-column: 1 / -1; }
 .ed-values {
   display: grid;
-  grid-template-columns: minmax(0, var(--measure-field)) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   column-gap: var(--space-3xs);
   row-gap: var(--space-3xs);
   align-items: center;
@@ -327,10 +342,12 @@ body {
 }
 .ed-line-tools { display: flex; align-items: center; gap: var(--space-3xs); }
 .ed-control { display: flex; align-items: center; gap: var(--space-3xs); }
+/* Поле занимает свою колонку целиком: место справа есть — значит значение
+   видно, а не обрезано на середине. */
 .ed-control > input[type="text"],
 .ed-control > input[type="number"],
 .ed-control > select,
-.ed-control > textarea { flex: 1 1 auto; min-width: 0; max-width: var(--measure-field); }
+.ed-control > textarea { flex: 1 1 auto; min-width: 0; }
 .ed-control > input[type="checkbox"] { flex: none; margin: 0; }
 .ed-handle-off,
 .ed-chevron-off { visibility: hidden; }
@@ -354,15 +371,15 @@ body {
 }
 .ed-icon-btn:hover { color: var(--role-text); }
 .ed-icon-btn[disabled] { opacity: 0.3; cursor: default; }
-/* Значок ведёт себя как буква: занимает всю ячейку и красится цветом кнопки.
+/* Значок ведёт себя как буква: красится цветом кнопки и стоит в середине
+   ячейки. Ячейка больше значка: нажимают по ячейке, а видят значок.
    Толщина обводки одна на все значки — иначе они выглядят из разных наборов. */
 .ed-glyph {
   display: block;
   flex: none;
-  width: var(--size-cell);
-  height: var(--size-cell);
+  width: var(--size-icon);
+  height: var(--size-icon);
 }
-.ed-icon-btn > .ed-glyph { width: 100%; height: 100%; }
 .ed-glyph > svg {
   display: block;
   width: 100%;
@@ -379,6 +396,9 @@ body {
 .ed-nav-row { display: contents; }
 .ed-nav-row > * { min-height: var(--size-row); display: flex; align-items: center; }
 .ed-nav-row[data-hidden="true"] > * { opacity: 0.45; }
+/* Замечание проверки: строка называет себя цветом, тем же, каким названы
+   ошибки в шапке и в списке проверок. */
+.ed-nav-row[data-problem="true"] .ed-name { color: var(--accent-pink-text); }
 .ed-name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -488,18 +508,37 @@ body {
   font-size: var(--type-mono-meta-size);
   color: var(--role-muted);
 }
-.ed-tile-add { border-style: dashed; cursor: pointer; color: var(--role-muted); }
+.ed-tile-add {
+  flex-direction: column;
+  gap: var(--space-3xs);
+  border-style: dashed;
+  cursor: pointer;
+  color: var(--role-muted);
+}
 .ed-tile-add:hover { color: var(--role-text); }
+.ed-tile-label {
+  padding: 0 var(--space-3xs);
+  font-size: var(--type-body-small-size);
+  text-align: center;
+}
 .ed-tile.ed-dragging { opacity: 0.5; }
 
 /* Объект из нескольких коротких значений — одна строка формы: подписи мелко
    сверху, поля в ряд, у всех одна ширина. */
-.ed-inline-fields { display: flex; gap: var(--space-2xs); min-width: 0; }
+/* Подполя одной вещи — начало, конец, время, подпись — делят строку поровну
+   и переносятся, когда места мало: значение не обрезается ни при какой
+   ширине окна. */
+.ed-inline-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
 .ed-inline-field {
   display: flex;
   flex-direction: column;
   gap: 0;
-  flex: 1 1 0;
+  flex: 1 1 var(--measure-pick);
   min-width: 0;
 }
 .ed-inline-field > .ed-hint { margin: 0; }
@@ -539,18 +578,40 @@ body {
   color: var(--role-muted);
   margin-top: var(--space-3xs);
 }
+/* Перечень: описание и места, где стоит тип. Переносится по ширине колонки —
+   иначе десяток мест выталкивает описание из своей колонки. */
+.ed-places {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3xs);
+  min-width: 0;
+}
+.ed-places > .ed-hint { margin-top: 0; }
+/* Место — кнопка ростом с подсказку: перечень читается перечнем, а не рядом
+   кнопок. */
+.ed-place {
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--type-mono-meta-size);
+  color: var(--role-primary-text);
+}
 .ed-address {
   font-family: var(--font-mono);
   font-size: var(--type-mono-nav-size);
   color: var(--role-muted);
 }
+/* Поле занимает отведённое ему место целиком. Предела ширины у него нет:
+   его держит колонка формы, а не само поле. */
 input[type="text"],
 input[type="number"],
 input[type="password"],
 textarea,
 select {
   width: 100%;
-  max-width: var(--measure-field);
   padding: 0 var(--space-3xs);
   border: var(--size-hair) solid var(--role-border);
   background: var(--role-bg);
@@ -595,9 +656,23 @@ a:focus-visible,
   list-style: none;
 }
 .ed-group > .ed-head::-webkit-details-marker { display: none; }
-.ed-group > .ed-head + * {
-  padding: var(--space-xs) 0 var(--space-xs) var(--space-xs);
+/* Тело группы занимает всю ширину списка и держит те же колонки: вложенное
+   поле стоит на той же вертикали, что и поле верхнего уровня. Между группой и
+   её телом браузер держит свою прослойку (::details-content); без неё колонки
+   до вложенного поля не доходят и оно съезжает в колонку подписи. */
+.ed-fields .ed-group::details-content {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
 }
+.ed-group > .ed-head + * {
+  grid-column: 1 / -1;
+  padding: 0;
+}
+/* Внутри формы расстояние между строками держит сетка: свои отступы у групп
+   и узлов складывались бы с ним и рвали ритм. */
+.ed-fields .ed-node,
+.ed-fields .ed-group { margin: 0; }
 .ed-title {
   font-family: var(--font-mono);
   font-size: var(--type-mono-meta-size);
@@ -804,10 +879,31 @@ a:focus-visible,
 .ed-inline select,
 .ed-inline input[type="text"] { flex: 0 1 var(--measure-field); }
 .ed-inline input[type="checkbox"] { flex: none; width: auto; }
+/* Путь к файлу — машинное имя: тот же моноширинный, что и у прочих машинных
+   имён в редакторе. */
+.ed-path {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--type-mono-nav-size);
+  color: var(--role-text);
+}
 .ed-link {
   font-family: var(--font-mono);
   font-size: var(--type-mono-meta-size);
   color: var(--role-primary-text);
+}
+/* Исходник разметки: показан для сверки, правится дерево выше. Приглушённый
+   цвет — знак того, что это следствие, а не причина. */
+.ed-code {
+  margin: 0;
+  width: 100%;
+  max-height: var(--size-scroll);
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: var(--type-mono-meta-size);
+  color: var(--role-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .ed-checks {
   padding: var(--space-2xs) var(--space-xs);
@@ -818,6 +914,16 @@ a:focus-visible,
   overflow: auto;
 }
 .ed-checks p { margin: 0 0 var(--space-3xs); }
+/* Замечание с адресом — кнопка: она открывает свой элемент. */
+.ed-check {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
 /* Десктопный макет шире колонки: рамка держит свою ширину и масштабируется. */
 .ed-stage {
   flex: 1;

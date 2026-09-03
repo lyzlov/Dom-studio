@@ -13,9 +13,9 @@ function base64(содержимое) {
   return btoa(s);
 }
 
-export const естьДоступКПапке = () => typeof window.showDirectoryPicker === 'function';
+export const hasFolderAccess = () => typeof window.showDirectoryPicker === 'function';
 
-export async function записатьВПапку(файлы, наПрогресс = () => {}) {
+export async function writeToFolder(файлы, наПрогресс = () => {}) {
   const корень = await window.showDirectoryPicker({ mode: 'readwrite', id: 'dom-site' });
   try {
     await корень.getDirectoryHandle('_content');
@@ -51,33 +51,33 @@ async function api(токен, путь, способ = 'GET', тело) {
   return ответ.json();
 }
 
-export async function проверитьДоступ(токен, { owner, repo }) {
+export async function checkAccess(токен, { owner, repo }) {
   const я = await api(токен, '/user');
   const р = await api(токен, `/repos/${owner}/${repo}`);
   return { пользователь: я.login, commit: !!(р.permissions && р.permissions.push) };
 }
 
 /** Голова ветки: с ней сверяется запись, чтобы не затереть чужую правку. */
-export const ключЦели = ц => `${ц.owner}/${ц.repo}#${ц.branch}`;
+export const targetKey = ц => `${ц.owner}/${ц.repo}#${ц.branch}`;
 
-export async function головыВеток(цели, токен) {
+export async function branchHeads(цели, токен) {
   const итог = {};
   for (const ц of цели) {
     try {
       const с = await api(токен, `/repos/${ц.owner}/${ц.repo}/git/ref/heads/${ц.branch}`);
-      итог[ключЦели(ц)] = с.object.sha;
-    } catch { итог[ключЦели(ц)] = null; }
+      итог[targetKey(ц)] = с.object.sha;
+    } catch { итог[targetKey(ц)] = null; }
   }
   return итог;
 }
 
-export async function записатьВGitHub(файлы, { токен, цели, сообщение, основа = {} }, наПрогресс = () => {}) {
+export async function writeToGitHub(файлы, { токен, цели, сообщение, основа = {} }, наПрогресс = () => {}) {
   const отчёт = [];
   for (const ц of цели) {
     наПрогресс(`${ц.owner}/${ц.repo}: чтение ветки`);
     const ссылка = await api(токен, `/repos/${ц.owner}/${ц.repo}/git/ref/heads/${ц.branch}`);
     const родитель = ссылка.object.sha;
-    const ожидалось = основа[ключЦели(ц)];
+    const ожидалось = основа[targetKey(ц)];
     // Ветка ушла вперёд с тех пор, как редактор прочитал site: наша запись
     // затёрла бы чужую правку. Ничего не пишем, пока страница не перечитана.
     if (ожидалось && ожидалось !== родитель)

@@ -11,8 +11,8 @@ body {
   font-size: var(--type-body-base-size);
   line-height: var(--type-body-base-leading);
 }
-:root { --header-h: 60px; --nav-pad: 12px; }
-:root:has(.breadcrumbs-row) { --header-h: 86px; }
+:root { --header-h: var(--pos-header); --nav-pad: var(--pos-nav-pad); }
+:root:has(.breadcrumbs-row) { --header-h: var(--pos-header-crumbs); }
 html { scroll-padding-top: calc(var(--header-h) + var(--space-md)); scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body { font-synthesis: none; }
@@ -43,12 +43,12 @@ table.schedule, table.table-simple {
 .todo-field { color: var(--accent-pink-text); }
 
 :focus-visible {
-  outline: 2px solid var(--role-focus);
-  outline-offset: 2px;
+  outline: var(--line-focus) solid var(--role-focus);
+  outline-offset: var(--line-focus-gap);
 }
 .btn:focus-visible, .site-footer :focus-visible {
   outline-color: var(--role-on-footer);
-  outline-offset: 3px;
+  outline-offset: var(--line-focus-gap-wide);
 }
 .visually-hidden {
   position: absolute;
@@ -62,7 +62,7 @@ table.schedule, table.table-simple {
   position: absolute;
   left: var(--space-xs);
   top: -100%;
-  z-index: 200;
+  z-index: var(--layer-skip);
   background: var(--role-text);
   color: var(--role-bg);
   padding: var(--space-2xs) var(--space-sm);
@@ -84,7 +84,7 @@ table.schedule, table.table-simple {
   align-items: center;
   justify-content: center;
   text-align: center;
-  border: 1px dashed var(--role-border);
+  border: var(--line-hair) dashed var(--role-border);
   color: var(--role-muted);
   font-size: var(--type-body-small-size);
   background: var(--role-surface);
@@ -95,7 +95,7 @@ table.schedule, table.table-simple {
 .site-header {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: var(--layer-header);
   background: var(--role-bg);
 }
 .site-header .bar {
@@ -105,7 +105,7 @@ table.schedule, table.table-simple {
   padding-top: var(--space-2xs);
   padding-bottom: var(--space-2xs);
 }
-.logo img { height: 44px; width: auto; display: block; }
+.logo img { height: var(--site-logo); width: auto; display: block; }
 .site-nav .nav-list {
   list-style: none;
   display: flex;
@@ -151,19 +151,19 @@ table.schedule, table.table-simple {
   position: absolute;
   top: 100%;
   left: 0;
-  z-index: 30;
+  z-index: var(--layer-header-popover);
 }
 .nav-group .dropdown::before {
   content: "";
   position: absolute;
   top: 0;
   bottom: auto;
-  height: max(100% + 80px, 280px);
+  height: max(100% + var(--site-hero-fade), var(--site-hero-min));
   left: var(--bg-left, 0);
   width: var(--bg-width, 100%);
   background: linear-gradient(to bottom,
-      var(--role-bg) calc(100% - 80px), transparent 100%);
-  z-index: -1;
+      var(--role-bg) calc(100% - var(--site-hero-fade)), transparent 100%);
+  z-index: var(--layer-under);
   pointer-events: none;
 }
 .nav-group .dropdown-inner {
@@ -195,12 +195,12 @@ table.schedule, table.table-simple {
   cursor: pointer;
   padding: var(--space-2xs);
 }
-.nav-toggle img { display: block; width: 22px; height: 22px; }
+.nav-toggle img { display: block; width: var(--site-icon-toggle); height: var(--site-icon-toggle); }
 .header-actions { display: flex; align-items: center; gap: var(--space-sm); margin-left: auto; }
 .social-icons { display: flex; gap: var(--space-2xs); }
 .social-icons a {
-  width: 32px;
-  height: 32px;
+  width: var(--site-control);
+  height: var(--site-control);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -209,7 +209,7 @@ table.schedule, table.table-simple {
   font-size: var(--type-mono-meta-size);
   text-decoration: none;
 }
-.social-icons img { width: 20px; height: 20px; display: block; }
+.social-icons img { width: var(--site-icon); height: var(--site-icon); display: block; }
 .breadcrumbs-row { padding-top: 0; padding-bottom: var(--space-2xs); }
 .breadcrumbs {
   font-size: var(--type-mono-meta-size);
@@ -222,6 +222,11 @@ table.schedule, table.table-simple {
 .breadcrumbs [aria-current="page"] { color: var(--role-text); }
 
 /* #region Кнопка */
+/* Скругления на сайте нет — и это записано, а не подразумевается: браузер
+   скругляет поля и кнопки по-своему, если ему не сказать. */
+input, select, textarea, button, .btn, .card, .modal-panel {
+  border-radius: var(--radius-base);
+}
 .btn {
   display: inline-flex;
   align-items: center;
@@ -232,7 +237,7 @@ table.schedule, table.table-simple {
   letter-spacing: var(--type-mono-nav-tracking);
   text-transform: var(--type-mono-nav-caps);
   text-decoration: none;
-  border: 1px solid var(--role-text);
+  border: var(--line-hair) solid var(--role-text);
   padding: var(--space-2xs) var(--space-xs);
   cursor: pointer;
   background: transparent;
@@ -275,7 +280,7 @@ table.schedule, table.table-simple {
 }
 .hero-copy {
   position: relative;
-  z-index: 1;
+  z-index: var(--layer-base);
   padding: var(--space-lg) 0 var(--space-md);
 }
 .hero-title-group { position: relative; }
@@ -289,7 +294,7 @@ table.schedule, table.table-simple {
   max-width: none;
   display: block;
   opacity: 0.4;
-  z-index: -1;
+  z-index: var(--layer-under);
   pointer-events: none;
 }
 
@@ -338,9 +343,9 @@ table.schedule, table.table-simple {
   position: relative;
   width: 100%;
   max-width: none;
-  aspect-ratio: 9/16;
+  aspect-ratio: var(--ratio-story);
   padding: var(--space-md) var(--space-sm) var(--space-sm);
-  border: 1px solid var(--role-border);
+  border: var(--line-hair) solid var(--role-border);
   background: var(--role-bg);
   color: var(--role-text);
   text-decoration: none;
@@ -350,7 +355,7 @@ table.schedule, table.table-simple {
   content: "";
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 4px;
+  height: var(--site-rule);
   background: var(--gradient-brand);
 }
 .hero-banner:hover { border-color: var(--role-text); }
@@ -389,8 +394,8 @@ table.schedule, table.table-simple {
 .page-head::after {
   content: "";
   display: block;
-  height: 4px;
-  width: 96px;
+  height: var(--site-rule);
+  width: var(--site-rule-width);
   margin-top: var(--space-sm);
   margin-left: max(var(--grid-margin), calc((100% - var(--grid-max)) / 2 + var(--grid-margin)));
   background: var(--gradient-brand);
@@ -483,8 +488,8 @@ table.schedule, table.table-simple {
 #tabs-types:focus-visible ~ .tab-bar .tab-labels label[for="tabs-types"],
 #tabs-schedule:focus-visible ~ .tab-bar .tab-labels label[for="tabs-schedule"],
 #tabs-price:focus-visible ~ .tab-bar .tab-labels label[for="tabs-price"] {
-  outline: 2px solid var(--role-focus);
-  outline-offset: 2px;
+  outline: var(--line-focus) solid var(--role-focus);
+  outline-offset: var(--line-focus-gap);
 }
 #tabs-format:checked ~ .tab-panels .panel-format,
 #tabs-age:checked ~ .tab-panels .panel-age,
@@ -520,9 +525,9 @@ table.schedule, table.table-simple {
 }
 .filter-tab-label::after {
   content: "";
-  width: 16px;
-  height: 16px;
-  background: url("icons/chevron-down.svg") center / 16px 16px no-repeat;
+  width: var(--site-icon-small);
+  height: var(--site-icon-small);
+  background: url("icons/chevron-down.svg") center / var(--site-icon-small) var(--site-icon-small) no-repeat;
   opacity: .55;
   transition: transform var(--motion-micro) var(--motion-ease);
 }
@@ -547,12 +552,12 @@ table.schedule, table.table-simple {
   top: 100%;
   left: 0;
   padding-top: var(--space-2xs);
-  min-width: 200px;
-  z-index: 15;
+  min-width: var(--site-dropdown-min);
+  z-index: var(--layer-popover);
 }
 .filter-dropdown .dropdown-inner {
   background: var(--role-bg);
-  border: 1px solid var(--role-border);
+  border: var(--line-hair) solid var(--role-border);
   padding: var(--space-2xs) 0;
   list-style: none;
   margin: 0;
@@ -584,7 +589,7 @@ table.schedule, table.table-simple {
 /* #region Сетка карточек и галерея | тип: cards, gallery */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--site-card-min), 1fr));
   gap: var(--space-md) var(--space-sm);
   align-items: stretch;
 }
@@ -597,10 +602,10 @@ table.schedule, table.table-simple {
   color: var(--role-text);
   height: 100%;
 }
-.card .card-link { position: absolute; inset: 0; z-index: 1; }
+.card .card-link { position: absolute; inset: 0; z-index: var(--layer-base); }
 .card .card-body, .card .card-image { position: relative; }
-.card-image { width: 100%; aspect-ratio: 4/3; object-fit: cover; background: var(--role-surface); }
-.card-image.placeholder { aspect-ratio: 4/3; height: auto; }
+.card-image { width: 100%; aspect-ratio: var(--ratio-photo); object-fit: cover; background: var(--role-surface); }
+.card-image.placeholder { aspect-ratio: var(--ratio-photo); height: auto; }
 .card .card-body { padding-top: var(--space-2xs); display: flex; flex-direction: column; gap: var(--space-2xs); flex: 1; }
 .card-title {
   font-family: var(--font-display);
@@ -610,10 +615,10 @@ table.schedule, table.table-simple {
   color: var(--role-heading);
   margin: 0;
 }
-.card .card-title { min-height: 2.4em; }
+.card .card-title { min-height: var(--site-card-title); }
 .card-meta { font-size: var(--type-mono-meta-size); line-height: var(--type-mono-meta-leading); color: var(--role-muted); margin: 0; }
 .card .card-desc { font-size: var(--type-body-small-size); margin: var(--space-3xs) 0 0; }
-.card .card-actions { position: relative; z-index: 2; display: flex; gap: var(--space-2xs); margin-top: auto; padding-top: var(--space-2xs); flex-wrap: wrap; }
+.card .card-actions { position: relative; z-index: var(--layer-raised); display: flex; gap: var(--space-2xs); margin-top: auto; padding-top: var(--space-2xs); flex-wrap: wrap; }
 .card:has(.card-link):hover .card-title { color: var(--role-primary-text); }
 
 .gallery-bar {
@@ -641,7 +646,7 @@ table.schedule, table.table-simple {
   .gallery[data-mode="grid"] .gallery-view { grid-template-columns: repeat(4, 1fr); }
 }
 .gallery[data-mode="grid"] .gallery-item { width: 100%; }
-.gallery[data-mode="grid"] .gallery-item img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+.gallery[data-mode="grid"] .gallery-item img { width: 100%; aspect-ratio: var(--ratio-square); object-fit: cover; }
 
 .gallery[data-mode="strip"] .gallery-view {
   display: flex;
@@ -664,7 +669,7 @@ table.schedule, table.table-simple {
 .gallery[data-mode="strip"] .gallery-item img {
   width: 100%;
   height: auto;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: var(--ratio-portrait);
   object-fit: cover;
 }
 .gallery[data-mode="grid"] .gallery-nav { visibility: hidden; }
@@ -681,7 +686,7 @@ table.schedule, table.table-simple {
   width: 100%;
   height: auto;
   max-width: 100%;
-  aspect-ratio: 4/3;
+  aspect-ratio: var(--ratio-photo);
   object-fit: cover;
 }
 
@@ -690,7 +695,7 @@ table.schedule, table.table-simple {
   grid-template-columns: repeat(2, 1fr);
   gap: var(--space-2xs);
 }
-.gallery:not([data-mode]) .gallery-item img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+.gallery:not([data-mode]) .gallery-item img { width: 100%; aspect-ratio: var(--ratio-square); object-fit: cover; }
 .gallery:not([data-mode]) .gallery-bar { display: none; }
 
 .team-grid {
@@ -699,7 +704,7 @@ table.schedule, table.table-simple {
   gap: var(--space-sm);
 }
 @media (min-width: 700px) { .team-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
-.team-card img, .team-card .placeholder { aspect-ratio: 1/1; object-fit: cover; width: 100%; max-width: 260px; }
+.team-card img, .team-card .placeholder { aspect-ratio: var(--ratio-square); object-fit: cover; width: 100%; max-width: 260px; }
 .team-card .card-title { margin-top: var(--space-2xs); }
 .team-card .card-meta { margin-top: 0; }
 
@@ -708,7 +713,7 @@ table.schedule, table.table-simple {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-xs) var(--space-md);
-  max-width: 560px;
+  max-width: var(--site-form);
 }
 .form-fields { display: grid; grid-template-columns: 1fr; gap: var(--space-xs); }
 .signup-context { align-self: start; }
@@ -717,7 +722,7 @@ table.schedule, table.table-simple {
 @media (min-width: 600px) {
   .form-fields { grid-template-columns: 1fr 1fr; }
   .form-row-wide { grid-column: 1 / -1; }
-  .signup-form:has(.signup-context:not([hidden])) { grid-template-columns: 1fr 200px; max-width: 800px; }
+  .signup-form:has(.signup-context:not([hidden])) { grid-template-columns: 1fr var(--site-form-aside); max-width: var(--site-form-wide); }
 }
 .form-row { display: flex; flex-direction: column; gap: var(--space-3xs); }
 .form-row label { font-size: var(--type-mono-label-size); text-transform: var(--type-mono-label-caps); letter-spacing: var(--type-mono-nav-tracking); color: var(--role-muted); }
@@ -725,7 +730,7 @@ table.schedule, table.table-simple {
   font-family: var(--font-mono);
   font-size: var(--type-mono-nav-size);
   padding: var(--space-2xs);
-  border: 1px solid var(--role-border);
+  border: var(--line-hair) solid var(--role-border);
   background: var(--role-bg);
   color: var(--role-text);
 }
@@ -752,9 +757,9 @@ table.schedule, table.table-simple {
 .disclosure > summary::after {
   content: "";
   flex: none;
-  width: 20px;
-  height: 20px;
-  background: url("icons/chevron-down.svg") center / 20px 20px no-repeat;
+  width: var(--site-icon);
+  height: var(--site-icon);
+  background: url("icons/chevron-down.svg") center / var(--site-icon) var(--site-icon) no-repeat;
   opacity: .55;
   transition: transform var(--motion-micro) var(--motion-ease), opacity var(--motion-micro) var(--motion-ease);
 }
@@ -774,8 +779,8 @@ main > .block:last-child { padding-bottom: var(--space-lg); }
 
 .schedule-wrap { max-width: none; overflow-x: auto; }
 .icon-btn {
-  width: 32px;
-  height: 32px;
+  width: var(--site-control);
+  height: var(--site-control);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -786,7 +791,7 @@ main > .block:last-child { padding-bottom: var(--space-lg); }
   opacity: .45;
   transition: opacity var(--motion-micro) var(--motion-ease);
 }
-.icon-btn img { width: 20px; height: 20px; display: block; }
+.icon-btn img { width: var(--site-icon); height: var(--site-icon); display: block; }
 .icon-btn:hover { opacity: 1; }
 .icon-btn[aria-pressed="true"] { opacity: 1; }
 .icon-btn[disabled] { opacity: .15; cursor: default; }
@@ -798,12 +803,12 @@ table.schedule, table.table-simple {
   font-size: var(--type-mono-nav-size);
   background: var(--role-bg);
 }
-.tabs table.schedule { min-width: 720px; }
+.tabs table.schedule { min-width: var(--site-schedule-min); }
 table.schedule th, table.schedule td,
 table.table-simple th, table.table-simple td {
   padding: var(--space-2xs) var(--space-xs) var(--space-2xs) 0;
   text-align: left;
-  border-bottom: 1px solid var(--role-border);
+  border-bottom: var(--line-hair) solid var(--role-border);
   vertical-align: top;
   font-family: var(--font-mono);
 }
@@ -816,7 +821,7 @@ table.table-simple th {
   color: var(--role-muted);
   text-transform: uppercase;
   letter-spacing: var(--type-mono-nav-tracking);
-  border-bottom: 1px solid var(--role-text);
+  border-bottom: var(--line-hair) solid var(--role-text);
   padding-top: var(--space-2xs);
   padding-bottom: var(--space-2xs);
 }
@@ -860,7 +865,7 @@ table.schedule th .sort-btn::after { content: ""; font-size: 0.8em; }
 table.schedule th[aria-sort] .sort-btn { color: var(--role-text); text-decoration: underline; }
 table.schedule th[aria-sort="ascending"] .sort-btn::after { content: "\2191"; }
 table.schedule th[aria-sort="descending"] .sort-btn::after { content: "\2193"; }
-table.schedule th .sort-btn:focus-visible { outline: 2px solid var(--role-focus); outline-offset: -2px; }
+table.schedule th .sort-btn:focus-visible { outline: var(--line-focus) solid var(--role-focus); outline-offset: -2px; }
 table.schedule td.cell-time { font-weight: 500; color: var(--role-text); white-space: nowrap; }
 table.schedule td.cell-day { font-weight: 500; color: var(--role-text); }
 .type-tag { font-weight: 500; }
@@ -873,7 +878,7 @@ table.schedule td.cell-day { font-weight: 500; color: var(--role-text); }
   table.schedule tr, table.table-simple tr,
   table.schedule td, table.table-simple td { display: block; }
   table.schedule tr, table.table-simple tr {
-    border-bottom: 1px solid var(--role-text);
+    border-bottom: var(--line-hair) solid var(--role-text);
     padding: var(--space-2xs) 0;
   }
   table.schedule td, table.table-simple td {
@@ -918,7 +923,7 @@ table.schedule td.cell-day { font-weight: 500; color: var(--role-text); }
 @media (min-width: 600px) {
   .footer-grid { grid-template-columns: repeat(3, 1fr); }
 }
-.footer-logo { height: 32px; width: auto; margin-bottom: var(--space-xs); }
+.footer-logo { height: var(--site-logo-footer); width: auto; margin-bottom: var(--space-xs); }
 .footer-grid h2 { color: var(--role-on-footer); font-size: var(--type-mono-nav-size); text-transform: var(--type-mono-nav-caps); margin-bottom: var(--space-xs); }
 .footer-grid p, .footer-grid a { color: var(--role-on-footer-muted); }
 .footer-grid a { text-decoration: none; }
@@ -940,7 +945,7 @@ body.is-locked { overflow: hidden; }
 .modal {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--layer-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -954,13 +959,13 @@ body.is-locked { overflow: hidden; }
 }
 .modal-panel {
   position: relative;
-  z-index: 1;
+  z-index: var(--layer-base);
   background: var(--role-bg);
   padding: var(--space-lg);
-  max-width: 640px;
+  max-width: var(--site-modal);
   width: 100%;
   }
-.modal-panel:has(.signup-context:not([hidden])) { max-width: 880px; }
+.modal-panel:has(.signup-context:not([hidden])) { max-width: var(--site-modal-wide); }
 .modal-panel {
   max-height: 90vh;
   overflow-y: auto;
@@ -984,7 +989,7 @@ body.is-locked { overflow: hidden; }
 .lightbox {
   position: fixed;
   inset: 0;
-  z-index: 110;
+  z-index: var(--layer-lightbox);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -995,7 +1000,7 @@ body.is-locked { overflow: hidden; }
   position: absolute;
   top: var(--space-xs);
   right: var(--space-xs);
-  z-index: 2;
+  z-index: var(--layer-raised);
 }
 
 /* #region Строка ссылок | тип: links */
@@ -1025,18 +1030,18 @@ body.is-locked { overflow: hidden; }
   height: auto;
   grid-template-columns: 1fr;
   gap: var(--space-sm);
-  border: 1px solid var(--role-border);
+  border: var(--line-hair) solid var(--role-border);
   padding: var(--space-sm);
   margin-bottom: var(--space-sm);
 }
 @media (min-width: 700px) { .card.card-wide { grid-template-columns: 4fr 8fr; gap: var(--space-lg); align-items: center; } }
-.card.card-wide .card-image { aspect-ratio: 4/3; }
+.card.card-wide .card-image { aspect-ratio: var(--ratio-photo); }
 .card.card-wide .card-body { display: flex; flex-direction: column; gap: var(--space-2xs); padding: 0; }
 .card.card-wide .card-title { min-height: 0; font-size: var(--type-heading-block-size); }
 .card.card-wide .card-actions { margin-top: var(--space-2xs); padding-top: 0; }
 
 /* #region Карточка без изображения (услуги, профориентация) */
-.card-text { border-top: 1px solid var(--role-border); padding-top: var(--space-sm); }
+.card-text { border-top: var(--line-hair) solid var(--role-border); padding-top: var(--space-sm); }
 .card-text .card-body { padding-top: 0; }
 
 /* #region Команда | тип: team */
@@ -1059,7 +1064,7 @@ body.is-locked { overflow: hidden; }
 .team-bio {
   grid-column: 1 / -1;
   position: relative;
-  border: 1px solid var(--role-border);
+  border: var(--line-hair) solid var(--role-border);
   padding: var(--space-md);
   margin-top: var(--space-2xs);
 }
@@ -1069,10 +1074,10 @@ body.is-locked { overflow: hidden; }
   position: absolute;
   top: -7px;
   left: var(--arrow-left, 40px);
-  width: 12px; height: 12px;
+  width: var(--site-corner); height: var(--site-corner);
   background: var(--role-bg);
-  border-left: 1px solid var(--role-border);
-  border-top: 1px solid var(--role-border);
+  border-left: var(--line-hair) solid var(--role-border);
+  border-top: var(--line-hair) solid var(--role-border);
   transform: rotate(45deg);
 }
 .team-bio h3 { margin-bottom: var(--space-2xs); font-weight: var(--type-heading-card-weight); font-size: var(--type-heading-card-size); }
@@ -1086,21 +1091,21 @@ body.is-locked { overflow: hidden; }
 }
 
 /* #region Лайтбокс */
-.lightbox-figure { position: relative; z-index: 1; margin: 0; display: block; }
+.lightbox-figure { position: relative; z-index: var(--layer-base); margin: 0; display: block; }
 .lightbox-img { display: block; max-width: 100vw; max-height: 100svh; width: auto; height: auto; }
 
 /* #region Карта проезда и оценка | тип: contacts, rating */
-.map-block { border: 1px solid var(--role-border); }
+.map-block { border: var(--line-hair) solid var(--role-border); }
 .map-block iframe {
   display: block;
   width: 100%;
-  aspect-ratio: 4/3;
+  aspect-ratio: var(--ratio-photo);
   border: 0;
   filter: grayscale(1) contrast(1.04);
   transition: filter var(--motion-block) var(--motion-ease);
 }
 .map-block:hover iframe, .map-block:focus-within iframe { filter: none; }
-@media (min-width: 700px) { .map-block iframe { aspect-ratio: 16/9; } }
+@media (min-width: 700px) { .map-block iframe { aspect-ratio: var(--ratio-wide); } }
 .map-actions { display: flex; flex-wrap: wrap; gap: var(--space-2xs); margin-top: var(--space-sm); }
 .contact-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-sm); margin-bottom: var(--space-md); }
 @media (min-width: 700px) { .contact-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -1130,19 +1135,19 @@ body.is-locked { overflow: hidden; }
     /* Докрутив меню до края, страница под ним не продолжает прокрутку. */
     overscroll-behavior: contain;
     background: var(--role-bg);
-    z-index: 25;
+    z-index: var(--layer-header-menu);
     padding: var(--space-sm) var(--grid-margin) var(--space-lg);
   }
   .site-nav.is-open { display: block; }
   .site-nav .nav-list { flex-direction: column; gap: 0; margin: 0; }
   .site-nav .nav-list > li > a,
-  .nav-group-label { padding: var(--space-xs) 0; min-height: 44px; display: flex; align-items: center; }
+  .nav-group-label { padding: var(--space-xs) 0; min-height: var(--site-tap); display: flex; align-items: center; }
   /* Подменю раскрыты всегда. Правило единственное: раскрытием по наведению
      владеет `@media (hover: hover)`, и на узком экране оно с этим не спорит. */
   .nav-group .dropdown { position: static; display: block; }
   .nav-group .dropdown::before { display: none; }
   .nav-group .dropdown-inner { padding: 0 0 var(--space-2xs) var(--space-sm); margin: 0; }
-  .nav-group .dropdown a { padding: var(--space-2xs) 0; min-height: 44px; display: flex; align-items: center; }
+  .nav-group .dropdown a { padding: var(--space-2xs) 0; min-height: var(--site-tap); display: flex; align-items: center; }
 }
 
 @media print {
@@ -1153,7 +1158,7 @@ body.is-locked { overflow: hidden; }
   .schedule-wrap { position: fixed; left: 0; top: 0; width: 100%; margin: 0; }
   .icon-btn { display: none; }
   table.schedule { min-width: 0; font-size: 9pt; }
-  table.schedule th, table.schedule td { padding: 3px 8px 3px 0; }
+  table.schedule th, table.schedule td { padding: var(--site-cell-pad) var(--space-2xs) var(--site-cell-pad) 0; }
   table.schedule td.cell-day, table.schedule th[data-sort-key="day"] { padding-left: 0; }
   table.schedule th { letter-spacing: 0; }
   .table-scroll { overflow: visible; }

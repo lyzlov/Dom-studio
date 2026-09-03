@@ -1,9 +1,18 @@
 {
   "$комментарий": "Меню сайта и разделы подвала. Порядок и подписи — одни на весь сайт.",
-  "parts": {
-    "header": {},
-    "menu": {},
-    "footer": {}
+  "layout": {
+    "$комментарий": "Состав и порядок частей шапки и подвала. Часть, которой нет в списке, не выводится; порядок в списке — порядок на странице.",
+    "header": [
+      "logo",
+      "menu",
+      "social"
+    ],
+    "footer": [
+      "brand",
+      "contacts",
+      "sections",
+      "legal"
+    ]
   },
   "menu": [
     {
@@ -11,23 +20,18 @@
       "group": "Деятельность",
       "items": [
         {
-          "name": "Курсы",
           "href": "courses/index.html"
         },
         {
-          "name": "События",
           "href": "events/index.html"
         },
         {
-          "name": "Услуги",
           "href": "services/index.html"
         },
         {
-          "name": "Профориентация",
           "href": "services/admissions/index.html"
         },
         {
-          "name": "Летний лагерь",
           "href": "camp/index.html"
         }
       ]
@@ -37,21 +41,17 @@
       "group": "О нас",
       "items": [
         {
-          "name": "Школа",
           "href": "about/studio/index.html"
         },
         {
-          "name": "Команда",
           "href": "about/team/index.html"
         },
         {
-          "name": "Наши принципы",
           "href": "about/principles/index.html"
         }
       ]
     },
     {
-      "name": "Блог",
       "href": "blog/index.html"
     },
     {
@@ -61,19 +61,15 @@
   ],
   "footer": [
     {
-      "name": "Курсы",
       "href": "courses/index.html"
     },
     {
-      "name": "События",
       "href": "events/index.html"
     },
     {
-      "name": "Услуги",
       "href": "services/index.html"
     },
     {
-      "name": "Школа",
       "href": "about/studio/index.html"
     }
   ]

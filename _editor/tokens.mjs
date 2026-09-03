@@ -2,7 +2,7 @@
  * tokens.mjs — чтение и правка _theme/tokens.css. Значение меняется на месте.
  */
 
-function блоки(css) {
+function blocks(css) {
   const результат = [];
   const re = /@media([^{]*)\{/g;
   let m;
@@ -18,8 +18,8 @@ function блоки(css) {
   return результат;
 }
 
-export function разобратьТокены(css) {
-  const медиа = блоки(css);
+export function parseTokens(css) {
+  const медиа = blocks(css);
   const токены = [];
   const re = /(--[a-zA-Z0-9-]+)\s*:\s*([^;]*);/g;
   let m;
@@ -40,7 +40,7 @@ export function разобратьТокены(css) {
   return токены;
 }
 
-export function заменитьТокены(css, токены, значения) {
+export function replaceTokens(css, токены, значения) {
   let итог = css;
   [...токены].sort((a, b) => b.from - a.from).forEach(т => {
     const новое = значения[т.name + '@' + т.where];
@@ -50,4 +50,4 @@ export function заменитьТокены(css, токены, значения
   return итог;
 }
 
-export const цвет = v => /^#[0-9a-fA-F]{3,8}$/.test(v.trim()) || /^rgba?\(/.test(v.trim());
+export const colorOf = v => /^#[0-9a-fA-F]{3,8}$/.test(v.trim()) || /^rgba?\(/.test(v.trim());
