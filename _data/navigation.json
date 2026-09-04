@@ -39,6 +39,9 @@
       "id": "about",
       "items": [
         {
+          "href": "blog/index.html"
+        },
+        {
           "href": "studio/index.html"
         },
         {
@@ -48,9 +51,6 @@
           "href": "principles/index.html"
         }
       ]
-    },
-    {
-      "href": "blog/index.html"
     },
     {
       "name": "FAQ",
