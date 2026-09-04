@@ -1,12 +1,6 @@
-/**
- * fields.mjs — подсказки полям формы и работа с кадрами. Здесь живёт всё, что
- * отвечает на вопрос «что показать в этом поле»: какой это вид записи, какой
- * справочник, какая картинка. Отдельно от editor.mjs, потому что это цельная
- * работа со своими правилами, а не часть отрисовки.
- */
 
 import { t, humanize, lang } from './locale.mjs';
-import { t as словоСайта } from '../../_code/lang.mjs';
+import { t as siteWord } from '../../_code/lang.mjs';
 import { fieldRow, iconButton, icon, recordName, TECHNICAL } from './form.mjs';
 import { imageBases } from '../../_code/assemble.mjs';
 import { resize, frameCatalog, translit } from './media.mjs';
@@ -14,558 +8,493 @@ import { captureLayout, toSVG, parseSVG, compare } from './layout.mjs';
 import { $, S, TARGETS, el, button, ask, apply, accept, check, load, login,
          pageName, problem } from './editor.mjs';
 
-
-/** Блок, которому принадлежит поле: нужен, чтобы знать, что он показывает. */
 function pathBlock() {
   if (!String(S.section).startsWith('block:')) return null;
-  const [стр, n] = S.section.slice(6).split('#');
-  return ((S.data.structure.pages[стр] || {}).blocks || [])[Number(n)] || null;
+  const [page2, n] = S.section.slice(6).split('#');
+  return ((S.data.structure.pages[page2] || {}).blocks || [])[Number(n)] || null;
 }
 
-function hint(путь, владелец) {
-  const k = путь[путь.length - 1];
-  const с = S.dict;
-  // Форма блока открывается из дерева, поэтому «мы внутри блока» знает состояние,
-  // а не путь: в пути лежит только номер записи.
-  const вБлоке = String(S.section).startsWith('block:') || String(S.section).startsWith('head:')
-    || путь.includes('blocks') || путь.includes('extra') || путь.includes('tabs');
+function hint(filePath, owner) {
+  const k = filePath[filePath.length - 1];
+  const s2 = S.dict;
+  const inBlock = String(S.section).startsWith('block:') || String(S.section).startsWith('head:')
+    || filePath.includes('blocks') || filePath.includes('extra') || filePath.includes('tabs');
 
-  if (k === 'type' && вБлоке)
-    return { options: с.blockTypes().map(т => ({ value: т.key, caption: т.name })),
-             description: с.typeDescription(владелец.type) };
-  // Баннер первого экрана берёт содержимое либо от ближайшего события, либо от
-  // названной записи, либо ниоткуда. Слово «nearest» человеку не показывается.
-  if (k === 'source' && путь.includes('banner'))
+  if (k === 'type' && inBlock)
+    return { options: s2.blockTypes().map(t2 => ({ value: t2.key, caption: t2.name })),
+             description: s2.typeDescription(owner.type) };
+  if (k === 'source' && filePath.includes('banner'))
     return { options: [{ value: 'nearest', caption: t('banner.nearest') },
-                       ...с.sources(),
+                       ...s2.sources(),
                        { value: '', caption: t('banner.none') }] };
-  if (k === 'id' && путь.includes('banner')) {
-    const вид = с.kinds().find(в => с.sourceOf(в) === (владелец.source || ''));
-    const пары = вид ? с.pairs(вид.key) : [];
-    return { options: [{ value: '', caption: t('banner.any') }, ...пары] };
+  if (k === 'id' && filePath.includes('banner')) {
+    const kind = s2.kinds().find(v2 => s2.sourceOf(v2) === (owner.source || ''));
+    const pairs = kind ? s2.pairs(kind.key) : [];
+    return { options: [{ value: '', caption: t('banner.any') }, ...pairs] };
   }
-  if (k === 'source') return { options: с.sources() };
+  if (k === 'source') return { options: s2.sources() };
 
-  // Набор машинных значений, объявленный в словаре устройства: слова к нему
-  // берутся из словаря языка сайта, а не пишутся в редакторе.
-  const набор = (S.data.types.enums || {})[k];
-  if (набор && Array.isArray(набор.values))
-    return { options: набор.values.map(з => ({ value: з, caption: словоСайта(`${набор.words}.${з}`) })) };
+  const set = (S.data.types.enums || {})[k];
+  if (set && Array.isArray(set.values))
+    return { options: set.values.map(z => ({ value: z, caption: siteWord(`${set.words}.${z}`) })) };
 
-  const вид = S.recordKind;
-  if (вид) {
-    const ссылка = с.refOf(вид, k);
-    if (ссылка) return { options: с.pairs(ссылка) };
-    const подсказки = с.optionsOf(вид, k);
-    // Пары «значение — подпись» выбираются списком: набрать подпись руками
-    // нельзя, в данные она всё равно не попадёт. Простые подсказки остаются
-    // подсказками — там значение и есть то, что видно.
-    if (подсказки && подсказки.length)
-      return typeof подсказки[0] === 'object' ? { options: подсказки } : { hints: подсказки };
+  const kind = S.recordKind;
+  if (kind) {
+    const link = s2.refOf(kind, k);
+    if (link) return { options: s2.pairs(link) };
+    const hints = s2.optionsOf(kind, k);
+    if (hints && hints.length)
+      return typeof hints[0] === 'object' ? { options: hints } : { hints: hints };
   }
 
-  // Вид карточки — это вид записи: список берётся из словаря, а не из строки.
-  if (k === 'kind' && вБлоке)
-    return { options: с.kinds().map(в => ({ value: в.key, caption: в.name })) };
+  if (k === 'kind' && inBlock)
+    return { options: s2.kinds().map(v2 => ({ value: v2.key, caption: v2.name })) };
 
-  // Фильтры для посетителя — поля той записи, которую показывает блок.
-  if (k === 'filters' || (Array.isArray(путь) && путь[путь.length - 2] === 'filters')) {
-    const б = pathBlock();
-    const в = б && (с.kinds().find(x => x.key === б.kind)
-      || с.kinds().find(x => с.sourceOf(x) === б.source));
-    const поля = (в && в.fields) || [];
-    if (поля.length) return { options: поля.map(f => ({ value: f, caption: ctx().caption(f) })) };
+  if (k === 'filters' || (Array.isArray(filePath) && filePath[filePath.length - 2] === 'filters')) {
+    const b2 = pathBlock();
+    const v2 = b2 && (s2.kinds().find(x => x.key === b2.kind)
+      || s2.kinds().find(x => s2.sourceOf(x) === b2.source));
+    const fields = (v2 && v2.fields) || [];
+    if (fields.length) return { options: fields.map(f => ({ value: f, caption: ctx().caption(f) })) };
   }
 
-  const описание = владелец && владелец.type && S.data.types.blockTypes[владелец.type]
-    ? (S.data.types.blockTypes[владелец.type].fields || {})[k] : null;
-  if (описание) {
-    const варианты = /^[^,]+\|/.test(описание) ? описание.split('|').map(s => s.trim()) : null;
-    return варианты ? { options: варианты.map(v => ({ value: v, caption: v })), description: описание }
-                    : { description: описание };
+  const description = owner && owner.type && S.data.types.blockTypes[owner.type]
+    ? (S.data.types.blockTypes[owner.type].fields || {})[k] : null;
+  if (description) {
+    const options = /^[^,]+\|/.test(description) ? description.split('|').map(s => s.trim()) : null;
+    return options ? { options: options.map(v => ({ value: v, caption: v })), description: description }
+                    : { description: description };
   }
   return {};
 }
 
-export function changeType(блок, type) {
-  const поля = ((S.data.types.blockTypes[type] || {}).fields) || {};
-  for (const k of Object.keys(блок))
-    if (k !== 'type' && k !== 'class' && k !== 'hidden' && !(k in поля)) delete блок[k];
-  for (const k of Object.keys(поля)) if (!(k in блок)) блок[k] = '';
+export function changeType(block, type) {
+  const fields = ((S.data.types.blockTypes[type] || {}).fields) || {};
+  for (const k of Object.keys(block))
+    if (k !== 'type' && k !== 'class' && k !== 'hidden' && !(k in fields)) delete block[k];
+  for (const k of Object.keys(fields)) if (!(k in block)) block[k] = '';
 }
 
-export function fieldOrder(значение, путь) {
-  if (значение && значение.type && S.data.types.blockTypes[значение.type])
-    return ['type', 'heading', ...Object.keys(S.data.types.blockTypes[значение.type].fields || {})];
-  return путь.length <= 1 && S.recordKind ? S.dict.fieldOrder(S.recordKind) : null;
+export function fieldOrder(value, filePath) {
+  if (value && value.type && S.data.types.blockTypes[value.type])
+    return ['type', 'heading', ...Object.keys(S.data.types.blockTypes[value.type].fields || {})];
+  return filePath.length <= 1 && S.recordKind ? S.dict.fieldOrder(S.recordKind) : null;
 }
 
-const КАРТИНКА = new Set(['image', 'photo', 'base']);
+const IMAGE = new Set(['image', 'photo', 'base']);
 
 function sectionFolder() {
-  const в = S.recordKind && S.dict.byKey(S.recordKind);
-  return (в && в.media) || S.project.media.fallbackFolder;
+  const v2 = S.recordKind && S.dict.byKey(S.recordKind);
+  return (v2 && v2.media) || S.project.media.fallbackFolder;
 }
 
-const frameHref = основа => S.mediaViews.get(основа) || ('../' + основа + '-400.jpg');
+const frameHref = base2 => S.mediaViews.get(base2) || ('../' + base2 + '-400.jpg');
 
-/** Текст блока и картинка правятся на месте: путь к файлу читателю не нужен. */
-function special(владелец, ключ, путь) {
-  if (КАРТИНКА.has(ключ) && typeof владелец[ключ] !== 'object') return imageField(владелец, ключ);
-  if (ключ !== 'text') return null;
-  const файл = String(владелец[ключ] || '');
-  if (!S.texts.has(файл)) return null;
-  return textField(файл, путь);
+function special(owner, key, filePath) {
+  if (IMAGE.has(key) && typeof owner[key] !== 'object') return imageField(owner, key);
+  if (key !== 'text') return null;
+  const file = String(owner[key] || '');
+  if (!S.texts.has(file)) return null;
+  return textField(file, filePath);
 }
 
-/**
- * Длинный текст правится как текст, а не как разметка: человек видит абзацы,
- * подзаголовки и списки, а не угловые скобки. Набор приёмов ровно тот, что
- * встречается в текстах сайта, — больше в разметке ничего и нет.
- */
-const ПРИЁМЫ = [
+const ACTIONS = [
   { key: 'rich.paragraph', job: () => document.execCommand('formatBlock', false, 'p') },
   { key: 'rich.heading', job: () => document.execCommand('formatBlock', false, 'h2') },
   { key: 'rich.list', job: () => document.execCommand('insertUnorderedList') },
   { key: 'rich.strong', job: () => document.execCommand('bold') },
 ];
 
-function textField(файл, путь) {
-  const блок = el('div', 'ed-rich');
-  const панель = el('div', 'ed-rich-tools');
-  const поле = el('div', 'ed-rich-body');
-  поле.contentEditable = 'true';
-  поле.spellcheck = true;
-  поле.innerHTML = S.texts.get(файл) || '';
-  поле.id = 'п-' + путь.join('-').replace(/[^\wа-яА-ЯёЁ-]/g, '_');
+function textField(file, filePath) {
+  const block = el('div', 'ed-rich');
+  const panel = el('div', 'ed-rich-tools');
+  const field = el('div', 'ed-rich-body');
+  field.contentEditable = 'true';
+  field.spellcheck = true;
+  field.innerHTML = S.texts.get(file) || '';
+  field.id = 'f-' + filePath.join('-').replace(/[^\w-]/g, '_');
 
-  const write = () => { S.texts.set(файл, поле.innerHTML); apply(false); };
-  поле.addEventListener('input', write);
+  const write = () => { S.texts.set(file, field.innerHTML); apply(false); };
+  field.addEventListener('input', write);
 
-  const button = (подпись, дело) => {
-    const b = el('button', 'ed-rich-btn', подпись);
+  const button = (caption, job) => {
+    const b = el('button', 'ed-rich-btn', caption);
     b.type = 'button';
-    b.addEventListener('click', е => {
-      е.preventDefault();
-      поле.focus();
-      дело();
+    b.addEventListener('click', e2 => {
+      e2.preventDefault();
+      field.focus();
+      job();
       write();
     });
     return b;
   };
-  ПРИЁМЫ.forEach(п => панель.append(button(t(п.key), п.job)));
-  панель.append(button(t('rich.link'), () => askString(t('rich.link'), '', href => {
-    поле.focus();
+  ACTIONS.forEach(p => panel.append(button(t(p.key), p.job)));
+  panel.append(button(t('rich.link'), () => askString(t('rich.link'), '', href => {
+    field.focus();
     if (href) document.execCommand('createLink', false, href);
     else document.execCommand('unlink');
     write();
   })));
 
-  блок.append(панель, поле);
-  return блок;
+  block.append(panel, field);
+  return block;
 }
 
-/** Окно с одной строкой ввода: адрес ссылки и всё, что спрашивается одним словом. */
-function askString(вопрос, значение, сделать) {
-  const д = $('dialog');
-  д.textContent = '';
-  д.append(el('h2', null, вопрос));
-  const поле = el('input');
-  поле.type = 'text';
-  поле.value = значение || '';
-  поле.setAttribute('aria-label', вопрос);
-  д.append(поле);
-  const действия = el('div', 'ed-actions');
-  const отмена = button(t('btn.cancel'), () => д.close());
-  действия.append(отмена, button(t('btn.save'), () => { д.close(); сделать(поле.value.trim()); }));
-  д.append(действия);
-  д.showModal();
-  поле.focus();
+function askString(question, value, apply2) {
+  const d = $('dialog');
+  d.textContent = '';
+  d.append(el('h2', null, question));
+  const field = el('input');
+  field.type = 'text';
+  field.value = value || '';
+  field.setAttribute('aria-label', question);
+  d.append(field);
+  const actions = el('div', 'ed-actions');
+  const undo = button(t('btn.cancel'), () => d.close());
+  actions.append(undo, button(t('btn.save'), () => { d.close(); apply2(field.value.trim()); }));
+  d.append(actions);
+  d.showModal();
+  field.focus();
 }
 
-/**
- * Замена файла, лежащего в разметке: логотипа шапки, логотипа подвала. Путь
- * объявлен рядом с именем части, в types.json, — редактор его не выдумывает.
- * Файл кладётся туда же, откуда взят: адрес в разметке не меняется.
- */
-export function fileField(путь) {
-  const блок = el('div', 'ed-frame-field');
-  const вид = el('img', 'ed-thumb');
-  вид.alt = '';
-  вид.src = '../' + путь;
-  const имя = el('span', 'ed-hint', путь.split('/').pop());
+export function fileField(filePath) {
+  const block = el('div', 'ed-frame-field');
+  const kind = el('img', 'ed-thumb');
+  kind.alt = '';
+  kind.src = '../' + filePath;
+  const name = el('span', 'ed-hint', filePath.split('/').pop());
 
-  const поле = el('input', 'ed-file');
-  поле.type = 'file';
-  поле.accept = '.svg,image/svg+xml,image/*';
-  const load = iconButton('import', t('media.upload'), () => поле.click());
-  поле.addEventListener('change', async () => {
-    const ф = поле.files && поле.files[0];
-    поле.value = '';
-    if (!ф) return;
-    const text = /svg/i.test(ф.type) || /\.svg$/i.test(ф.name)
-      ? await ф.text() : new Uint8Array(await ф.arrayBuffer());
-    S.media.set(путь, text);
-    вид.src = typeof text === 'string'
+  const field = el('input', 'ed-file');
+  field.type = 'file';
+  field.accept = '.svg,image/svg+xml,image/*';
+  const load = iconButton('import', t('media.upload'), () => field.click());
+  field.addEventListener('change', async () => {
+    const f2 = field.files && field.files[0];
+    field.value = '';
+    if (!f2) return;
+    const text = /svg/i.test(f2.type) || /\.svg$/i.test(f2.name)
+      ? await f2.text() : new Uint8Array(await f2.arrayBuffer());
+    S.media.set(filePath, text);
+    kind.src = typeof text === 'string'
       ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(text)
       : URL.createObjectURL(new Blob([text]));
     apply(true);
   });
 
-  const действия = el('div', 'ed-tools');
-  действия.append(load, поле);
-  блок.append(вид, имя, действия);
-  return блок;
+  const actions = el('div', 'ed-tools');
+  actions.append(load, field);
+  block.append(kind, name, actions);
+  return block;
 }
 
+function inFrame(html, width, job) {
+  const height = width >= 1024 ? 900 : 844;
+  return new Promise((resolve, problem) => {
+    const frame = document.createElement('iframe');
+    frame.style.cssText = `position:fixed;left:-20000px;top:0;width:${width}px;height:${height}px;border:0`;
+    document.body.append(frame);
+    frame.srcdoc = html;
 
-/** Страница снимается в отдельной рамке нужной ширины, а не в предпросмотре. */
-/**
- * Снимок страницы в скрытой рамке. Первое событие load приходит от пустого
- * about:blank, поэтому ждём, пока в рамке действительно окажется страница и
- * её стили: иначе снимается документ нулевой ширины.
- */
-function inFrame(html, ширина, дело) {
-  // Высота рамки — как у настоящего экрана: единицы vh считаются от неё, и
-  // растянутая рамка растянула бы первый экран вчетверо.
-  const высота = ширина >= 1024 ? 900 : 844;
-  return new Promise((готово, problem) => {
-    const рамка = document.createElement('iframe');
-    рамка.style.cssText = `position:fixed;left:-20000px;top:0;width:${ширина}px;height:${высота}px;border:0`;
-    document.body.append(рамка);
-    рамка.srcdoc = html;
-
-    let попыток = 0;
+    let attempts = 0;
     const check = () => {
-      попыток++;
-      const д = рамка.contentDocument;
-      const готова = д && д.readyState === 'complete' && д.body
-        && д.documentElement.clientWidth > 0 && д.querySelector('main');
-      if (!готова && попыток < 100) return setTimeout(check, 50);
-      if (!готова) { рамка.remove(); return problem(new Error(t('err.notRendered'))); }
-      // Снимок ждёт картинки: без них у кадров нулевая высота и пустая заливка.
+      attempts++;
+      const d = frame.contentDocument;
+      const ready = d && d.readyState === 'complete' && d.body
+        && d.documentElement.clientWidth > 0 && d.querySelector('main');
+      if (!ready && attempts < 100) return setTimeout(check, 50);
+      if (!ready) { frame.remove(); return problem(new Error(t('err.notRendered'))); }
       setTimeout(async () => {
         try {
-          д.querySelectorAll('img[loading="lazy"]').forEach(и => { и.loading = 'eager'; });
-          await Promise.all([...д.images].map(и => (и.complete ? null
-            : new Promise(р => { и.onload = и.onerror = р; }))));
-          готово(await дело(д));
-        } catch (e) { problem(e); } finally { рамка.remove(); }
+          d.querySelectorAll('img[loading="lazy"]').forEach(i2 => { i2.loading = 'eager'; });
+          await Promise.all([...d.images].map(i2 => (i2.complete ? null
+            : new Promise(r => { i2.onload = i2.onerror = r; }))));
+          resolve(await job(d));
+        } catch (e) { problem(e); } finally { frame.remove(); }
       }, 120);
     };
     setTimeout(check, 50);
   });
 }
 
-const pageForShot = путь => {
-  const пара = S.built.find(([п]) => п === путь);
-  if (!пара) return null;
-  const база = new URL('../' + путь, location.href).href;
-  const тема = `<style>${S.theme.css.replace(/<\/style/gi, '<\\/style')}</style>`;
-  return пара[1].replace(/<head>/i, `<head>\n  <base href="${база}">`)
-    .replace(/<\/head>/i, `  ${тема}\n</head>`);
+const pageForShot = filePath => {
+  const pair = S.built.find(([p]) => p === filePath);
+  if (!pair) return null;
+  const base = new URL('../' + filePath, location.href).href;
+  const theme = `<style>${S.theme.css.replace(/<\/style/gi, '<\\/style')}</style>`;
+  return pair[1].replace(/<head>/i, `<head>\n  <base href="${base}">`)
+    .replace(/<\/head>/i, `  ${theme}\n</head>`);
 };
 
-/** Имена секций берутся из структуры страницы, а не из классов вёрстки. */
-function sectionNames(путь) {
-  const оп = S.data.structure.pages[путь];
-  if (!оп) return [];
+function sectionNames(filePath) {
+  const pageDef = S.data.structure.pages[filePath];
+  if (!pageDef) return [];
   return [
-    ...(оп.heading ? ['section-head'] : []),
-    ...(оп.blocks || []).filter(б => !б.hidden).map(б => б.type || 'block'),
+    ...(pageDef.heading ? ['section-head'] : []),
+    ...(pageDef.blocks || []).filter(b2 => !b2.hidden).map(b2 => b2.type || 'block'),
   ];
 }
 
-export async function exportLayout(путь, блок = null, скачивать = false) {
-  const html = pageForShot(путь);
+export async function exportLayout(filePath, block = null, download2 = false) {
+  const html = pageForShot(filePath);
   if (!html) throw new Error(t('err.notBuilt'));
-  const имена = sectionNames(путь);
-  const сдвиг = имена.length - (S.data.structure.pages[путь].blocks || []).filter(б => !б.hidden).length;
-  const сделано = [];
-  for (const у of layouts().devices) {
-    const макет = await inFrame(html, у.width, д => captureLayout(д, имена));
-    // Слой блока ищется по номеру в имени, а не по месту в массиве: шапка и
-    // подвал тоже слои, и место сдвинулось бы на них.
-    if (блок != null) {
-      const метка = String(блок + сдвиг + 1).padStart(2, '0') + '-';
-      макет.layers = макет.layers.filter(с => с.name.startsWith(метка));
+  const names = sectionNames(filePath);
+  const shift = names.length - (S.data.structure.pages[filePath].blocks || []).filter(b2 => !b2.hidden).length;
+  const doneCount = [];
+  for (const u of layouts().devices) {
+    const layout = await inFrame(html, u.width, d => captureLayout(d, names));
+    if (block != null) {
+      const label = String(block + shift + 1).padStart(2, '0') + '-';
+      layout.layers = layout.layers.filter(s2 => s2.name.startsWith(label));
     }
-    const имя = layoutName(путь, у.name);
-    const svg = toSVG(макет, { page: pageName(путь), layout: у.name });
-    S.layouts.set(имя, svg);
-    if (скачивать) download(имя.split('/').pop(), svg);
-    сделано.push(имя);
+    const name = layoutName(filePath, u.name);
+    const svg = toSVG(layout, { page: pageName(filePath), layout: u.name });
+    S.layouts.set(name, svg);
+    if (download2) download(name.split('/').pop(), svg);
+    doneCount.push(name);
   }
-  return сделано;
+  return doneCount;
 }
 
-/** Файл уходит и в репозиторий по «Сохранить», и сразу в загрузки браузера. */
-/** Что изменилось в правленом макете относительно собранной страницы. */
-function showDiff(путь, отчёты) {
-  const д = $('dialog');
-  д.textContent = '';
-  д.append(el('h2', null, t('layout.compare')));
-  if (!отчёты.length) {
-    д.append(el('p', null, t('layout.none')));
+function showDiff(filePath, reports) {
+  const d = $('dialog');
+  d.textContent = '';
+  d.append(el('h2', null, t('layout.compare')));
+  if (!reports.length) {
+    d.append(el('p', null, t('layout.none')));
   } else {
-    for (const о of отчёты) {
-      д.append(el('p', null, `${о.layout}: ${о.diff.length
-        ? `${t('layout.diffs')}: ${о.diff.length}` : t('layout.same')}`));
-      if (!о.diff.length) continue;
-      const с = el('div', 'ed-files');
-      о.diff.slice(0, 30).forEach(р => с.append(el('p', null,
-        р.kind === 'moved' ? `${р.name}: ${t('layout.moved')} ${р.from} \u2192 ${р.to}`
-          : `${р.name}: ${t('layout.' + р.kind)}`)));
-      д.append(с);
+    for (const o2 of reports) {
+      d.append(el('p', null, `${o2.layout}: ${o2.diff.length
+        ? `${t('layout.diffs')}: ${o2.diff.length}` : t('layout.same')}`));
+      if (!o2.diff.length) continue;
+      const s2 = el('div', 'ed-files');
+      o2.diff.slice(0, 30).forEach(r => s2.append(el('p', null,
+        r.kind === 'moved' ? `${r.name}: ${t('layout.moved')} ${r.from} \u2192 ${r.to}`
+          : `${r.name}: ${t('layout.' + r.kind)}`)));
+      d.append(s2);
     }
-    const убранные = [...new Set(отчёты.flatMap(о => о.diff
-      .filter(р => р.kind === 'removed' && !р.name.includes('/'))
-      .map(р => р.name)))];
-    if (убранные.length) {
-      const действия = el('div', 'ed-actions');
-      действия.append(button(`${t('layout.hideMissing')}: ${убранные.length}`, () => {
-        const оп = S.data.structure.pages[путь];
-        const видимые = (оп.blocks || []).filter(б => !б.hidden);
-        const сдвиг = sectionNames(путь).length - видимые.length;
-        убранные.forEach(имя => {
-          const i = Number(имя.slice(0, 2)) - 1 - сдвиг;
-          if (видимые[i]) видимые[i].hidden = true;
+    const removed = [...new Set(reports.flatMap(o2 => o2.diff
+      .filter(r => r.kind === 'removed' && !r.name.includes('/'))
+      .map(r => r.name)))];
+    if (removed.length) {
+      const actions = el('div', 'ed-actions');
+      actions.append(button(`${t('layout.hideMissing')}: ${removed.length}`, () => {
+        const pageDef = S.data.structure.pages[filePath];
+        const visibleItems = (pageDef.blocks || []).filter(b2 => !b2.hidden);
+        const shift = sectionNames(filePath).length - visibleItems.length;
+        removed.forEach(name => {
+          const i = Number(name.slice(0, 2)) - 1 - shift;
+          if (visibleItems[i]) visibleItems[i].hidden = true;
         });
-        д.close();
+        d.close();
         apply(true);
       }));
-      д.append(действия);
+      d.append(actions);
     }
   }
-  const низ = el('div', 'ed-actions');
-  низ.append(button(t('layout.close'), () => д.close()));
-  д.append(низ);
-  д.showModal();
+  const bottom = el('div', 'ed-actions');
+  bottom.append(button(t('layout.close'), () => d.close()));
+  d.append(bottom);
+  d.showModal();
 }
 
-function download(имя, text) {
+function download(name, text) {
   const url = URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' }));
   const a = el('a');
   a.href = url;
-  a.download = имя;
+  a.download = name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Импорт: файл со слоями сверяется со страницей, различия показываются. */
-export function importLayout(путь) {
+export function importLayout(filePath) {
   const login = el('input');
   login.type = 'file';
   login.accept = '.svg';
   login.className = 'ed-file';
   login.addEventListener('change', async () => {
-    const файл = login.files && login.files[0];
-    if (!файл) return;
-    const text = await файл.text();
-    const html = pageForShot(путь);
-    const имена = sectionNames(путь);
-    // Сверяем с тем устройством, которое записано в самом файле: иначе
-    // мобильный макет сравнивается с десктопным снимком и всё «расходится».
-    const изФайла = parseSVG(text);
-    const устройство = (text.match(/data-device="([^"]+)"/) || [])[1];
-    const свои = layouts().devices.filter(у => !устройство || у.name === устройство);
-    const отчёты = [];
-    for (const у of (свои.length ? свои : layouts().devices)) {
-      const текущий = await inFrame(html, у.width, д => captureLayout(д, имена));
-      отчёты.push({ layout: у.name, name: файл.name, diff: compare(текущий, изФайла) });
+    const file = login.files && login.files[0];
+    if (!file) return;
+    const text = await file.text();
+    const html = pageForShot(filePath);
+    const names = sectionNames(filePath);
+    const fromFile = parseSVG(text);
+    const layoutOf = (text.match(/data-device="([^"]+)"/) || [])[1];
+    const own = layouts().devices.filter(u => !layoutOf || u.name === layoutOf);
+    const reports = [];
+    for (const u of (own.length ? own : layouts().devices)) {
+      const currentOne = await inFrame(html, u.width, d => captureLayout(d, names));
+      reports.push({ layout: u.name, name: file.name, diff: compare(currentOne, fromFile) });
     }
-    showDiff(путь, отчёты);
+    showDiff(filePath, reports);
   });
   return login;
 }
 
 export const ctx = () => ({ hint, changeType, fieldOrder, special,
-  rowOf: ключ => S.dict.rowOf(ключ),
-  formatOf: ключ => S.dict.formatOf(ключ),
+  rowOf: key => S.dict.rowOf(key),
+  formatOf: key => S.dict.formatOf(key),
   months: () => S.dict.months(),
-  // Подпись поля — одна на весь редактор и приходит из словаря имён проекта.
-  caption: к => S.dict.caption(к),
-  itemName: (з, i) => {
-    if (з && typeof з === 'object' && з.type) {
-      const т = S.dict.blockTypes().find(x => x.key === з.type);
-      const своё = з.title || з.heading || з.caption || з.name || з.question;
-      const имя = (т && т.name) || з.type;
-      return своё ? `${имя} — ${своё}` : имя;
+  caption: k2 => S.dict.caption(k2),
+  itemName: (z, i) => {
+    if (z && typeof z === 'object' && z.type) {
+      const t2 = S.dict.blockTypes().find(x => x.key === z.type);
+      const ownValue = z.title || z.heading || z.caption || z.name || z.question;
+      const name = (t2 && t2.name) || z.type;
+      return ownValue ? `${name} — ${ownValue}` : name;
     }
-    return recordName(з, i);
+    return recordName(z, i);
   },
-  onChange: структурно => apply(структурно) });
+  onChange: structural => apply(structural) });
 
-// #endregion
+function imageField(owner, key) {
+  const block = el('div', 'ed-media');
+  const report = el('span', 'ed-hint', '');
+  const grid2 = el('div', 'ed-gallery');
+  const base2 = String(owner[key] || '');
 
-// #region Картинки
-
-/**
- * Одиночный кадр — та же галерея, что и у списка кадров, только на одну
- * плитку: видно, что стоит, и одинаково понятно, как это убрать и заменить.
- */
-function imageField(владелец, ключ) {
-  const блок = el('div', 'ed-media');
-  const отчёт = el('span', 'ed-hint', '');
-  const сетка = el('div', 'ed-gallery');
-  const основа = String(владелец[ключ] || '');
-
-  if (основа) сетка.append(frameTile({
-    base: основа, caption: основа.replace(S.project.media.folder, ''),
-    remove: () => { владелец[ключ] = ''; apply(true); },
+  if (base2) grid2.append(frameTile({
+    base: base2, caption: base2.replace(S.project.media.folder, ''),
+    remove: () => { owner[key] = ''; apply(true); },
   }));
 
-  const accept = кадры => { владелец[ключ] = кадры[кадры.length - 1]; apply(true); };
-  const поле = fileInput(false, ф => acceptFrames(ф, () => {}, т => { отчёт.textContent = т; })
-    .then(accept).catch(e => { отчёт.textContent = t('app.failed') + ': ' + e.message; }));
-  сетка.append(
-    actionTile('import', t('media.upload'), () => поле.click()),
+  const accept = frames => { owner[key] = frames[frames.length - 1]; apply(true); };
+  const field = fileInput(false, f2 => acceptFrames(f2, () => {}, t2 => { report.textContent = t2; })
+    .then(accept).catch(e => { report.textContent = t('app.failed') + ': ' + e.message; }));
+  grid2.append(
+    actionTile('import', t('media.upload'), () => field.click()),
     actionTile('view-grid', t('media.pick'),
-      () => frameChoice(о => { владелец[ключ] = о; apply(true); })));
+      () => frameChoice(o2 => { owner[key] = o2; apply(true); })));
 
-  блок.append(сетка, отчёт, поле);
-  return блок;
+  block.append(grid2, report, field);
+  return block;
 }
 
-/** Плитка кадра: сама картинка, крестик и пометка обложки у первой. */
-export function frameTile({ base: основа, caption: подпись, remove: убрать, cover: обложка = false, index: индекс = null }) {
-  const плитка = el('div', 'ed-tile');
-  if (индекс != null) плитка.dataset.index = String(индекс);
-  const вид = el('img', 'ed-tile-img');
-  вид.src = frameHref(String(основа || ''));
-  вид.alt = подпись || '';
-  вид.draggable = false;
-  плитка.title = подпись || '';
-  плитка.append(вид);
-  if (обложка) плитка.append(el('span', 'ed-tile-mark', t('media.cover')));
-  плитка.append(iconButton('close', t('btn.delete'), () => ask(
-    `${t('btn.delete')}: ${подпись || основа}`, t('btn.delete'), убрать)));
-  return плитка;
+export function frameTile({ base: base2, caption: caption, remove: remove, cover: cover = false, index: index = null }) {
+  const grid = el('div', 'ed-tile');
+  if (index != null) grid.dataset.index = String(index);
+  const kind = el('img', 'ed-tile-img');
+  kind.src = frameHref(String(base2 || ''));
+  kind.alt = caption || '';
+  kind.draggable = false;
+  grid.title = caption || '';
+  grid.append(kind);
+  if (cover) grid.append(el('span', 'ed-tile-mark', t('media.cover')));
+  grid.append(iconButton('close', t('btn.delete'), () => ask(
+    `${t('btn.delete')}: ${caption || base2}`, t('btn.delete'), remove)));
+  return grid;
 }
 
-/** Плитка-действие: добавить с компьютера или выбрать из медиатеки. */
-export function actionTile(значокИмя, hint, действие) {
+export function actionTile(iconName, hint, action) {
   const b = el('button', 'ed-tile ed-tile-add');
   b.type = 'button';
   b.title = hint;
   b.setAttribute('aria-label', hint);
-  // Подпись у плитки есть всегда: две плитки, различающиеся только значком, —
-  // ребус, а не выбор.
-  b.append(icon(значокИмя), el('span', 'ed-tile-label', hint));
-  b.addEventListener('click', действие);
+  b.append(icon(iconName), el('span', 'ed-tile-label', hint));
+  b.addEventListener('click', action);
   return b;
 }
 
 export const layouts = () => (S.project.layouts || { folder: 'layouts/', devices: [] });
 
-const layoutName = (страница, устройство) =>
-  `${layouts().folder}${(страница.replace(/\/?index\.html$/, '') || 'index').replace(/\//g, '-')}-${устройство}.svg`;
+const layoutName = (page, layoutOf) =>
+  `${layouts().folder}${(page.replace(/\/?index\.html$/, '') || 'index').replace(/\//g, '-')}-${layoutOf}.svg`;
 
-/** Имя не затирает уже лежащий frame: занятое получает номер. */
-function freeBase(folder, имя) {
-  const taken = о => S.media.has(`${о}-${S.project.media.widths[0]}.jpg`) || !!S.sizes[о];
-  const корень = `${S.project.media.folder}${folder}/${имя}`;
-  if (!taken(корень)) return корень;
+function freeBase(folder, name) {
+  const taken = o2 => S.media.has(`${o2}-${S.project.media.widths[0]}.jpg`) || !!S.sizes[o2];
+  const root = `${S.project.media.folder}${folder}/${name}`;
+  if (!taken(root)) return root;
   let n = 2;
-  while (taken(`${корень}-${n}`)) n++;
-  return `${корень}-${n}`;
+  while (taken(`${root}-${n}`)) n++;
+  return `${root}-${n}`;
 }
 
-/**
- * Нарезка выбранных файлов. Файлов может быть сколько угодно: человек выбирает
- * их разом в окне выбора, и каждый становится своим кадром, а не заменяет
- * предыдущий.
- */
-export async function acceptFrames(файлы, наКадр, наОтчёт = () => {}) {
-  const готово = [];
-  for (let i = 0; i < файлы.length; i++) {
-    const ф = файлы[i];
-    наОтчёт(`${t('media.slicing')} ${i + 1}/${файлы.length}`);
-    const основа = freeBase(sectionFolder(), translit(ф.name.replace(/\.[^.]+$/, '')));
-    const { files: куски, size: размер } = await resize(ф, основа, S.project.media);
-    for (const [п, байты] of куски) S.media.set(п, байты);
-    S.sizes[основа] = размер;
-    const первый = куски.get(`${основа}-${S.project.media.widths[0]}.jpg`);
-    if (первый) S.mediaViews.set(основа, URL.createObjectURL(new Blob([первый], { type: 'image/jpeg' })));
-    готово.push(основа);
-    наКадр(основа);
+export async function acceptFrames(files, perFrame, perReport = () => {}) {
+  const resolve = [];
+  for (let i = 0; i < files.length; i++) {
+    const f2 = files[i];
+    perReport(`${t('media.slicing')} ${i + 1}/${files.length}`);
+    const base2 = freeBase(sectionFolder(), translit(f2.name.replace(/\.[^.]+$/, '')));
+    const { files: chunks, size: size } = await resize(f2, base2, S.project.media);
+    for (const [p, bytes] of chunks) S.media.set(p, bytes);
+    S.sizes[base2] = size;
+    const first = chunks.get(`${base2}-${S.project.media.widths[0]}.jpg`);
+    if (first) S.mediaViews.set(base2, URL.createObjectURL(new Blob([first], { type: 'image/jpeg' })));
+    resolve.push(base2);
+    perFrame(base2);
   }
-  наОтчёт('');
-  return готово;
+  perReport('');
+  return resolve;
 }
 
-/** Скрытое поле выбора файлов: у одного кадра — один файл, у галереи — сколько угодно. */
-export function fileInput(много, accept) {
-  const поле = el('input', 'ed-file');
-  поле.type = 'file';
-  поле.accept = 'image/*';
-  if (много) поле.multiple = true;
-  поле.addEventListener('change', async () => {
-    const выбраны = [...(поле.files || [])];
-    поле.value = '';
-    if (выбраны.length) await accept(выбраны);
+export function fileInput(many, accept) {
+  const field = el('input', 'ed-file');
+  field.type = 'file';
+  field.accept = 'image/*';
+  if (many) field.multiple = true;
+  field.addEventListener('change', async () => {
+    const chosen = [...(field.files || [])];
+    field.value = '';
+    if (chosen.length) await accept(chosen);
   });
-  return поле;
+  return field;
 }
 
-/** Имя папки медиатеки по-человечески: латиницу папок человеку не показываем. */
-const folderName = п => (lang() === 'en' ? humanize(п)
-  : ((S.data.types.mediaFolders || {})[п] || humanize(п)));
+const folderName = p => (lang() === 'en' ? humanize(p)
+  : ((S.data.types.mediaFolders || {})[p] || humanize(p)));
 
-export function frameChoice(готово) {
-  const д = $('dialog');
-  д.textContent = '';
-  д.append(el('h2', null, t('media.pick')));
+export function frameChoice(resolve) {
+  const d = $('dialog');
+  d.textContent = '';
+  d.append(el('h2', null, t('media.pick')));
 
-  const строкаПапки = el('div', 'ed-inline');
-  const выбор = el('select', 'ed-pick');
-  S.project.media.folders.forEach(п => {
-    const o = el('option', null, folderName(п));
-    o.value = п;
-    выбор.append(o);
+  const folderLine = el('div', 'ed-inline');
+  const choice = el('select', 'ed-pick');
+  S.project.media.folders.forEach(p => {
+    const o = el('option', null, folderName(p));
+    o.value = p;
+    choice.append(o);
   });
-  выбор.value = sectionFolder();
-  строкаПапки.append(выбор);
-  д.append(строкаПапки);
+  choice.value = sectionFolder();
+  folderLine.append(choice);
+  d.append(folderLine);
 
-  const сетка = el('div', 'ed-frame-grid');
-  const отчёт = el('p', 'ed-hint', '');
-  д.append(сетка, отчёт);
+  const grid2 = el('div', 'ed-frame-grid');
+  const report = el('p', 'ed-hint', '');
+  d.append(grid2, report);
 
-  const showFrames = основы => {
-    сетка.textContent = '';
-    if (!основы.length) { отчёт.textContent = t('media.empty'); return; }
-    отчёт.textContent = '';
-    основы.forEach(о => {
+  const showFrames = bases => {
+    grid2.textContent = '';
+    if (!bases.length) { report.textContent = t('media.empty'); return; }
+    report.textContent = '';
+    bases.forEach(o2 => {
       const b = el('button', 'ed-frame-button');
       b.type = 'button';
-      b.title = о.replace(S.project.media.folder, '');
-      const и = el('img');
-      и.src = frameHref(о);
-      и.alt = '';
-      b.append(и);
-      b.addEventListener('click', () => { д.close(); готово(о); });
-      сетка.append(b);
+      b.title = o2.replace(S.project.media.folder, '');
+      const i2 = el('img');
+      i2.src = frameHref(o2);
+      i2.alt = '';
+      b.append(i2);
+      b.addEventListener('click', () => { d.close(); resolve(o2); });
+      grid2.append(b);
     });
   };
 
   const loadFolder = async () => {
-    отчёт.textContent = t('media.reading');
+    report.textContent = t('media.reading');
     try {
-      showFrames(await frameCatalog(выбор.value, TARGETS()[TARGETS().length - 1], S.project.media));
+      showFrames(await frameCatalog(choice.value, TARGETS()[TARGETS().length - 1], S.project.media));
     } catch {
-      const свои = imageBases(S.data).filter(о => о.includes(`/${выбор.value}/`));
-      showFrames(свои);
-      if (свои.length) отчёт.textContent = t('media.partial');
+      const own = imageBases(S.data).filter(o2 => o2.includes(`/${choice.value}/`));
+      showFrames(own);
+      if (own.length) report.textContent = t('media.partial');
     }
   };
-  выбор.addEventListener('change', loadFolder);
+  choice.addEventListener('change', loadFolder);
 
-  const действия = el('div', 'ed-actions');
-  действия.append(button(t('btn.cancel'), () => д.close()));
-  д.append(действия);
-  д.showModal();
+  const actions = el('div', 'ed-actions');
+  actions.append(button(t('btn.cancel'), () => d.close()));
+  d.append(actions);
+  d.showModal();
   loadFolder();
 }
 
-// #endregion

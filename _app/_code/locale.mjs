@@ -1,108 +1,76 @@
-/**
- * locale.mjs — подписи интерфейса.
- *
- * Английского словаря нет и не нужно: по-английски вещь называется так, как
- * называется её ключ. `btn.save` показывается как «Save», `--fill-mint` — как
- * «Fill/Mint», страница `about-team` — как «About Team». Русский (и любой
- * другой) словарь этот показ заменяет: ключ↔значение, одна пара.
- *
- * Запасной текст в вызове нужен только там, где имя ключа не совпадает с
- * английской фразой: «Pick an element on the left.» ключом не назовёшь.
- */
 
 import { humanize, setAbbreviations } from '../../_code/lang.mjs';
 
 export { humanize, setAbbreviations };
 
-const ЯЗЫКИ = ['en', 'ru'];
-const ХРАНИЛИЩЕ = 'enfilade.locale';
+const LANGS = ['en', 'ru'];
+const STORAGE = 'enfilade.locale';
 
 let dict = {};
-let проект = {};
-let текущий = 'en';
+let project = {};
+let currentOne = 'en';
 
-/**
- * Имена вещей проекта приходят из его словаря, а не из словаря Enfilade:
- * «Мята» и «Первый экран, название» — слова этого сайта, а не слова редактора.
- */
-export function setProjectNames(о) {
-  проект = о && typeof о === 'object' ? о : {};
+export function setProjectNames(o) {
+  project = o && typeof o === 'object' ? o : {};
 }
 
-/** Ключ вида 'form.save' ищется и как вложенный путь, и как плоский ключ. */
-function pick(о, ключ) {
-  if (о == null) return undefined;
-  // Пустое значение — «ещё не переведено»: подпись берётся дальше по цепочке.
-  if (Object.prototype.hasOwnProperty.call(о, ключ)) return о[ключ] === '' ? undefined : о[ключ];
-  let узел = о;
-  for (const часть of ключ.split('.')) {
-    if (узел == null || typeof узел !== 'object') return undefined;
-    узел = узел[часть];
+function pick(o, key) {
+  if (o == null) return undefined;
+  if (Object.prototype.hasOwnProperty.call(o, key)) return o[key] === '' ? undefined : o[key];
+  let node = o;
+  for (const part of key.split('.')) {
+    if (node == null || typeof node !== 'object') return undefined;
+    node = node[part];
   }
-  return typeof узел === 'string' && узел !== '' ? узел : undefined;
+  return typeof node === 'string' && node !== '' ? node : undefined;
 }
 
-/**
- * Подпись по ключу. Есть перевод — берётся он; нет — запасной текст из вызова;
- * нет и его — сам ключ, написанный по-человечески.
- */
-export function t(ключ, запасной) {
-  const свой = pick(проект, ключ);
-  if (свой != null) return свой;
-  const v = pick(dict, ключ);
+export function t(key, fallback) {
+  const ownOf = pick(project, key);
+  if (ownOf != null) return ownOf;
+  const v = pick(dict, key);
   if (v != null) return v;
-  if (запасной != null) return запасной;
-  return humanize(String(ключ).split('.').pop());
+  if (fallback != null) return fallback;
+  return humanize(String(key).split('.').pop());
 }
 
-/**
- * Подпись с подстановками: `tf('save.file', { n, of })`. Имена в фигурных
- * скобках те же, что в словаре, — переводчик видит, что подставится.
- */
-export function tf(ключ, значения = {}) {
-  return String(t(ключ))
-    .replace(/\{([^}]+)\}/g, (_, к) => (значения[к] == null ? '' : String(значения[к])));
+export function tf(key, values = {}) {
+  return String(t(key))
+    .replace(/\{([^}]+)\}/g, (_, k) => (values[k] == null ? '' : String(values[k])));
 }
 
-/**
- * Имя токена: `--fill-mint` → «Fill/Mint» по-английски и «Заливка/Мята» в
- * переводе. Первый дефис делит группу и член группы — то же имя, что в Figma.
- */
-export function tokenLabel(имя) {
-  const чистое = String(имя).replace(/^--/, '');
-  const [группа, ...остаток] = чистое.split('-');
-  const член = остаток.join('-');
-  const своё = pick(проект, 'token.' + чистое);
-  if (!член) return своё != null ? своё : humanize(группа);
-  const имяЧлена = своё != null ? своё : humanize(член);
-  const имяГруппы = pick(проект, 'token.' + группа);
-  return `${имяГруппы != null ? имяГруппы : humanize(группа)}/${имяЧлена}`;
+export function tokenLabel(name) {
+  const clean = String(name).replace(/^--/, '');
+  const [group, ...tail2] = clean.split('-');
+  const member = tail2.join('-');
+  const ownValue = pick(project, 'token.' + clean);
+  if (!member) return ownValue != null ? ownValue : humanize(group);
+  const memberName = ownValue != null ? ownValue : humanize(member);
+  const groupName = pick(project, 'token.' + group);
+  return `${groupName != null ? groupName : humanize(group)}/${memberName}`;
 }
 
-export const lang = () => текущий;
+export const lang = () => currentOne;
 
-/** Язык из хранилища, иначе русский: сайт русский, редактор открывает клиент. */
 export function preferredLang() {
-  const с = localStorage.getItem(ХРАНИЛИЩЕ);
-  return ЯЗЫКИ.includes(с) ? с : 'ru';
+  const s = localStorage.getItem(STORAGE);
+  return LANGS.includes(s) ? s : 'ru';
 }
 
-/** У английского файла словаря нет: имя ключа и есть английское имя. */
-export async function loadLocale(язык) {
-  текущий = ЯЗЫКИ.includes(язык) ? язык : 'en';
-  localStorage.setItem(ХРАНИЛИЩЕ, текущий);
+export async function loadLocale(lang2) {
+  currentOne = LANGS.includes(lang2) ? lang2 : 'en';
+  localStorage.setItem(STORAGE, currentOne);
   dict = {};
-  if (текущий !== 'en') {
+  if (currentOne !== 'en') {
     try {
-      const о = await fetch(`_lang/${текущий}/ui.json`, { cache: 'no-store' });
-      if (о.ok) dict = await о.json();
+      const o = await fetch(`_lang/${currentOne}/ui.json`, { cache: 'no-store' });
+      if (o.ok) dict = await o.json();
     } catch { dict = {}; }
   }
-  document.documentElement.lang = текущий;
-  return текущий;
+  document.documentElement.lang = currentOne;
+  return currentOne;
 }
 
-/** Следующий язык по кругу — для кнопки-переключателя. */
 export function nextLang() {
-  return ЯЗЫКИ[(ЯЗЫКИ.indexOf(текущий) + 1) % ЯЗЫКИ.length];
+  return LANGS[(LANGS.indexOf(currentOne) + 1) % LANGS.length];
 }

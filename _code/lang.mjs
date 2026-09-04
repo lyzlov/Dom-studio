@@ -1,78 +1,42 @@
-/**
- * lang.mjs — слова сайта. Ровно то же устройство, что у словаря редактора:
- * ключ английский, перевод накладывается сверху, нет перевода — вещь
- * называется так, как называется её ключ.
- *
- * Слово, которое видит посетитель, в коде не пишется: код называет ключ, а
- * словарь языка говорит, какими это будет буквами. Другой язык — другой файл
- * словаря, и ни строки кода. Запасной текст в вызове нужен только там, где
- * ключом фразу не назовёшь: «{ages} лет» или порядок дней недели.
- */
 
-let словарь = {};
+let dict = {};
 
-/** Словарь ставится один раз при сборке — как и набор шаблонов. */
-export function setLang(о) {
-  словарь = о && typeof о === 'object' ? о : {};
+export function setLang(o) {
+  dict = o && typeof o === 'object' ? o : {};
 }
 
-export const lang = () => словарь;
+export const lang = () => dict;
 
-/**
- * Правка слова: словарь заменяется целиком, а не правится по месту. Кто
- * сложил из него что-то своё — ветку `ui` шаблонов, собранную страницу, —
- * узнаёт о правке по смене объекта, и второго способа об этом сообщить не
- * заводится.
- */
-export function setWord(ключ, значение) {
-  словарь = { ...словарь, [ключ]: значение };
-  return словарь;
+export function setWord(key, value) {
+  dict = { ...dict, [key]: value };
+  return dict;
 }
 
-/**
- * Сокращения, которые пишутся целиком прописными. Правило набора, а не
- * перевод: живёт рядом с самим правилом.
- */
-let СОКРАЩЕНИЯ = new Set(['faq', 'id', 'url', 'svg', 'css', 'html', 'seo', 'json', 'ui']);
+let ABBREVIATIONS = new Set(['faq', 'id', 'url', 'svg', 'css', 'html', 'seo', 'json', 'ui']);
 
-export const setAbbreviations = список => {
-  if (Array.isArray(список) && список.length)
-    СОКРАЩЕНИЯ = new Set(список.map(s => String(s).toLowerCase()));
+export const setAbbreviations = list => {
+  if (Array.isArray(list) && list.length)
+    ABBREVIATIONS = new Set(list.map(s => String(s).toLowerCase()));
 };
 
-const word = с => (СОКРАЩЕНИЯ.has(с.toLowerCase())
-  ? с.toUpperCase() : с.charAt(0).toUpperCase() + с.slice(1));
+const word = s2 => (ABBREVIATIONS.has(s2.toLowerCase())
+  ? s2.toUpperCase() : s2.charAt(0).toUpperCase() + s2.slice(1));
 
-/**
- * Ключ по-человечески: `about-team` → «About Team», `exportLayout` → «Export
- * Layout». Косая черта в имени сохраняется: она делит группу и член группы.
- */
-export function humanize(имя) {
-  return String(имя).split('/').map(часть => часть
+export function humanize(name) {
+  return String(name).split('/').map(part => part
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .split(/[-_\s]+/).filter(Boolean).map(word)
     .join(' ')).join('/');
 }
 
-/**
- * Слово по ключу. Есть перевод — берётся он; нет — запасной текст из вызова;
- * нет и его — сам ключ, написанный по-человечески. Недопереведённый сайт
- * остаётся читаемым, а не показывает ключи.
- */
-export function t(ключ, запасной) {
-  const v = словарь[ключ];
-  // Пустое значение — «ещё не переведено»: слово берётся дальше по цепочке.
+export function t(key, fallback) {
+  const v = dict[key];
   if (typeof v === 'string' && v !== '') return v;
-  if (запасной != null) return запасной;
-  return humanize(String(ключ).split('.').pop());
+  if (fallback != null) return fallback;
+  return humanize(String(key).split('.').pop());
 }
 
-/**
- * Слово с подстановками: `tf('ui.sessionLink', …)`. Имена
- * в фигурных скобках — те же, что в словаре, поэтому переводчик видит, что
- * подставится, и может переставить местами.
- */
-export function tf(ключ, значения = {}) {
-  return String(t(ключ))
-    .replace(/\{([^}]+)\}/g, (_, к) => (значения[к] == null ? '' : String(значения[к])));
+export function tf(key, values = {}) {
+  return String(t(key))
+    .replace(/\{([^}]+)\}/g, (_, k) => (values[k] == null ? '' : String(values[k])));
 }

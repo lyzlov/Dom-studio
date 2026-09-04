@@ -1,161 +1,128 @@
-/**
- * markup.mjs — чтение шаблона разметки деревом элементов.
- *
- * Шаблон — это html с подстановками mustache. Править его строкой умеет тот,
- * кто знает и то и другое; смотреть на него деревом — любой. Разбор здесь
- * ровно для показа: каждый узел помнит свой кусок исходного текста, и сборка
- * обратно — это склейка кусков. Что не разобралось, остаётся текстом, поэтому
- * склейка возвращает исходную строку байт в байт.
- *
- * Виды узлов:
- *   тег      <div class="…">        дети — до парного закрытия
- *   текст    видимый текст
- *   поле     {{имя}} и {{{имя}}}
- *   повтор   {{#имя}}…{{/имя}}
- *   иначе    {{^имя}}…{{/имя}}
- *   вставка  {{>имя}}
- */
 
-/** Теги без закрывающего: их дети невозможны. */
-const ПУСТЫЕ = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img',
+const EMPTIES = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img',
   'input', 'link', 'meta', 'source', 'track', 'wbr']);
 
-/** Теги, которые в дереве не показываются: рамка страницы, а не её содержание. */
-const НЕВИДИМЫЕ = new Set(['script', 'style']);
+const INVISIBLE = new Set(['script', 'style']);
 
-/** Разбор строки шаблона в дерево узлов. */
-export function parseMarkup(текст) {
-  const корень = { type: 'root', children: [] };
-  const стек = [корень];
-  const top = () => стек[стек.length - 1];
-  const s = String(текст == null ? '' : текст);
-  let i = 0, буфер = '';
+export function parseMarkup(text) {
+  const root = { type: 'root', children: [] };
+  const stack = [root];
+  const top = () => stack[stack.length - 1];
+  const s = String(text == null ? '' : text);
+  let i = 0, buf = '';
 
   const flush = () => {
-    if (!буфер) return;
-    top().children.push({ type: 'text', raw: буфер });
-    буфер = '';
+    if (!buf) return;
+    top().children.push({ type: 'text', raw: buf });
+    buf = '';
   };
 
   while (i < s.length) {
     if (s.startsWith('<!--', i)) {
-      const конец = s.indexOf('-->', i + 4);
-      const до = конец < 0 ? s.length : конец + 3;
+      const end = s.indexOf('-->', i + 4);
+      const to = end < 0 ? s.length : end + 3;
       flush();
-      top().children.push({ type: 'note', raw: s.slice(i, до), text: s.slice(i + 4, конец < 0 ? s.length : конец).trim() });
-      i = до;
+      top().children.push({ type: 'note', raw: s.slice(i, to), text: s.slice(i + 4, end < 0 ? s.length : end).trim() });
+      i = to;
       continue;
     }
-    const тег = readTag(s, i);
-    if (тег) {
+    const tag = readTag(s, i);
+    if (tag) {
       flush();
-      i = тег.end;
-      if (тег.closing) {
-        // Закрытие ищет свой тег вглубь стека: незакрытый <p> не должен
-        // утаскивать за собой всё дерево.
-        const где = стек.map(у => у.tag).lastIndexOf(тег.name);
-        if (где > 0) { стек[где].tail = тег.raw; стек.length = где; }
-        else top().children.push({ type: 'text', raw: тег.raw });
+      i = tag.end;
+      if (tag.closing) {
+        const where = stack.map(u => u.tag).lastIndexOf(tag.name);
+        if (where > 0) { stack[where].tail = tag.raw; stack.length = where; }
+        else top().children.push({ type: 'text', raw: tag.raw });
         continue;
       }
-      const узел = { type: 'tag', tag: тег.name, attrs: тег.attrs,
-        props: тег.props, raw: тег.raw, children: [] };
-      top().children.push(узел);
-      if (!тег.empty && !ПУСТЫЕ.has(тег.name)) стек.push(узел);
+      const node = { type: 'tag', tag: tag.name, attrs: tag.attrs,
+        props: tag.props, raw: tag.raw, children: [] };
+      top().children.push(node);
+      if (!tag.empty && !EMPTIES.has(tag.name)) stack.push(node);
       continue;
     }
-    const вст = readMustache(s, i);
-    if (вст) {
+    const ins2 = readMustache(s, i);
+    if (ins2) {
       flush();
-      i = вст.end;
-      if (вст.sign === '/') {
-        const где = стек.map(у => у.name).lastIndexOf(вст.name);
-        if (где > 0) { стек[где].tail = вст.raw; стек.length = где; }
-        else top().children.push({ type: 'text', raw: вст.raw });
+      i = ins2.end;
+      if (ins2.sign === '/') {
+        const where = stack.map(u => u.name).lastIndexOf(ins2.name);
+        if (where > 0) { stack[where].tail = ins2.raw; stack.length = where; }
+        else top().children.push({ type: 'text', raw: ins2.raw });
         continue;
       }
-      if (вст.sign === '#' || вст.sign === '^') {
-        const узел = { type: вст.sign === '#' ? 'repeat' : 'else', name: вст.name,
-          raw: вст.raw, children: [] };
-        top().children.push(узел);
-        стек.push(узел);
+      if (ins2.sign === '#' || ins2.sign === '^') {
+        const node = { type: ins2.sign === '#' ? 'repeat' : 'else', name: ins2.name,
+          raw: ins2.raw, children: [] };
+        top().children.push(node);
+        stack.push(node);
         continue;
       }
-      top().children.push(вст.sign === '>'
-        ? { type: 'insert', name: вст.name, raw: вст.raw }
-        : { type: 'field', name: вст.name, asIs: вст.sign === '{', raw: вст.raw });
+      top().children.push(ins2.sign === '>'
+        ? { type: 'insert', name: ins2.name, raw: ins2.raw }
+        : { type: 'field', name: ins2.name, asIs: ins2.sign === '{', raw: ins2.raw });
       continue;
     }
-    буфер += s[i++];
+    buf += s[i++];
   }
   flush();
-  return корень;
+  return root;
 }
 
-/** Сборка дерева обратно в строку. Ничего не менявшееся дерево даёт исходник. */
-export function serializeMarkup(узел) {
-  if (узел.type === 'root') return узел.children.map(serializeMarkup).join('');
-  const своё = узел.raw || '';
-  if (!узел.children) return своё;
-  return своё + узел.children.map(serializeMarkup).join('') + (узел.tail || '');
+export function serializeMarkup(node) {
+  if (node.type === 'root') return node.children.map(serializeMarkup).join('');
+  const ownValue = node.raw || '';
+  if (!node.children) return ownValue;
+  return ownValue + node.children.map(serializeMarkup).join('') + (node.tail || '');
 }
 
-/** `<a class="x" href="{{href}}">` → имя, разобранные атрибуты, границы. */
 function readTag(s, i) {
   if (s[i] !== '<') return null;
   const m = /^<(\/?)([a-zA-Z][a-zA-Z0-9-]*)/.exec(s.slice(i, i + 40));
   if (!m) return null;
-  let j = i + m[0].length, кавычка = '';
+  let j = i + m[0].length, quote = '';
   while (j < s.length) {
     const c = s[j];
-    if (кавычка) { if (c === кавычка) кавычка = ''; }
-    else if (c === '"' || c === "'") кавычка = c;
+    if (quote) { if (c === quote) quote = ''; }
+    else if (c === '"' || c === "'") quote = c;
     else if (c === '>') break;
     j++;
   }
-  const сырое = s.slice(i, j + 1);
-  const внутри = s.slice(i + m[0].length, j).replace(/\/$/, '');
+  const raw = s.slice(i, j + 1);
+  const inside = s.slice(i + m[0].length, j).replace(/\/$/, '');
   return {
     name: m[2].toLowerCase(),
     closing: m[1] === '/',
     empty: /\/\s*$/.test(s.slice(i, j)),
-    attrs: parseAttributes(внутри),
-    props: внутри.trim(),
-    raw: сырое,
+    attrs: parseAttributes(inside),
+    props: inside.trim(),
+    raw: raw,
     end: j + 1,
   };
 }
 
-/**
- * Свойства тега человеческой строкой: `id="{{id}}"{{#sr}} class="x"{{/sr}}` →
- * «id = ‹Опознаватель›, если Скрыт: class = x». Подстановки внутри свойств
- * разбором в пары не ловятся — их читают прямо из исходной строки.
- */
-// Слова этот модуль не произносит: он остаётся чистым и проверяется без DOM.
-// Как назвать «обратное условие», говорит тот, кто показывает.
-export function humanAttributes(текст, fieldName = s => s,
-                                без = имя => `without “${имя}”:`) {
-  const s = String(текст || '');
-  // Подстановка не считается ни именем, ни значением, пока стоит на месте:
-  // сначала её убирают с глаз, потом разбирают пары, потом возвращают.
-  const схрон = [];
-  const чистое = s.replace(/\{\{\{[^}]*\}\}\}|\{\{[^}]*\}\}/g, м => {
-    const ins = readMustache(м, 0);
-    схрон.push(ins);
-    return `${схрон.length - 1}`;
+export function humanAttributes(text, fieldName = s => s,
+                                without = name => `without “${name}”:`) {
+  const s = String(text || '');
+  const store = [];
+  const clean = s.replace(/\{\{\{[^}]*\}\}\}|\{\{[^}]*\}\}/g, m2 => {
+    const ins = readMustache(m2, 0);
+    store.push(ins);
+    return `${store.length - 1}`;
   });
-  const restore = т => т.replace(/(\d+)/g, (_, n) => {
-    const ins = схрон[+n];
+  const restore = t => t.replace(/(\d+)/g, (_, n) => {
+    const ins = store[+n];
     if (ins.sign === '#') return `${fieldName(ins.name)}:`;
-    if (ins.sign === '^') return без(fieldName(ins.name));
+    if (ins.sign === '^') return without(fieldName(ins.name));
     if (ins.sign === '/') return '';
     return `«${fieldName(ins.name)}»`;
   });
-  return parseAttributes(чистое)
-    .map(({ name: имя, value: значение }) => {
-      const и = restore(имя).trim();
-      const з = restore(значение).trim();
-      return з ? `${и} = ${з}` : и;
+  return parseAttributes(clean)
+    .map(({ name: name, value: value }) => {
+      const i2 = restore(name).trim();
+      const z = restore(value).trim();
+      return z ? `${i2} = ${z}` : i2;
     })
     .filter(Boolean)
     .join(' ')
@@ -163,37 +130,34 @@ export function humanAttributes(текст, fieldName = s => s,
     .trim();
 }
 
-/** `class="card" id="{{id}}"` → [{имя, значение}]. Пары, а не строка. */
-function parseAttributes(текст) {
-  const из = [];
-  const пара = /([a-zA-Z@:_.\u0001-][a-zA-Z0-9@:_.\u0001-]*)\s*(?:=\s*("[^"]*"|'[^']*'|[^\s"'>]+))?/g;
+function parseAttributes(text) {
+  const from = [];
+  const pair = /([a-zA-Z@:_.\u0001-][a-zA-Z0-9@:_.\u0001-]*)\s*(?:=\s*("[^"]*"|'[^']*'|[^\s"'>]+))?/g;
   let m;
-  while ((m = пара.exec(текст))) {
-    const значение = m[2] == null ? '' : m[2].replace(/^["']|["']$/g, '');
-    из.push({ name: m[1], value: значение });
+  while ((m = pair.exec(text))) {
+    const value = m[2] == null ? '' : m[2].replace(/^["']|["']$/g, '');
+    from.push({ name: m[1], value: value });
   }
-  return из;
+  return from;
 }
 
-/** `{{#имя}}`, `{{{имя}}}`, `{{>имя}}` → знак, имя, границы. */
 function readMustache(s, i) {
   if (s[i] !== '{' || s[i + 1] !== '{') return null;
-  const тройная = s[i + 2] === '{';
-  const конец = s.indexOf(тройная ? '}}}' : '}}', i + 2);
-  if (конец < 0) return null;
-  const тело = s.slice(i + (тройная ? 3 : 2), конец);
-  const знак = тройная ? '{' : ('#^/>&'.includes(тело[0]) ? тело[0] : '');
+  const triple = s[i + 2] === '{';
+  const end = s.indexOf(triple ? '}}}' : '}}', i + 2);
+  if (end < 0) return null;
+  const body = s.slice(i + (triple ? 3 : 2), end);
+  const sign = triple ? '{' : ('#^/>&'.includes(body[0]) ? body[0] : '');
   return {
-    sign: знак,
-    name: (знак && знак !== '{' ? тело.slice(1) : тело).trim(),
-    raw: s.slice(i, конец + (тройная ? 3 : 2)),
-    end: конец + (тройная ? 3 : 2),
+    sign: sign,
+    name: (sign && sign !== '{' ? body.slice(1) : body).trim(),
+    raw: s.slice(i, end + (triple ? 3 : 2)),
+    end: end + (triple ? 3 : 2),
   };
 }
 
-/** Узлы, которые в дереве не показываются: скрипты и пустые промежутки. */
-export function showNode(у) {
-  if (у.type === 'tag') return !НЕВИДИМЫЕ.has(у.tag);
-  if (у.type === 'text') return /\S/.test(у.raw);
+export function showNode(u) {
+  if (u.type === 'tag') return !INVISIBLE.has(u.tag);
+  if (u.type === 'text') return /\S/.test(u.raw);
   return true;
 }

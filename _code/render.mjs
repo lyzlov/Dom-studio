@@ -1,121 +1,94 @@
-/**
- * render.mjs — shell страницы: голова, шапка, подвал, форма, галерея, заголовок раздела.
- */
 
 import { R as render, esc } from './template.mjs';
 import { t, tf } from './lang.mjs';
 
-const R = (имя, данные) => render(имя, данные).replace(/\n$/, '');
+const R = (name, data) => render(name, data).replace(/\n$/, '');
 
-/** Сумма со знаком валюты: знак объявлен в словаре языка. */
-const money = сумма => `${сумма}${t('ui.currency')}`;
-// Цена машинная: ноль — это «бесплатно», и словом его делает словарь языка.
-const цена = з => (з == null || з === '' ? '' : (Number(з) === 0 ? t('ui.free') : money(з)));
+const money = amount => `${amount}${t('ui.currency')}`;
+const price = z => (z == null || z === '' ? '' : (Number(z) === 0 ? t('ui.free') : money(z)));
 
-/* #region Вспомогательное */
 export { esc };
 
 export const up = depth => '../'.repeat(depth);
 
-export const pathDepth = путь => путь.split('/').length - 1;
+export const pathDepth = filePath => filePath.split('/').length - 1;
 
-export function linkHtml(откуда, куда) {
-  const a = откуда.split('/').slice(0, -1), b = куда.split('/');
+export function linkHtml(src2, target) {
+  const a = src2.split('/').slice(0, -1), b = target.split('/');
   let i = 0;
   while (i < a.length && i < b.length - 1 && a[i] === b[i]) i++;
-  const путь = '../'.repeat(a.length - i) + b.slice(i).join('/');
-  const без = путь.replace(/(^|\/)index\.html$/, '$1');
-  return без === '' ? './' : без;
+  const filePath = '../'.repeat(a.length - i) + b.slice(i).join('/');
+  const without = filePath.replace(/(^|\/)index\.html$/, '$1');
+  return without === '' ? './' : without;
 }
 
 export const pad = (n, s) => s.split('\n').map(l => l ? ' '.repeat(n) + l : l).join('\n');
 
-export const isPast = (поКакую, сегодня) => поКакую < сегодня;
+export const isPast = (until, today) => until < today;
 
-/**
- * Возраст. В данных он лежит промежутками — `[{ min: 7, max: 9 }, { min: 10,
- * max: 12 }]`, `max: null` значит «и старше», пустой список — «любой». По нему
- * считают: корзины фильтра, отбор, сравнение. Словами он становится только на
- * странице, и слова эти из словаря: «лет», «и», десятичный знак у каждого
- * языка свои.
- */
-const число = n => String(n).replace('.', t('ui.decimal'));
+const num = n => String(n).replace('.', t('ui.decimal'));
 
-export function ageText(промежутки) {
-  // Поля нет — сказать нечего; пустой список — сказано «любой», и это разное.
-  if (!Array.isArray(промежутки)) return '';
-  if (!промежутки.length) return t('ui.ageAny');
-  const части = промежутки.map(({ min: от, max: до }) => (до == null
-    ? tf('ui.ageFrom', { from: число(от) })
-    : (от === до ? число(от) : `${число(от)}–${число(до)}`)));
-  return tf('ui.ageYears', { ages: части.join(t('ui.ageJoin')) });
+export function ageText(ranges) {
+  if (!Array.isArray(ranges)) return '';
+  if (!ranges.length) return t('ui.ageAny');
+  const parts = ranges.map(({ min: from2, max: to }) => (to == null
+    ? tf('ui.ageFrom', { from: num(from2) })
+    : (from2 === to ? num(from2) : `${num(from2)}–${num(to)}`)));
+  return tf('ui.ageYears', { ages: parts.join(t('ui.ageJoin')) });
 }
 
-const КОРЗИНЫ = [[3, 5, '3–5'], [6, 10, '6–10'], [11, 16, '11–16']];
+const AGE_BUCKETS = [[3, 5, '3–5'], [6, 10, '6–10'], [11, 16, '11–16']];
 
-/** Корзины фильтра, с которыми возраст пересекается. Без разбора текста. */
-export function ageBuckets(промежутки) {
-  if (!Array.isArray(промежутки) || !промежутки.length) return [];
-  const имена = new Set();
-  for (const { min: от, max: до } of промежутки)
-    for (const [a, b, имя] of КОРЗИНЫ)
-      if (от <= b && (до == null ? 99 : до) >= a) имена.add(имя);
-  return КОРЗИНЫ.map(([, , имя]) => имя).filter(имя => имена.has(имя));
+export function ageBuckets(ranges) {
+  if (!Array.isArray(ranges) || !ranges.length) return [];
+  const names = new Set();
+  for (const { min: from2, max: to } of ranges)
+    for (const [a, b, name] of AGE_BUCKETS)
+      if (from2 <= b && (to == null ? 99 : to) >= a) names.add(name);
+  return AGE_BUCKETS.map(([, , name]) => name).filter(name => names.has(name));
 }
 
-/* #region Каркас: head, шапка, подвал, модальное окно */
-function head({ site, title, description, href: путь, depth, root, prefix, alternates, image }) {
+function head({ site, title, description, href: filePath, depth, root, prefix, alternates, image }) {
   const abs = p => site.site.url.replace(/\/$/, '') + '/' + p.replace(/(^|\/)index\.html$/, '$1');
   return R('head', {
     u: up(depth), root, title, description,
-    canonical: abs(prefix + путь),
+    canonical: abs(prefix + filePath),
     alternates,
     org: site.org.fullName,
     cover: abs(image || '_assets/media/og-cover.jpg'),
   });
 }
 
-const hidden = (структура, что) =>
-  !!(((структура.navigation || {}).parts || {})[что] || {}).hidden;
+const hidden = (structure, what) =>
+  !!(((structure.navigation || {}).parts || {})[what] || {}).hidden;
 
-/**
- * Шапка собирается из частей так же, как подвал: состав и порядок — в данных,
- * вид части — в её шаблоне. Меню — такая же часть, как логотип и соцсети.
- */
-function header({ site, structure: структура, depth, root, href: путь, active, path, parts: части, prefix = '', alternates = [] }) {
-  const L = цель => linkHtml(путь, цель);
-  // Та же страница на других языках. Пока язык один, версий нет — и части с
-  // переключателем в шапке тоже.
-  const здесь = prefix + путь;
-  const языки = alternates.filter(в => в.name).map(в => ({
-    name: в.name, code: в.code, link: linkHtml(здесь, в.path), current: в.path === здесь }));
+function header({ site, structure: structure, depth, root, href: filePath, active, path, parts: parts, prefix = '', alternates = [] }) {
+  const L = target2 => linkHtml(filePath, target2);
+  const here = prefix + filePath;
+  const langs = alternates.filter(v2 => v2.name).map(v2 => ({
+    name: v2.name, code: v2.code, link: linkHtml(here, v2.path), current: v2.path === here }));
   const item = p => ({ name: p.name, link: L(p.href), current: p.href === active });
-  const ссылки = path.slice(0, -1).map((к, i) => ({ name: к.name, link: L(к.href), notFirst: i > 0 }));
-  const значения = {
+  const links2 = path.slice(0, -1).map((k2, i) => ({ name: k2.name, link: L(k2.href), notFirst: i > 0 }));
+  const values = {
     u: up(depth), root,
     org: site.org.fullName,
     social: site.contacts.social || [],
-    menu: структура.navigation.menu.map(г => (г.items
-      ? { isGroup: true, group: г.group, items: г.items.map(item) }
-      : item(г))),
-    refs: ссылки, hasLinks: ссылки.length > 0,
+    menu: structure.navigation.menu.map(g => (g.items
+      ? { isGroup: true, group: g.group, items: g.items.map(item) }
+      : item(g))),
+    refs: links2, hasLinks: links2.length > 0,
     last: path[path.length - 1].name,
-    languages: языки,
+    languages: langs,
   };
-  const barHtml = partList(структура, 'header', части)
-    .map(({ name: имя, part: о }) => R(о.template || `header-${имя}`, значения).replace(/\n$/, ''))
+  const barHtml = partList(structure, 'header', parts)
+    .map(({ name: name, part: o }) => R(o.template || `header-${name}`, values).replace(/\n$/, ''))
     .join('\n');
-  return R('header', { ...значения, barHtml });
+  return R('header', { ...values, barHtml });
 }
 
-/**
- * Подвал собирается из частей: что в нём есть и в каком порядке — сказано в
- * данных (`navigation.layout.footer`), как выглядит часть — в её шаблоне, а в
- * какую зону она встаёт — в словаре. Скрытая часть просто не попадает в список.
- */
-function footer({ site, structure: структура, depth, root, href: путь, parts: части }) {
-  const L = цель => linkHtml(путь, цель);
-  const значения = {
+function footer({ site, structure: structure, depth, root, href: filePath, parts: parts }) {
+  const L = target2 => linkHtml(filePath, target2);
+  const values = {
     u: up(depth), root,
     title: site.org.title,
     slogan: site.org.slogan,
@@ -124,47 +97,42 @@ function footer({ site, structure: структура, depth, root, href: пут
     telHref: site.contacts.phone.replace(/[^\d+]/g, ''),
     phone: site.contacts.phone,
     social: site.contacts.social || [],
-    sections: структура.navigation.footer.map(р => ({ name: р.name, link: L(р.href) })),
+    sections: structure.navigation.footer.map(r2 => ({ name: r2.name, link: L(r2.href) })),
     privacy: L('privacy/index.html'),
     offer: L('offer/index.html'),
   };
-  const собранные = partList(структура, 'footer', части).map(({ name: имя, part: о }) => ({
-    zone: о.zone || 'grid',
-    html: R(о.template || `footer-${имя}`, значения).replace(/\n$/, ''),
+  const collected = partList(structure, 'footer', parts).map(({ name: name, part: o }) => ({
+    zone: o.zone || 'grid',
+    html: R(o.template || `footer-${name}`, values).replace(/\n$/, ''),
   }));
-  const join = зона => собранные.filter(ч => ч.zone === зона).map(ч => ч.html).join('\n');
-  return R('footer', { ...значения, gridHtml: join('grid'), rowHtml: join('row') });
+  const join = zone => collected.filter(ch => ch.zone === zone).map(ch => ch.html).join('\n');
+  return R('footer', { ...values, gridHtml: join('grid'), rowHtml: join('row') });
 }
 
-/**
- * Части элемента в том составе и порядке, в каком они объявлены в данных.
- * Списка нет — берётся порядок словаря: старые проекты не ломаются.
- */
-function partList(структура, где, объявленные) {
-  const порядок = (((структура.navigation || {}).layout || {})[где])
-    || Object.keys(объявленные || {});
-  return порядок
-    .filter(имя => (объявленные || {})[имя] && !hidden(структура, `${где}.${имя}`))
-    .map(имя => ({ name: имя, part: объявленные[имя] }));
+function partList(structure, where, declared) {
+  const order = (((structure.navigation || {}).layout || {})[where])
+    || Object.keys(declared || {});
+  return order
+    .filter(name => (declared || {})[name] && !hidden(structure, `${where}.${name}`))
+    .map(name => ({ name: name, part: declared[name] }));
 }
 
-export function form(приставка, поля) {
+export function form(prefix2, fields2) {
   return R('form', {
-    fields: поля.map(п => ({
-      id: `${приставка}-${п.key}`,
-      caption: п.caption,
-      type: п.type,
-      name: п.name,
-      required: !!п.required,
-      textarea: !!п.multiline,
-      wide: !!п.wide,
+    fields: fields2.map(p2 => ({
+      id: `${prefix2}-${p2.key}`,
+      caption: p2.caption,
+      type: p2.type,
+      name: p2.name,
+      required: !!p2.required,
+      textarea: !!p2.multiline,
+      wide: !!p2.wide,
     })),
   });
 }
 
-const modal = поля => R('modal', { form: form('modal', поля) });
+const modal = fields2 => R('modal', { form: form('modal', fields2) });
 
-/* #region Галерея — один элемент на весь сайт, два режима */
 const SIZES = '(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw';
 
 export function galleryHtml({ frames, root, mode, firstEager = true, full = '-800', sizes = SIZES, class: cls = 'card-image' }) {
@@ -174,16 +142,15 @@ export function galleryHtml({ frames, root, mode, firstEager = true, full = '-80
     strip: String((mode || 'strip') === 'strip'),
     grid: String(mode === 'grid'),
     classAttr: cls ? ` class="${cls}"` : '',
-    frames: frames.map((к, i) => ({
-      base: root + к.base,
-      full: `${root}${к.base}${к.full || full}.jpg`,
-      caption: к.caption, width: к.width, height: к.height,
+    frames: frames.map((k2, i) => ({
+      base: root + k2.base,
+      full: `${root}${k2.base}${k2.full || full}.jpg`,
+      caption: k2.caption, width: k2.width, height: k2.height,
       eager: firstEager && i === 0,
     })),
   });
 }
 
-/* #region Заголовок раздела */
 export function sectionHead({ eyebrow, h1, fields = [], button, meta, lead = [], paragraphs = [], extra = '', galleryHtml }) {
   const rows = meta || fields.filter(([, v]) => v != null && v !== '')
     .map(([k, v]) => `<strong>${esc(k)}:</strong> ${v}`).join('<br>\n        ');
@@ -195,39 +162,31 @@ export function sectionHead({ eyebrow, h1, fields = [], button, meta, lead = [],
   });
 }
 
-/* #region Блоки */
 export function plainTable({ columns, rows, widths, headNoScope }) {
   return R('table', {
     colgroup: (widths ? R('colgroup', { widths }) : '') + (headNoScope ? '' : '\n'),
-    columns: columns.map(и => ({ name: и, scope: !headNoScope })),
+    columns: columns.map(i2 => ({ name: i2, scope: !headNoScope })),
     rows: rows.map(r => ({ cells: r.map((v, i) => ({ caption: columns[i], value: v })) })),
   });
 }
 
-/* #region Страница целиком */
-export function page({ site, structure: структура, elements: элементы, title, description, href: путь, image, active, path, body,
+export function page({ site, structure: structure, elements: elements, title, description, href: filePath, image, active, path, body,
                        langDepth = 0, prefix = '', alternates = [] }) {
-  const depth = pathDepth(путь);
-  // Страницы лежат в папке языка, общие ресурсы — в корне сайта: у основного
-  // языка это одно и то же место, у остальных — на уровень выше.
+  const depth = pathDepth(filePath);
   const root = up(depth + langDepth);
   return render('page', {
     u: up(depth),
     body,
-    head: head({ site, title, description, href: путь, depth, root, prefix, alternates, image }),
-    // Шапку, меню и подвал можно спрятать целиком: признак лежит там же, где
-    // сама навигация, и читается сборкой, а не только редактором.
-    header: hidden(структура, 'header') ? '' : header({ site, structure: структура, depth, root, href: путь, active, path,
-      prefix, alternates, parts: ((элементы || {}).header || {}).parts }),
-    footer: hidden(структура, 'footer') ? '' : footer({ site, structure: структура, depth, root, href: путь,
-      parts: ((элементы || {}).footer || {}).parts }),
-    modal: modal(структура.form.fields),
+    head: head({ site, title, description, href: filePath, depth, root, prefix, alternates, image }),
+    header: hidden(structure, 'header') ? '' : header({ site, structure: structure, depth, root, href: filePath, active, path,
+      prefix, alternates, parts: ((elements || {}).header || {}).parts }),
+    footer: hidden(structure, 'footer') ? '' : footer({ site, structure: structure, depth, root, href: filePath,
+      parts: ((elements || {}).footer || {}).parts }),
+    modal: modal(structure.form.fields),
   });
 }
 
-/* #region Страница-сущность */
-
-const substitute = (шаблон, знач) => String(шаблон).replace(/\{([^}]+)\}/g, (_, k) => знач[k] ?? '');
+const substitute = (tpl, val) => String(tpl).replace(/\{([^}]+)\}/g, (_, k) => val[k] ?? '');
 
 export const HEAD_FIELDS = {
   course: (c, ctx) => [
@@ -242,7 +201,7 @@ export const HEAD_FIELDS = {
     [t('ui.age'), esc(ageText(e.age))],
     [t('ui.place'), esc(e.place)],
     [e.curators.length > 1 ? t('ui.curators') : t('ui.curator'), esc(ctx.person(e.curators))],
-    [t('ui.price'), esc(цена(e.price))],
+    [t('ui.price'), esc(price(e.price))],
   ],
   post: () => [],
   session: (s, ctx) => [
@@ -251,58 +210,58 @@ export const HEAD_FIELDS = {
     [t('ui.age'), esc(ageText(s.age))],
     [t('ui.place'), esc(s.place)],
     [t('ui.curator'), esc(ctx.person(s.curator))],
-    [t('ui.price'), esc(цена(s.price))],
+    [t('ui.price'), esc(price(s.price))],
   ],
 };
 
-const ПОДПИСЬ_КАДРА = {
+const FRAME_CAPTION = {
   course: c => c.title,
   event: e => e.title,
-  post: п => п.heading,
+  post: p2 => p2.heading,
   session: s => tf('ui.sessionPoster', { title: s.title }),
 };
 
-export const priceLine = тариф => [
-  тариф.trial ? tf('ui.priceTrial', { price: money(тариф.trial) })
+export const priceLine = pricePlan => [
+  pricePlan.trial ? tf('ui.priceTrial', { price: money(pricePlan.trial) })
               : t('ui.priceNoTrial'),
-  тариф.single ? tf('ui.priceSingle', { price: money(тариф.single) })
+  pricePlan.single ? tf('ui.priceSingle', { price: money(pricePlan.single) })
                : t('ui.priceNoSingle'),
 ].join(', ') + '. '
-  + тариф.packages.map((п, i) => `${i && п.short ? п.short : п.title} — ${money(п.price)}`).join(', ') + '.';
+  + pricePlan.packages.map((p2, i) => `${i && p2.short ? p2.short : p2.title} — ${money(p2.price)}`).join(', ') + '.';
 
-export function entityPage({ kind: вид, entity: сущность, template: шаблон, site, structure: структура, elements: элементы, ctx, blocks }) {
-  const путь = `${шаблон.folder}/${сущность.id}/index.html`;
-  const depth = pathDepth(путь);
-  const прошедшее = шаблон.button === 'until-past' && ctx.past(сущность);
-  const frames = сущность.image ? [{
-    base: сущность.image, caption: ПОДПИСЬ_КАДРА[вид](сущность),
-    ...(ctx.sizes[сущность.image] || { width: 400, height: 300 }),
+export function entityPage({ kind: kind, entity: entity, template: tpl, site, structure: structure, elements: elements, ctx, blocks }) {
+  const filePath = `${tpl.folder}/${entity.id}/index.html`;
+  const depth = pathDepth(filePath);
+  const isPastItem = tpl.button === 'until-past' && ctx.past(entity);
+  const frames = entity.image ? [{
+    base: entity.image, caption: FRAME_CAPTION[kind](entity),
+    ...(ctx.sizes[entity.image] || { width: 400, height: 300 }),
   }] : [];
   const illustration = frames.length
     ? galleryHtml({ frames, root: ctx.assets, mode: 'grid' })
-    : шаблон.button === 'none' && вид === 'post' ? ''
+    : tpl.button === 'none' && kind === 'post' ? ''
     : '';
 
   const body = [
     sectionHead({
-      eyebrow: substitute(шаблон.eyebrow, ctx.values),
-      h1: сущность.title || сущность.heading,
-      fields: HEAD_FIELDS[вид](сущность, ctx),
-      button: шаблон.button === 'always' || (шаблон.button !== 'none' && !прошедшее),
-      meta: шаблон.meta && substitute(шаблон.meta, ctx.values),
+      eyebrow: substitute(tpl.eyebrow, ctx.values),
+      h1: entity.title || entity.heading,
+      fields: HEAD_FIELDS[kind](entity, ctx),
+      button: tpl.button === 'always' || (tpl.button !== 'none' && !isPastItem),
+      meta: tpl.meta && substitute(tpl.meta, ctx.values),
       galleryHtml: illustration,
     }),
     ...blocks.map(b => '\n' + b),
   ].join('\n');
 
   return page({
-    site, structure: структура, elements: элементы, body,
-    title: substitute(шаблон.metaTitle, ctx.values),
-    description: substitute(шаблон.metaDescription, ctx.values),
-    href: путь, langDepth: ctx.langDepth, prefix: ctx.prefix, alternates: ctx.alternates(путь),
-    active: шаблон.parent,
+    site, structure: structure, elements: elements, body,
+    title: substitute(tpl.metaTitle, ctx.values),
+    description: substitute(tpl.metaDescription, ctx.values),
+    href: filePath, langDepth: ctx.langDepth, prefix: ctx.prefix, alternates: ctx.alternates(filePath),
+    active: tpl.parent,
     path: [{ name: t('ui.home'), href: 'index.html' },
-             { name: шаблон.section, href: шаблон.parent },
-             { name: сущность.title || сущность.heading }],
+             { name: tpl.section, href: tpl.parent },
+             { name: entity.title || entity.heading }],
   });
 }

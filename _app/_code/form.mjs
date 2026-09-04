@@ -1,42 +1,25 @@
-/**
- * form.mjs — форма выводится из самих данных. Подписи, списки и порядок полей
- * берутся из types.json; отдельного описания формы нет.
- */
 
 import { t } from './locale.mjs';
 
-const el = (тег, класс, текст) => {
-  const e = document.createElement(тег);
-  if (класс) e.className = класс;
-  if (текст != null) e.textContent = текст;
+const el = (tag2, cls, text) => {
+  const e = document.createElement(tag2);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
   return e;
 };
 
-/**
- * Ключи, которыми управляет разработчик: живут в свёрнутой группе внизу.
- * Адрес в ссылке (`id`) сюда не входит: он виден человеку в адресной строке,
- * поэтому стоит в форме сразу под названием, а не прячется.
- */
 export const TECHNICAL = new Set(['href', 'class', 'wrapper', 'active',
-  // Чем блок наполняется и как он устроен: сменить это — переделать блок,
-  // а не поправить текст. Такое живёт в свёрнутой группе, а не на виду.
   'type', 'source', 'kind', 'filter', 'wide', 'srHeading', 'mode', 'map']);
 
-/**
- * Значки. Все до одного — файлы из _assets/icons, вставленные в страницу как
- * SVG, а не картинкой: только так обводка берёт цвет кнопки, и значок ведёт
- * себя как буква — гаснет, подсвечивается, меняет цвет вместе с текстом.
- * Текстовых символов вместо значков в редакторе больше нет.
- */
-const ЗНАЧКИ = new Map();
+const ICONS = new Map();
 
-export async function loadIcons(имена) {
-  await Promise.all(имена.map(async name => {
-    if (ЗНАЧКИ.has(name)) return;
+export async function loadIcons(names) {
+  await Promise.all(names.map(async name => {
+    if (ICONS.has(name)) return;
     try {
-      const о = await fetch(`../_assets/icons/${name}.svg`, { cache: 'force-cache' });
-      if (!о.ok) return;
-      const node = new DOMParser().parseFromString(await о.text(), 'image/svg+xml')
+      const o2 = await fetch(`../_assets/icons/${name}.svg`, { cache: 'force-cache' });
+      if (!o2.ok) return;
+      const node = new DOMParser().parseFromString(await o2.text(), 'image/svg+xml')
         .querySelector('svg');
       if (!node) return;
       node.setAttribute('stroke', 'currentColor');
@@ -44,541 +27,456 @@ export async function loadIcons(имена) {
       node.removeAttribute('height');
       node.setAttribute('aria-hidden', 'true');
       node.setAttribute('focusable', 'false');
-      ЗНАЧКИ.set(name, node);
-    } catch { /* значка нет — кнопка останется с одной подсказкой */ }
+      ICONS.set(name, node);
+    } catch {  }
   }));
 }
 
 export function icon(name) {
-  const о = ЗНАЧКИ.get(name);
-  const с = el('span', 'ed-glyph');
-  if (о) с.append(о.cloneNode(true));
-  return с;
+  const o2 = ICONS.get(name);
+  const s = el('span', 'ed-glyph');
+  if (o2) s.append(o2.cloneNode(true));
+  return s;
 }
 
-/**
- * Строка формы: подпись, поле, кнопки. Строка своей геометрии не задаёт —
- * колонки объявлены один раз на списке (`.ed-fields`), а строка их только
- * заполняет. Поэтому строка не может съехать относительно соседей: съехать
- * может разве что весь список целиком.
- */
 export function fieldRow({ name, id, value, mark, tools, tag = 'div', level = 0 }) {
-  const с = el(tag, 'ed-row');
+  const s = el(tag, 'ed-row');
 
-  const подпись = el('span', 'ed-row-name');
-  // Вложенность видна отступом подписи — тем же, что и в дереве. Отступ живёт
-  // на подписи, а не на группе: сдвигать саму группу значит рвать колонки,
-  // по которым выровнена вся форма.
-  if (level) подпись.style.paddingLeft = `calc(${level} * var(--size-cell))`;
-  if (name instanceof Node) подпись.append(name);
-  else if (name != null) подпись.append(el('span', 'ed-name', name));
-  if (id) подпись.title = String(id);
-  с.append(подпись);
+  const caption = el('span', 'ed-row-name');
+  if (level) caption.style.paddingLeft = `calc(${level} * var(--size-cell))`;
+  if (name instanceof Node) caption.append(name);
+  else if (name != null) caption.append(el('span', 'ed-name', name));
+  if (id) caption.title = String(id);
+  s.append(caption);
 
-  const место = el('span', 'ed-row-value');
-  if (value) место.append(value);
-  if (mark) место.append(mark);
-  с.append(место);
+  const spot = el('span', 'ed-row-value');
+  if (value) spot.append(value);
+  if (mark) spot.append(mark);
+  s.append(spot);
 
-  const кнопки = el('span', 'ed-row-tools');
-  (tools || []).forEach(к => кнопки.append(к || el('span', 'ed-cell')));
-  с.append(кнопки);
-  return с;
+  const buttons = el('span', 'ed-row-tools');
+  (tools || []).forEach(k2 => buttons.append(k2 || el('span', 'ed-cell')));
+  s.append(buttons);
+  return s;
 }
 
-/**
- * Кнопка-значок с подсказкой. Подпись всегда есть: без неё значок — ребус.
- * Первый довод — имя значка из _assets/icons; строку он больше не принимает.
- */
-export function iconButton(name, подсказка, действие, { pressed: нажата = false } = {}) {
+export function iconButton(name, hint, action, { pressed: pressed = false } = {}) {
   const b = el('button', 'ed-cell ed-icon-btn');
   b.append(icon(name));
   b.type = 'button';
-  b.title = подсказка;
-  b.setAttribute('aria-label', подсказка);
-  if (нажата) b.setAttribute('aria-pressed', 'true');
-  b.addEventListener('click', е => { е.preventDefault(); е.stopPropagation(); действие(е); });
+  b.title = hint;
+  b.setAttribute('aria-label', hint);
+  if (pressed) b.setAttribute('aria-pressed', 'true');
+  b.addEventListener('click', e2 => { e2.preventDefault(); e2.stopPropagation(); action(e2); });
   return b;
 }
 
-/** Шеврон раскрытия поддерева. Своя колонка, чтобы имена шли по одной линии. */
-export function chevron(открыт, действие) {
-  return iconButton(открыт ? 'chevron-down' : 'chevron-right',
-    открыт ? t('btn.collapse') : t('btn.expand'), действие);
+export function chevron(isOpen, action) {
+  return iconButton(isOpen ? 'chevron-down' : 'chevron-right',
+    isOpen ? t('btn.collapse') : t('btn.expand'), action);
 }
 
-export const recordName = (з, i) => {
-  if (з && typeof з === 'object') {
-    // Подпись поля формы — её человеческое имя; машинное `name` идёт после.
-    const своё = з.title || з.heading || з.caption || з.name || з.question;
-    if (з.type && !з.date && !з.dates) return своё ? `${з.type} — ${своё}` : String(з.type);
-    return своё || з.id || `№ ${i + 1}`;
+export const recordName = (z, i) => {
+  if (z && typeof z === 'object') {
+    const ownValue = z.title || z.heading || z.caption || z.name || z.question;
+    if (z.type && !z.date && !z.dates) return ownValue ? `${z.type} — ${ownValue}` : String(z.type);
+    return ownValue || z.id || `№ ${i + 1}`;
   }
-  return String(з || `№ ${i + 1}`);
+  return String(z || `№ ${i + 1}`);
 };
 
-const isHidden = з => !!(з && typeof з === 'object' && з.hidden);
+const isHidden = z => !!(z && typeof z === 'object' && z.hidden);
 
-/** Насколько глубоко поле лежит: путь начинается с самого элемента. */
 export const pathLevel = path => Math.max(0, (Array.isArray(path) ? path.length : 2) - 2);
 
-/** Машинная дата `2026-02-20` — человеку `20.02.2026`, и обратно. */
-const localized = з => {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(з ?? ''));
-  return m ? `${m[3]}.${m[2]}.${m[1]}` : String(з ?? '');
+const localized = z => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(z ?? ''));
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : String(z ?? '');
 };
 
-const toMachine = т => {
-  const m = /^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})$/.exec(String(т ?? '').trim());
-  if (!m) return String(т ?? '').trim();
+const toMachine = t2 => {
+  const m = /^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})$/.exec(String(t2 ?? '').trim());
+  if (!m) return String(t2 ?? '').trim();
   return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
 };
 
-/**
- * Подпись даты словами: она и уходит на сайт, тогда как начало и конец нужны
- * только для отбора. Собирается из тех же двух дат, поэтому не расходится с
- * ними сама по себе.
- */
-export function dateCaption(от, до, месяцы) {
-  const parse = з => {
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(з ?? ''));
+export function dateCaption(from2, to, months) {
+  const parse = z => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(z ?? ''));
     return m ? { year: +m[1], month: +m[2] - 1, day: +m[3] } : null;
   };
-  const а = parse(от), б = parse(до) || parse(от);
-  if (!а || !месяцы || месяцы.length !== 12) return null;
-  const name = д => месяцы[д.month];
-  if (!б || (а.year === б.year && а.month === б.month && а.day === б.day))
-    return `${а.day} ${name(а)} ${а.year}`;
-  if (а.year === б.year && а.month === б.month)
-    return `${а.day}–${б.day} ${name(а)} ${а.year}`;
-  if (а.year === б.year)
-    return `${а.day} ${name(а)} – ${б.day} ${name(б)} ${а.year}`;
-  return `${а.day} ${name(а)} ${а.year} – ${б.day} ${name(б)} ${б.year}`;
+  const a = parse(from2), b2 = parse(to) || parse(from2);
+  if (!a || !months || months.length !== 12) return null;
+  const name = d => months[d.month];
+  if (!b2 || (a.year === b2.year && a.month === b2.month && a.day === b2.day))
+    return `${a.day} ${name(a)} ${a.year}`;
+  if (a.year === b2.year && a.month === b2.month)
+    return `${a.day}–${b2.day} ${name(a)} ${a.year}`;
+  if (a.year === b2.year)
+    return `${a.day} ${name(a)} – ${b2.day} ${name(b2)} ${a.year}`;
+  return `${a.day} ${name(a)} ${a.year} – ${b2.day} ${name(b2)} ${b2.year}`;
 }
 
-function blank(образец) {
-  if (Array.isArray(образец)) return [];
-  if (образец && typeof образец === 'object') {
+function blank(sample) {
+  if (Array.isArray(sample)) return [];
+  if (sample && typeof sample === 'object') {
     const o = {};
-    for (const k of Object.keys(образец)) if (!k.startsWith('$') && k !== 'hidden') o[k] = blank(образец[k]);
+    for (const k of Object.keys(sample)) if (!k.startsWith('$') && k !== 'hidden') o[k] = blank(sample[k]);
     return o;
   }
-  if (typeof образец === 'number') return 0;
-  if (typeof образец === 'boolean') return false;
+  if (typeof sample === 'number') return 0;
+  if (typeof sample === 'boolean') return false;
   return '';
 }
 
-// #region Поля
-
-export function node(владелец, ключ, path, ctx) {
-  const значение = владелец[ключ];
-  if (Array.isArray(значение)) return array(владелец, ключ, path, ctx);
-  if (shortObject(значение)) return toLine(владелец, ключ, path, ctx);
-  if (значение && typeof значение === 'object') return object(владелец, ключ, path, ctx);
-  return simple(владелец, ключ, path, ctx);
+export function node(owner, key, path, ctx) {
+  const value2 = owner[key];
+  if (Array.isArray(value2)) return array(owner, key, path, ctx);
+  if (shortObject(value2)) return toLine(owner, key, path, ctx);
+  if (value2 && typeof value2 === 'object') return object(owner, key, path, ctx);
+  return simple(owner, key, path, ctx);
 }
 
-/**
- * Объект из двух-четырёх коротких значений — это одна вещь, а не раздел:
- * начало, конец и время даты стоят в строку, а не лесенкой из свёрнутой группы.
- */
-const shortObject = о => {
-  if (!о || typeof о !== 'object' || Array.isArray(о)) return false;
-  const ключи = Object.keys(о).filter(k => !k.startsWith('$'));
-  return ключи.length >= 2 && ключи.length <= 4
-    && ключи.every(k => о[k] == null
-      || (typeof о[k] !== 'object' && String(о[k]).length <= 40));
+const shortObject = o2 => {
+  if (!o2 || typeof o2 !== 'object' || Array.isArray(o2)) return false;
+  const keys = Object.keys(o2).filter(k => !k.startsWith('$'));
+  return keys.length >= 2 && keys.length <= 4
+    && keys.every(k => o2[k] == null
+      || (typeof o2[k] !== 'object' && String(o2[k]).length <= 40));
 };
 
-function toLine(владелец, ключ, path, ctx) {
-  const о = владелец[ключ];
-  const ряд = el('div', 'ed-inline-fields');
-  // Показываются все поля, объявленные для этой вещи, даже если в данных их
-  // ещё нет: пустое время видно и заполняется, а не прячется до первой записи.
-  const порядок = (ctx.rowOf && ctx.rowOf(ключ)) || Object.keys(о);
-  const ключи = [...порядок, ...Object.keys(о)
-    .filter(k => !k.startsWith('$') && !порядок.includes(k))];
-  const поля = {};
-  ключи.forEach(k => {
-    const я = el('label', 'ed-inline-field');
-    я.append(el('span', 'ed-hint', ctx.caption(k)));
-    const { item: э } = field(о, k, [...path, k], ctx);
-    поля[k] = э;
-    я.append(э);
-    ряд.append(я);
+function toLine(owner, key, path, ctx) {
+  const o2 = owner[key];
+  const row = el('div', 'ed-inline-fields');
+  const order = (ctx.rowOf && ctx.rowOf(key)) || Object.keys(o2);
+  const keys = [...order, ...Object.keys(o2)
+    .filter(k => !k.startsWith('$') && !order.includes(k))];
+  const fields = {};
+  keys.forEach(k => {
+    const ya = el('label', 'ed-inline-field');
+    ya.append(el('span', 'ed-hint', ctx.caption(k)));
+    const { item: ee } = field(o2, k, [...path, k], ctx);
+    fields[k] = ee;
+    ya.append(ee);
+    row.append(ya);
   });
-  linkCaption(о, поля, ctx);
-  return fieldRow({ name: ctx.caption(ключ), value: ряд, level: pathLevel(path) });
+  linkCaption(o2, fields, ctx);
+  return fieldRow({ name: ctx.caption(key), value: row, level: pathLevel(path) });
 }
 
-/**
- * Подпись идёт за датами: правится начало или конец — подпись пересчитывается.
- * Написанную руками («5 и 8 марта») не трогаем: она сказана человеком и
- * машинным правилом не выводится.
- */
-function linkCaption(о, поля, ctx) {
-  const месяцы = ctx.months && ctx.months();
-  if (!месяцы || !поля.caption || !(поля.from || поля.to)) return;
-  const auto = () => dateCaption(о.from, о.to, месяцы);
-  let своя = !!о.caption && о.caption !== auto();
+function linkCaption(o2, fields, ctx) {
+  const months = ctx.months && ctx.months();
+  if (!months || !fields.caption || !(fields.from || fields.to)) return;
+  const auto = () => dateCaption(o2.from, o2.to, months);
+  let ownItem = !!o2.caption && o2.caption !== auto();
   const recount = () => {
-    if (своя) return;
-    const п = auto();
-    if (п == null) return;
-    о.caption = п;
-    поля.caption.value = п;
+    if (ownItem) return;
+    const p = auto();
+    if (p == null) return;
+    o2.caption = p;
+    fields.caption.value = p;
   };
-  ['from', 'to'].forEach(k => поля[k] && поля[k].addEventListener('input', recount));
-  поля.caption.addEventListener('input', () => { своя = !!о.caption && о.caption !== auto(); });
+  ['from', 'to'].forEach(k => fields[k] && fields[k].addEventListener('input', recount));
+  fields.caption.addEventListener('input', () => { ownItem = !!o2.caption && o2.caption !== auto(); });
 }
 
-function field(владелец, ключ, path, ctx) {
-  const значение = владелец[ключ];
-  const п = ctx.hint(path, владелец) || {};
-  const особое = ctx.special && ctx.special(владелец, ключ, path);
-  if (особое) return { item: особое, description: null };
-  let э;
+function field(owner, key, path, ctx) {
+  const value2 = owner[key];
+  const p = ctx.hint(path, owner) || {};
+  const special = ctx.special && ctx.special(owner, key, path);
+  if (special) return { item: special, description: null };
+  let ee;
 
-  if (typeof значение === 'boolean') {
-    э = el('input');
-    э.type = 'checkbox';
-    э.checked = значение;
-    э.addEventListener('change', () => { владелец[ключ] = э.checked; ctx.onChange(); });
-  } else if (п.options && п.options.length) {
-    э = el('select');
-    const пары = п.options.map(в => (typeof в === 'string' ? { value: в, caption: в } : в));
-    if (!пары.some(в => в.value === String(значение ?? '')))
-      пары.unshift({ value: String(значение ?? ''), caption: String(значение ?? '') });
-    for (const в of пары) {
-      const o = el('option', null, в.caption);
-      o.value = в.value;
-      э.append(o);
+  if (typeof value2 === 'boolean') {
+    ee = el('input');
+    ee.type = 'checkbox';
+    ee.checked = value2;
+    ee.addEventListener('change', () => { owner[key] = ee.checked; ctx.onChange(); });
+  } else if (p.options && p.options.length) {
+    ee = el('select');
+    const pairs = p.options.map(v2 => (typeof v2 === 'string' ? { value: v2, caption: v2 } : v2));
+    if (!pairs.some(v2 => v2.value === String(value2 ?? '')))
+      pairs.unshift({ value: String(value2 ?? ''), caption: String(value2 ?? '') });
+    for (const v2 of pairs) {
+      const o = el('option', null, v2.caption);
+      o.value = v2.value;
+      ee.append(o);
     }
-    э.value = String(значение ?? '');
-    э.addEventListener('change', () => {
-      владелец[ключ] = э.value;
-      if (ключ === 'type' && ctx.changeType) ctx.changeType(владелец, э.value);
-      ctx.onChange(ключ === 'type');
+    ee.value = String(value2 ?? '');
+    ee.addEventListener('change', () => {
+      owner[key] = ee.value;
+      if (key === 'type' && ctx.changeType) ctx.changeType(owner, ee.value);
+      ctx.onChange(key === 'type');
     });
-  } else if (typeof значение === 'number') {
-    э = el('input');
-    э.type = 'number';
-    э.value = String(значение);
-    э.addEventListener('input', () => {
-      владелец[ключ] = э.value === '' ? 0 : Number(э.value);
+  } else if (typeof value2 === 'number') {
+    ee = el('input');
+    ee.type = 'number';
+    ee.value = String(value2);
+    ee.addEventListener('input', () => {
+      owner[key] = ee.value === '' ? 0 : Number(ee.value);
       ctx.onChange();
     });
-  } else if (ctx.formatOf && ctx.formatOf(ключ) === 'date') {
-    // Хранится машинная дата, показывается и вводится привычная. Пересчёта в
-    // данных нет: в файл уходит то же, что там и лежало.
-    э = el('input');
-    э.type = 'text';
-    // Образец даты — тоже слово: у другого языка порядок частей свой.
-    э.placeholder = t('form.datePattern');
-    э.value = localized(значение);
-    э.addEventListener('input', () => {
-      владелец[ключ] = toMachine(э.value);
+  } else if (ctx.formatOf && ctx.formatOf(key) === 'date') {
+    ee = el('input');
+    ee.type = 'text';
+    ee.placeholder = t('form.datePattern');
+    ee.value = localized(value2);
+    ee.addEventListener('input', () => {
+      owner[key] = toMachine(ee.value);
       ctx.onChange();
     });
-    э.addEventListener('blur', () => { э.value = localized(владелец[ключ]); });
+    ee.addEventListener('blur', () => { ee.value = localized(owner[key]); });
   } else {
-    const длинное = String(значение ?? '').length > 80 || /[<\n]/.test(String(значение ?? ''));
-    э = el(длинное ? 'textarea' : 'input');
-    if (!длинное) э.type = 'text';
-    э.value = String(значение ?? '');
-    э.addEventListener('input', () => { владелец[ключ] = э.value; ctx.onChange(); });
-    // Подсказка не запрещает своё value: возраст «7–9 и 10–12 лет» закрытым
-    // списком не описать, но набирать его заново каждый раз незачем.
-    if (!длинное && п.hints && п.hints.length) {
-      const список = el('datalist');
-      список.id = 'list-' + path.join('-').replace(/[^\w-]/g, '_');
-      п.hints.forEach(в => {
+    const long = String(value2 ?? '').length > 80 || /[<\n]/.test(String(value2 ?? ''));
+    ee = el(long ? 'textarea' : 'input');
+    if (!long) ee.type = 'text';
+    ee.value = String(value2 ?? '');
+    ee.addEventListener('input', () => { owner[key] = ee.value; ctx.onChange(); });
+    if (!long && p.hints && p.hints.length) {
+      const list = el('datalist');
+      list.id = 'list-' + path.join('-').replace(/[^\w-]/g, '_');
+      p.hints.forEach(v2 => {
         const o = el('option');
-        o.value = в;
-        список.append(o);
+        o.value = v2;
+        list.append(o);
       });
-      э.setAttribute('list', список.id);
-      э.append(список);
+      ee.setAttribute('list', list.id);
+      ee.append(list);
     }
   }
 
-  э.id = 'field-' + path.join('-').replace(/[^\w-]/g, '_');
-  return { item: э, description: п.description };
+  ee.id = 'field-' + path.join('-').replace(/[^\w-]/g, '_');
+  return { item: ee, description: p.description };
 }
 
-function simple(владелец, ключ, path, ctx) {
-  const { item: э, description } = field(владелец, ключ, path, ctx);
-  const обёртка = el('div', 'ed-control');
-  обёртка.append(э);
-  // Описание поля из словаря («строка, необязательно») — язык разработчика.
-  // Человеку его читать незачем; у типа блока описание остаётся: там оно
-  // говорит, что блок делает, а не какого вида его значение.
-  if (ключ === 'type' && description && !/\|/.test(description))
-    обёртка.append(el('span', 'ed-hint', description));
-  const строка = fieldRow({ name: ctx.caption(ключ), value: обёртка, level: pathLevel(path) });
-  строка.querySelector('.ed-row-name').title = String(ключ);
-  if (ключ === 'type' && владелец && 'type' in владелец) строка.classList.add('ed-type');
-  return строка;
+function simple(owner, key, path, ctx) {
+  const { item: ee, description } = field(owner, key, path, ctx);
+  const wrap = el('div', 'ed-control');
+  wrap.append(ee);
+  if (key === 'type' && description && !/\|/.test(description))
+    wrap.append(el('span', 'ed-hint', description));
+  const line = fieldRow({ name: ctx.caption(key), value: wrap, level: pathLevel(path) });
+  line.querySelector('.ed-row-name').title = String(key);
+  if (key === 'type' && owner && 'type' in owner) line.classList.add('ed-type');
+  return line;
 }
 
-// #endregion
-
-// #region Группы
-
-/**
- * Свёртываемая группа. Шапка — та же строка элемента, что и у поля: колонки
- * совпадают, поэтому вложенность видна отступом, а не другой вёрсткой.
- */
-function group(заголовок, внутри, { open: открыта = false, tools: инструменты = null, className: класс = '',
-                                     id = null, value: значение = null, hidden: скрыто = false,
-                                     level: уровень = 0 } = {}) {
-  const g = el('details', ('ed-group ' + класс).trim());
-  g.open = открыта;
-  const шапка = fieldRow({
-    name: заголовок, id, value: значение, tag: 'summary', level: уровень,
-    tools: инструменты ? [инструменты] : [],
+function group(heading, inside, { open: opened = false, tools: tools2 = null, className: cls = '',
+                                     id = null, value: value2 = null, hidden: hiddenState = false,
+                                     level: level2 = 0 } = {}) {
+  const g = el('details', ('ed-group ' + cls).trim());
+  g.open = opened;
+  const header = fieldRow({
+    name: heading, id, value: value2, tag: 'summary', level: level2,
+    tools: tools2 ? [tools2] : [],
   });
-  шапка.classList.add('ed-head');
-  if (скрыто) шапка.dataset.hidden = 'true';
-  g.append(шапка, внутри);
+  header.classList.add('ed-head');
+  if (hiddenState) header.dataset.hidden = 'true';
+  g.append(header, inside);
   return g;
 }
 
-/**
- * Порядок полей — из types.json, если он про эту запись что-то знает.
- * Адрес в ссылке всегда идёт вторым, сразу за названием: он часть имени, а не
- * служебная мелочь в конце.
- */
-function inOrder(ключи, порядок) {
-  const свой = (порядок && порядок.length)
-    ? [...порядок.filter(k => ключи.includes(k)), ...ключи.filter(k => !порядок.includes(k))]
-    : ключи.slice();
-  const i = свой.indexOf('id');
-  if (i > 1) { свой.splice(i, 1); свой.splice(1, 0, 'id'); }
-  return свой;
+function inOrder(keys, order) {
+  const ownOf = (order && order.length)
+    ? [...order.filter(k => keys.includes(k)), ...keys.filter(k => !order.includes(k))]
+    : keys.slice();
+  const i = ownOf.indexOf('id');
+  if (i > 1) { ownOf.splice(i, 1); ownOf.splice(1, 0, 'id'); }
+  return ownOf;
 }
 
-function object(владелец, ключ, path, ctx, безОбёртки = false) {
-  const значение = владелец[ключ];
-  const блок = el('div', 'ed-node');
-  const служебные = [];
-  const ключи = inOrder(
-    Object.keys(значение).filter(k => !k.startsWith('$') && k !== 'hidden'),
-    ctx.fieldOrder && ctx.fieldOrder(значение, path));
+function object(owner, key, path, ctx, unwrapped = false) {
+  const value2 = owner[key];
+  const block = el('div', 'ed-node');
+  const services = [];
+  const keys = inOrder(
+    Object.keys(value2).filter(k => !k.startsWith('$') && k !== 'hidden'),
+    ctx.fieldOrder && ctx.fieldOrder(value2, path));
 
-  for (const k of ключи) {
-    const узелк = node(значение, k, [...path, k], ctx);
-    if (TECHNICAL.has(k)) служебные.push(узелк);
-    else блок.append(узелк);
+  for (const k of keys) {
+    const nodeOf = node(value2, k, [...path, k], ctx);
+    if (TECHNICAL.has(k)) services.push(nodeOf);
+    else block.append(nodeOf);
   }
-  if (служебные.length) {
-    const внутри = el('div', 'ed-node');
-    служебные.forEach(у => внутри.append(у));
-    блок.append(group(t('ui.technical'), внутри,
+  if (services.length) {
+    const inside = el('div', 'ed-node');
+    services.forEach(u => inside.append(u));
+    block.append(group(t('ui.technical'), inside,
       { className: 'ed-tech', level: pathLevel(path) + 1 }));
   }
-  return безОбёртки ? блок
-    : group(ctx.caption(ключ), блок, { open: true, level: pathLevel(path) });
+  return unwrapped ? block
+    : group(ctx.caption(key), block, { open: true, level: pathLevel(path) });
 }
 
-// #endregion
+const flat = z => z && typeof z === 'object' && !Array.isArray(z) && !z.type
+  && Object.keys(z).filter(k => !k.startsWith('$')).length <= 5
+  && Object.values(z).every(v => v == null || typeof v !== 'object')
+  && Object.values(z).every(v => String(v ?? '').length <= 40);
 
-// #region Списки
+const asTable = list => list.length > 0 && list.every(flat)
+  && list.every(z => Object.keys(z).join() === Object.keys(list[0]).join());
 
-/** Плоская запись из коротких значений — строка таблицы, а не карточка. */
-const flat = з => з && typeof з === 'object' && !Array.isArray(з) && !з.type
-  && Object.keys(з).filter(k => !k.startsWith('$')).length <= 5
-  && Object.values(з).every(v => v == null || typeof v !== 'object')
-  && Object.values(з).every(v => String(v ?? '').length <= 40);
-
-const asTable = список => список.length > 0 && список.every(flat)
-  && список.every(з => Object.keys(з).join() === Object.keys(список[0]).join());
-
-/** Колонки списка: из словаря типов, а не из первой строки — пустой список
-    обязан показывать свои колонки, иначе править в нём нечего. */
-const listColumns = (список, ключ, ctx) => {
-  const объявлены = ctx.rowOf && ctx.rowOf(ключ);
-  if (объявлены) return объявлены;
-  return список.length ? Object.keys(список[0]).filter(k => !k.startsWith('$')) : [];
+const listColumns = (list, key, ctx) => {
+  const declaredSet = ctx.rowOf && ctx.rowOf(key);
+  if (declaredSet) return declaredSet;
+  return list.length ? Object.keys(list[0]).filter(k => !k.startsWith('$')) : [];
 };
 
-/** Новая строка списка: по образцу последней, а у пустого — по словарю типов. */
-function prepend(список, ctx, ключ) {
-  const колонки = listColumns(список, ключ, ctx);
-  const образец = список.length ? blank(список[список.length - 1])
-    : (колонки.length ? Object.fromEntries(колонки.map(k => [k, ''])) : '');
-  список.unshift(образец);
+function prepend(list, ctx, key) {
+  const columns = listColumns(list, key, ctx);
+  const sample = list.length ? blank(list[list.length - 1])
+    : (columns.length ? Object.fromEntries(columns.map(k => [k, ''])) : '');
+  list.unshift(sample);
   ctx.onChange(true);
 }
 
-function addButton(список, ctx, подсказка = null, ключ = null) {
-  return iconButton('plus', подсказка || t('btn.add'),
-    () => prepend(список, ctx, ключ));
+function addButton(list, ctx, hint = null, key = null) {
+  return iconButton('plus', hint || t('btn.add'),
+    () => prepend(list, ctx, key));
 }
 
-/** Список простых значений: строка на значение, без второго уровня вокруг него. */
-const simpleValues = список => список.length > 0
-  && список.every(з => з == null || typeof з !== 'object');
+const simpleValues = list => list.length > 0
+  && list.every(z => z == null || typeof z !== 'object');
 
-function simpleList(список, path, ctx) {
-  const тело = el('div', 'ed-values');
-  список.forEach((_, i) => {
-    const { item: э } = field(список, i, [...path, i], ctx);
-    э.setAttribute('aria-label', String(i + 1));
-    const обёртка = el('div', 'ed-control');
-    обёртка.append(э);
-    тело.append(fieldRow({
-      name: null, value: обёртка,
-      tools: [deleteButton(список, i, ctx, список[i])],
+function simpleList(list, path, ctx) {
+  const body = el('div', 'ed-values');
+  list.forEach((_, i) => {
+    const { item: ee } = field(list, i, [...path, i], ctx);
+    ee.setAttribute('aria-label', String(i + 1));
+    const wrap = el('div', 'ed-control');
+    wrap.append(ee);
+    body.append(fieldRow({
+      name: null, value: wrap,
+      tools: [deleteButton(list, i, ctx, list[i])],
     }));
   });
-  return тело;
+  return body;
 }
 
-/**
- * Список без своего заголовка: сам список и кнопка «добавить». Нужен там, где
- * список — единственное содержимое экрана и его имя уже сказано в пути.
- */
-export function plainList(владелец, ключ, path, ctx) {
-  const список = владелец[ключ];
-  const колонки = listColumns(список, ключ, ctx);
-  const тело = el('div');
-  тело.append(simpleValues(список) ? simpleList(список, path, ctx)
-    : (asTable(список) || (!список.length && колонки.length))
-      ? table(список, path, ctx, колонки)
-      : cards(список, path, ctx));
-  const низ = el('div', 'ed-tools');
-  низ.append(addButton(список, ctx, null, ключ));
-  тело.append(низ);
-  return тело;
+export function plainList(owner, key, path, ctx) {
+  const list = owner[key];
+  const columns = listColumns(list, key, ctx);
+  const body = el('div');
+  body.append(simpleValues(list) ? simpleList(list, path, ctx)
+    : (asTable(list) || (!list.length && columns.length))
+      ? table(list, path, ctx, columns)
+      : cards(list, path, ctx));
+  const bottom = el('div', 'ed-tools');
+  bottom.append(addButton(list, ctx, null, key));
+  body.append(bottom);
+  return body;
 }
 
-function array(владелец, ключ, path, ctx) {
-  const список = владелец[ключ];
-  // Сколько записей в списке — часть его имени, а не действие над ним:
-  // счёт стоит в колонке значения, рядом с подписью.
-  const счёт = el('span', 'ed-count', String(список.length));
-  return group(ctx.caption(ключ), plainList(владелец, ключ, path, ctx),
-    { open: список.length <= 6, value: счёт, level: pathLevel(path) });
+function array(owner, key, path, ctx) {
+  const list = owner[key];
+  const count = el('span', 'ed-count', String(list.length));
+  return group(ctx.caption(key), plainList(owner, key, path, ctx),
+    { open: list.length <= 6, value: count, level: pathLevel(path) });
 }
 
-function table(список, path, ctx, колонки) {
+function table(list, path, ctx, columns) {
   const t = el('div', 'ed-flat');
-  t.style.setProperty('--cols', String(колонки.length));
-  const шапка = el('div', 'ed-flat-row ed-flat-head');
-  колонки.forEach(k => шапка.append(el('span', null, ctx.caption(k))));
-  шапка.append(el('span'));
-  t.append(шапка);
+  t.style.setProperty('--cols', String(columns.length));
+  const header = el('div', 'ed-flat-row ed-flat-head');
+  columns.forEach(k => header.append(el('span', null, ctx.caption(k))));
+  header.append(el('span'));
+  t.append(header);
 
-  список.forEach((з, i) => {
-    const строка = el('div', 'ed-flat-row');
-    колонки.forEach(k => {
-      const { item: э } = field(з, k, [...path, i, k], ctx);
-      э.setAttribute('aria-label', ctx.caption(k));
-      строка.append(э);
+  list.forEach((z, i) => {
+    const line = el('div', 'ed-flat-row');
+    columns.forEach(k => {
+      const { item: ee } = field(z, k, [...path, i, k], ctx);
+      ee.setAttribute('aria-label', ctx.caption(k));
+      line.append(ee);
     });
-    строка.append(deleteButton(список, i, ctx, з));
-    t.append(строка);
+    line.append(deleteButton(list, i, ctx, z));
+    t.append(line);
   });
   return t;
 }
 
-function cards(список, path, ctx) {
-  const тело = el('div', 'ed-cards');
-  список.forEach((з, i) => {
-    const внутри = el('div');
-    внутри.append(valueKind(список, i, [...path, i], ctx));
+function cards(list, path, ctx) {
+  const body = el('div', 'ed-cards');
+  list.forEach((z, i) => {
+    const inside = el('div');
+    inside.append(valueKind(list, i, [...path, i], ctx));
 
-    const инструменты = el('span', 'ed-tools');
-    const доп = ctx.extra && ctx.extra(з, [...path, i]);
-    if (доп) инструменты.append(доп);
-    if (з && typeof з === 'object') инструменты.append(eyeButton(з, ctx));
-    инструменты.append(deleteButton(список, i, ctx, з));
+    const tools2 = el('span', 'ed-tools');
+    const extra = ctx.extra && ctx.extra(z, [...path, i]);
+    if (extra) tools2.append(extra);
+    if (z && typeof z === 'object') tools2.append(eyeButton(z, ctx));
+    tools2.append(deleteButton(list, i, ctx, z));
 
-    const g = group(ctx.itemName ? ctx.itemName(з, i) : recordName(з, i), внутри, {
-      tools: инструменты, hidden: isHidden(з),
-      id: з && typeof з === 'object' ? (з.type || з.id || null) : null,
+    const g = group(ctx.itemName ? ctx.itemName(z, i) : recordName(z, i), inside, {
+      tools: tools2, hidden: isHidden(z),
+      id: z && typeof z === 'object' ? (z.type || z.id || null) : null,
     });
-    if (isHidden(з)) g.dataset.hidden = 'true';
-    тело.append(g);
+    if (isHidden(z)) g.dataset.hidden = 'true';
+    body.append(g);
   });
-  return тело;
+  return body;
 }
 
-/** Элемент списка: объект разворачивается без второй рамки вокруг индекса. */
-function valueKind(список, i, path, ctx) {
-  const з = список[i];
-  if (Array.isArray(з)) return array(список, i, path, ctx);
-  if (з && typeof з === 'object') return object(список, i, path, ctx, true);
-  return simple(список, i, path, ctx);
+function valueKind(list, i, path, ctx) {
+  const z = list[i];
+  if (Array.isArray(z)) return array(list, i, path, ctx);
+  if (z && typeof z === 'object') return object(list, i, path, ctx, true);
+  return simple(list, i, path, ctx);
 }
-
-// #endregion
-
-// #region Инструменты записи
 
 export const dragHandle = () => {
-  const р = el('span', 'ed-cell ed-icon-btn ed-handle', '⠿');
-  р.title = t('btn.drag');
-  return р;
+  const r = el('span', 'ed-cell ed-icon-btn ed-handle', '⠿');
+  r.title = t('btn.drag');
+  return r;
 };
 
-export const eyeIcon = скрыто => icon(скрыто ? 'eye-off' : 'eye');
+export const eyeIcon = hiddenState => icon(hiddenState ? 'eye-off' : 'eye');
 
-export function eyeButton(з, ctx) {
+export function eyeButton(z, ctx) {
   const b = el('button', 'ed-cell ed-icon-btn');
-  b.append(eyeIcon(isHidden(з)));
+  b.append(eyeIcon(isHidden(z)));
   b.type = 'button';
-  b.title = isHidden(з) ? t('eye.hidden') : t('eye.shown');
+  b.title = isHidden(z) ? t('eye.hidden') : t('eye.shown');
   b.setAttribute('aria-label', b.title);
-  b.addEventListener('click', е => {
-    е.preventDefault();
-    е.stopPropagation();
-    if (з.hidden) delete з.hidden; else з.hidden = true;
+  b.addEventListener('click', e2 => {
+    e2.preventDefault();
+    e2.stopPropagation();
+    if (z.hidden) delete z.hidden; else z.hidden = true;
     ctx.onChange(true);
   });
   return b;
 }
 
-/** Удаление в два шага: второй клик по той же кнопке подтверждает. */
-export function deleteButton(список, i, ctx, з) {
+export function deleteButton(list, i, ctx, z) {
   const b = el('button', 'ed-cell ed-icon-btn', '✕');
   b.type = 'button';
   b.title = t('btn.delete');
-  let спрошено = false;
-  const cancel = () => { спрошено = false; b.textContent = '✕'; b.classList.remove('ed-danger'); };
+  let asked = false;
+  const cancel = () => { asked = false; b.textContent = '✕'; b.classList.remove('ed-danger'); };
   b.addEventListener('blur', cancel);
-  b.addEventListener('click', е => {
-    е.preventDefault();
-    е.stopPropagation();
-    if (!спрошено) {
-      спрошено = true;
+  b.addEventListener('click', e2 => {
+    e2.preventDefault();
+    e2.stopPropagation();
+    if (!asked) {
+      asked = true;
       b.textContent = '?';
-      b.title = `${t('btn.delete')} «${String(recordName(з, i)).slice(0, 24)}»`;
+      b.title = `${t('btn.delete')} «${String(recordName(z, i)).slice(0, 24)}»`;
       b.classList.add('ed-danger');
       return;
     }
-    список.splice(i, 1);
+    list.splice(i, 1);
     ctx.onChange(true);
   });
   return b;
 }
 
-/**
- * Перетаскивание за ручку. Указательные события, а не HTML5 drag: последний
- * ломает выделение внутри полей и не работает пальцем.
- */
-
-// #endregion
-
-/** Одна запись справочника: поля в объявленном порядке, без внешней рамки. */
-export function recordForm(список, i, ctx) {
-  return valueKind(список, i, [i], ctx);
+export function recordForm(list, i, ctx) {
+  return valueKind(list, i, [i], ctx);
 }
 
-export function form(держатель, ключ, ctx) {
-  const значение = держатель[ключ];
-  if (Array.isArray(значение)) return array(держатель, ключ, [], ctx);
-  if (значение && typeof значение === 'object') return object(держатель, ключ, [], ctx, true);
-  return simple(держатель, ключ, [], ctx);
+export function form(holder, key, ctx) {
+  const value2 = holder[key];
+  if (Array.isArray(value2)) return array(holder, key, [], ctx);
+  if (value2 && typeof value2 === 'object') return object(holder, key, [], ctx, true);
+  return simple(holder, key, [], ctx);
 }

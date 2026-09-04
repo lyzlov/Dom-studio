@@ -1,18 +1,13 @@
-/**
- * blocks.mjs — наполнения блока и страничные элементы.
- * Разметка в markup/*.html; здесь сопоставление данных с полями шаблона.
- */
 
 import { esc, linkHtml, galleryHtml, plainTable, ageText, ageBuckets } from './render.mjs';
 import { R as render } from './template.mjs';
 import { t, tf } from './lang.mjs';
 
-const R = (имя, данные) => render(имя, данные).replace(/\n$/, '');
+const R = (name2, data) => render(name2, data).replace(/\n$/, '');
 
-export const innerBlocks = (html, путь) =>
-  String(html).replace(/href="\/([^"]*)"/g, (_, ц) => `href="${linkHtml(путь, ц + (ц.endsWith('/') ? 'index.html' : ''))}"`);
+export const innerBlocks = (html, filePath) =>
+  String(html).replace(/href="\/([^"]*)"/g, (_, c2) => `href="${linkHtml(filePath, c2 + (c2.endsWith('/') ? 'index.html' : ''))}"`);
 
-/* #region Карточка */
 const SIZES = '(min-width: 1024px) 300px, (min-width: 600px) 45vw, 92vw';
 const SIZES_TEAM = '(min-width: 600px) 260px, 45vw';
 
@@ -23,7 +18,7 @@ const picture = ({ base, caption, width, height, root, lazy = true, sizes = SIZE
 export function card({ linkTo, heading, linkLabel, meta, subheading, description, note,
                            image, frameCaption, sizes, root, attrs = {}, action, wide }) {
   const parts = [];
-  const add = (вид, value) => { if (value) parts.push({ [вид]: true, value }); };
+  const add = (kind, value) => { if (value) parts.push({ [kind]: true, value }); };
   if (wide) { add('meta', meta); add('heading', heading); }
   else { add('heading', heading); add('meta', meta); }
   add('subheading', subheading);
@@ -42,40 +37,33 @@ export function card({ linkTo, heading, linkLabel, meta, subheading, description
   });
 }
 
-/**
- * Дни недели: череда машинная и живёт в коде, слово — в словаре языка. Раньше
- * череда лежала словами в словаре, и совпадение с данными держалось на том,
- * что язык данных и язык словаря один. У второго языка так не выйдет.
- */
-export const ДНИ = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-export const день = код => t('ui.weekday.' + код);
+export const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+export const day = code => t('ui.weekday.' + code);
 
-/* #region Время занятий */
-export function sessionTime(курс, { withRoom, room = x => x }) {
-  const ручная = withRoom ? курс.timeLabel : курс.timeLabelCard;
-  if (ручная) return ручная;
-  const залы = [...new Set(курс.lessons.map(з => room(з.room)))];
-  if (залы.length > 1) {
-    return курс.lessons
-      .map(з => `${день(з.day)} ${з.time} (${ageText(з.age)}${withRoom ? tf('ui.hallOf', { room: room(з.room) }) : ''})`)
+export function sessionTime(course, { withRoom, room = x => x }) {
+  const manual = withRoom ? course.timeLabel : course.timeLabelCard;
+  if (manual) return manual;
+  const rooms = [...new Set(course.lessons.map(z => room(z.room)))];
+  if (rooms.length > 1) {
+    return course.lessons
+      .map(z => `${day(z.day)} ${z.time} (${ageText(z.age)}${withRoom ? tf('ui.hallOf', { room: room(z.room) }) : ''})`)
       .join(' / ');
   }
-  const хвост = withRoom ? tf('ui.hallOf', { room: залы[0] }) : '';
-  const возрастыРазные = new Set(курс.lessons.map(з => JSON.stringify(з.age))).size > 1;
-  if (!возрастыРазные) return курс.lessons.map(з => `${день(з.day)} ${з.time}`).join(' / ') + хвост;
-  const поДням = [];
-  for (const з of курс.lessons) {
-    let г = поДням.find(x => x.day === з.day);
-    if (!г) { г = { day: з.day, slots: [] }; поДням.push(г); }
-    г.slots.push(з);
+  const tail = withRoom ? tf('ui.hallOf', { room: rooms[0] }) : '';
+  const agesDiffer = new Set(course.lessons.map(z => JSON.stringify(z.age))).size > 1;
+  if (!agesDiffer) return course.lessons.map(z => `${day(z.day)} ${z.time}`).join(' / ') + tail;
+  const byDay = [];
+  for (const z of course.lessons) {
+    let g = byDay.find(x => x.day === z.day);
+    if (!g) { g = { day: z.day, slots: [] }; byDay.push(g); }
+    g.slots.push(z);
   }
-  return поДням.map(г => г.slots
-    .map((з, i) => `${i ? '' : день(г.day) + ' '}${з.time}${withRoom ? ` (${ageText(з.age)})` : ''}`)
-    .join(' / ')).join('; ') + хвост;
+  return byDay.map(g => g.slots
+    .map((z, i) => `${i ? '' : day(g.day) + ' '}${z.time}${withRoom ? ` (${ageText(z.age)})` : ''}`)
+    .join(' / ')).join('; ') + tail;
 }
 
-/* #region Виды карточек */
-const href = (папка, id) => `${папка}/${id}/index.html`;
+const href = (folder, id) => `${folder}/${id}/index.html`;
 
 export const KINDS = {
   course: (c, ctx) => card({
@@ -85,22 +73,22 @@ export const KINDS = {
            `${t('ui.curator')}: ${esc(ctx.person(c.curator))}`].join('<br>'),
     image: c.image, sizes: ctx.sizes, root: ctx.assets,
     attrs: { age: ageBuckets(c.age).join(' '),
-                day: [...new Set(c.lessons.map(з => з.day))].join(', '),
+                day: [...new Set(c.lessons.map(z => z.day))].join(', '),
                 direction: c.direction },
     action: t('ui.enrollLower'),
   }),
   event: (e, ctx) => {
-    const прошедшее = ctx.past(e);
+    const isPastItem = ctx.past(e);
     return card({
       linkTo: linkHtml(ctx.href, href('events', e.id)), heading: e.title,
-      linkLabel: прошедшее ? e.title
+      linkLabel: isPastItem ? e.title
         : `${e.title}, ${e.date.caption.replace(/\s*\d{4}$/, '')}`,
-      meta: прошедшее
+      meta: isPastItem
         ? [`${t('ui.age')}: ${esc(ageText(e.age))}`, `${t('ui.date')}: ${esc(e.date.caption)}`].filter(x => !/: $/.test(x)).join('<br>')
         : [esc(e.date.caption), esc(e.date.time), esc(e.place)].filter(Boolean).join(' · '),
-      description: прошедшее ? null : e.description,
+      description: isPastItem ? null : e.description,
       image: e.image, sizes: ctx.sizes, root: ctx.assets, wide: ctx.wide,
-      action: прошедшее ? null : t('ui.enroll'),
+      action: isPastItem ? null : t('ui.enroll'),
     });
   },
   session: (s, ctx) => card({
@@ -110,10 +98,10 @@ export const KINDS = {
     image: s.image, frameCaption: tf('ui.sessionPoster', { title: s.title }),
     sizes: ctx.sizes, root: ctx.assets,
   }),
-  post: (п, ctx) => card({
-    linkTo: linkHtml(ctx.href, href('blog', п.id)), heading: п.heading,
-    meta: [esc(п.date), esc(п.readTime)].join(' · '),
-    image: п.cover, sizes: ctx.sizes, root: ctx.assets,
+  post: (p, ctx) => card({
+    linkTo: linkHtml(ctx.href, href('blog', p.id)), heading: p.heading,
+    meta: [esc(p.date), esc(p.readTime)].join(' · '),
+    image: p.cover, sizes: ctx.sizes, root: ctx.assets,
   }),
   service: (u, ctx) => card({ heading: u.title, description: innerBlocks(u.description, ctx.href),
     sizes: ctx.sizes, root: ctx.assets }),
@@ -124,54 +112,51 @@ export const KINDS = {
   }),
 };
 
-/* #region Наполнения блока */
-const textBlock = (б, ctx) => innerBlocks(ctx.text(б.text), ctx.href);
+const textBlock = (b2, ctx) => innerBlocks(ctx.text(b2.text), ctx.href);
 
-const filtersBlock = (б, ctx, list) => {
-  const ПОДПИСИ = () => ({ age: t('ui.age'), day: t('ui.day'),
+const filtersBlock = (b2, ctx, list) => {
+  const CAPTIONS = () => ({ age: t('ui.age'), day: t('ui.day'),
                          direction: t('ui.direction') });
-  const values = группа => {
-    if (группа === 'age') return ['3–5', '6–10', '11–16'];
-    // Отбор идёт по коду дня, а показывается слово: у отбора машинное значение,
-    // у подписи — язык.
-    if (группа === 'day') return ДНИ.filter(д => list.some(c => c.lessons.some(з => з.day === д)))
-      .map(д => ({ value: д, caption: день(д) }));
+  const values = group => {
+    if (group === 'age') return ['3–5', '6–10', '11–16'];
+    if (group === 'day') return WEEKDAYS.filter(d => list.some(c => c.lessons.some(z => z.day === d)))
+      .map(d => ({ value: d, caption: day(d) }));
     return [...new Set(list.map(c => c.direction))]
       .map(id => ({ value: id, caption: ctx.name('direction', id) }))
       .sort((a, b) => a.caption.localeCompare(b.caption, t('ui.collator')));
   };
-  const pairs = сп => сп.map(з => (typeof з === 'string' ? { value: з, caption: з } : з));
+  const pairs = list2 => list2.map(z => (typeof z === 'string' ? { value: z, caption: z } : z));
   return R('filters', {
-    filters: б.filters.map(г => ({ group: г, caption: ПОДПИСИ()[г], values: pairs(values(г)) })),
+    filters: b2.filters.map(g => ({ group: g, caption: CAPTIONS()[g], values: pairs(values(g)) })),
   });
 };
 
-const blockCards = (б, ctx) => {
-  const list = ctx.select(б);
-  const вид = KINDS[б.kind];
-  const карточки = list.map(x => вид(x, { ...ctx, wide: б.wide })).join('\n');
-  if (б.wide && list.length === 1) return карточки;
+const blockCards = (b2, ctx) => {
+  const list = ctx.select(b2);
+  const kind = KINDS[b2.kind];
+  const cards = list.map(x => kind(x, { ...ctx, wide: b2.wide })).join('\n');
+  if (b2.wide && list.length === 1) return cards;
   return R('cards', {
-    filters: б.filters ? filtersBlock(б, ctx, list) + '\n' : '',
-    filterable: !!б.filters, cards: карточки,
+    filters: b2.filters ? filtersBlock(b2, ctx, list) + '\n' : '',
+    filterable: !!b2.filters, cards: cards,
   });
 };
 
-const teamBlock = (б, ctx) => R('team', {
-  people: ctx.select(б).map(т => ({
-    name: т.name, role: т.role, bio: т.bio || '',
-    frame: т.photo
-      ? picture({ base: т.photo, caption: т.name, root: ctx.assets, sizes: SIZES_TEAM, class: null,
-                   ...(ctx.sizes[т.photo] || { width: 400, height: 400 }) })
-      : R('placeholder', { name: т.name }),
+const teamBlock = (b2, ctx) => R('team', {
+  people: ctx.select(b2).map(t2 => ({
+    name: t2.name, role: t2.role, bio: t2.bio || '',
+    frame: t2.photo
+      ? picture({ base: t2.photo, caption: t2.name, root: ctx.assets, sizes: SIZES_TEAM, class: null,
+                   ...(ctx.sizes[t2.photo] || { width: 400, height: 400 }) })
+      : R('placeholder', { name: t2.name }),
   })),
 });
 
-const faqBlock = (б, ctx) => R('faq', {
-  faq: ctx.select(б).map(в => ({ question: в.question, answer: innerBlocks(в.answer, ctx.href) })),
+const faqBlock = (b2, ctx) => R('faq', {
+  faq: ctx.select(b2).map(v2 => ({ question: v2.question, answer: innerBlocks(v2.answer, ctx.href) })),
 });
 
-const scheduleBlock = (б, ctx) => R('schedule', {
+const scheduleBlock = (b2, ctx) => R('schedule', {
   rows: JSON.stringify(ctx.schedule()),
   colgroup: R('colgroup', { widths: ['8.3333%', '8.3333%', '25.0000%', '16.6667%', '16.6667%', '8.3333%', '16.6667%'] }),
   columns: [['day', t('ui.day')], ['time', t('ui.time')],
@@ -181,61 +166,59 @@ const scheduleBlock = (б, ctx) => R('schedule', {
     .map(([key, name]) => ({ key, name })),
 });
 
-const tableBlock = (б, ctx) => {
-  if (б.kind !== 'plain') return scheduleBlock(б, ctx);
-  const t = ctx.table(б);
+const tableBlock = (b2, ctx) => {
+  if (b2.kind !== 'plain') return scheduleBlock(b2, ctx);
+  const t = ctx.table(b2);
   return plainTable(t) + (t.note ? '\n' + R('note', { text: t.note }) : '');
 };
 
-const galleryBlock = (б, ctx) => {
-  const html = galleryHtml({ frames: ctx.frames(б), root: ctx.assets, mode: б.mode,
+const galleryBlock = (b2, ctx) => {
+  const html = galleryHtml({ frames: ctx.frames(b2), root: ctx.assets, mode: b2.mode,
     firstEager: false, full: '-1400', sizes: '(min-width: 1024px) 25vw, 45vw', class: null });
-  return б.collapsed
-    ? R('disclosure', { class: 'disclosure-control', caption: б.collapsed, inner: html })
+  return b2.collapsed
+    ? R('disclosure', { class: 'disclosure-control', caption: b2.collapsed, inner: html })
     : html;
 };
 
-const linksBlock = (б, ctx) => R('quicklinks', {
-  items: б.items.map(п => ({ name: п.name, link: linkHtml(ctx.href, п.href) })),
+const linksBlock = (b2, ctx) => R('quicklinks', {
+  items: b2.items.map(p => ({ name: p.name, link: linkHtml(ctx.href, p.href) })),
 });
 linksBlock.section = 'quicklinks';
 
-const ratingBlock = (б, ctx) => {
-  const о = ctx.rating();
-  return R('rating', { ...о, routeLabel: tf('ui.newTab', { name: о.button }) });
+const ratingBlock = (b2, ctx) => {
+  const o = ctx.rating();
+  return R('rating', { ...o, routeLabel: tf('ui.newTab', { name: o.button }) });
 };
 
-const contactsBlock = (б, ctx) => {
-  const к = ctx.contacts();
-  const phone = R('tel-link', { num: к.phone.replace(/[^\d+]/g, ''), phone: к.phone });
-  // Соцсетей может быть сколько угодно: каждая даёт свою строку в таблице
-  // контактов и своё звено в строчном варианте.
-  const соцсети = (к.social || []).map(с => ({
-    social: с, link: R('social-link', { ...с, schoolNewTab: tf('ui.schoolNewTab', с) }),
+const contactsBlock = (b2, ctx) => {
+  const k2 = ctx.contacts();
+  const phone = R('tel-link', { num: k2.phone.replace(/[^\d+]/g, ''), phone: k2.phone });
+  const socials = (k2.social || []).map(s2 => ({
+    social: s2, link: R('social-link', { ...s2, schoolNewTab: tf('ui.schoolNewTab', s2) }),
   }));
   const grid = R('contacts', {
-    paragraphs: б.kind === 'paragraphs', address: к.address, phone,
-    socials: соцсети.map(x => x.link).join(' · '),
-    rows: [{ caption: t('ui.address'), value: esc(к.address) },
+    paragraphs: b2.kind === 'paragraphs', address: k2.address, phone,
+    socials: socials.map(x => x.link).join(' · '),
+    rows: [{ caption: t('ui.address'), value: esc(k2.address) },
              { caption: t('ui.phone'), value: phone },
-             ...соцсети.map(x => ({ caption: x.social.name, value: x.link }))],
+             ...socials.map(x => ({ caption: x.social.name, value: x.link }))],
   });
-  if (!б.map || б.map === 'none') return grid;
-  const [lat, lng] = к.coords;
-  const карта = R('map', { lat, lng, caption: к.mapCaption, route: к.route });
-  return grid + '\n' + (б.map === 'collapsed'
-    ? R('disclosure', { class: 'disclosure-control', caption: t('ui.mapOpen'), inner: карта })
-    : карта);
+  if (!b2.map || b2.map === 'none') return grid;
+  const [lat, lng] = k2.coords;
+  const map = R('map', { lat, lng, caption: k2.mapCaption, route: k2.route });
+  return grid + '\n' + (b2.map === 'collapsed'
+    ? R('disclosure', { class: 'disclosure-control', caption: t('ui.mapOpen'), inner: map })
+    : map);
 };
 
-const formBlock = (б, ctx) => ctx.form();
+const formBlock = (b2, ctx) => ctx.form();
 
-const blockTabs = (б, ctx) => R('tabs', {
-  tabs: б.tabs.map((в, i) => ({
-    key: в.key, name: в.name, first: i === 0,
-    bar: CONTENTS[в.blockType.type](в.blockType, ctx),
+const blockTabs = (b2, ctx) => R('tabs', {
+  tabs: b2.tabs.map((v2, i) => ({
+    key: v2.key, name: v2.name, first: i === 0,
+    bar: CONTENTS[v2.blockType.type](v2.blockType, ctx),
   })),
-  action: б.action ? '\n' + R('tab-action', { ...б.action, root: ctx.assets }) : '',
+  action: b2.action ? '\n' + R('tab-action', { ...b2.action, root: ctx.assets }) : '',
 });
 
 export const CONTENTS = {
@@ -251,11 +234,11 @@ export const CONTENTS = {
   form: formBlock,
 };
 
-const heroBlock = (б, ctx) => {
-  const b = ctx.banner(б.banner);
+const heroBlock = (b2, ctx) => {
+  const b = ctx.banner(b2.banner);
   return R('hero', {
-    root: ctx.assets, heading: б.heading, subheading: б.subheading,
-    slogan: б.slogan, facts: б.facts,
+    root: ctx.assets, heading: b2.heading, subheading: b2.subheading,
+    slogan: b2.slogan, facts: b2.facts,
     banner: b ? '\n' + R('banner', {
       link: linkHtml(ctx.href, b.link), date: b.date,
       heading: b.heading, caption: b.caption,
@@ -265,20 +248,19 @@ const heroBlock = (б, ctx) => {
 
 export const PAGE_LEVEL = { tabs: blockTabs, 'hero': heroBlock };
 
-/* #region Сборка блока */
-export function buildElement(б, ctx) {
-  return PAGE_LEVEL[б.type] ? PAGE_LEVEL[б.type](б, ctx) : buildBlock(б, ctx);
+export function buildElement(b2, ctx) {
+  return PAGE_LEVEL[b2.type] ? PAGE_LEVEL[b2.type](b2, ctx) : buildBlock(b2, ctx);
 }
 
-export function buildBlock(б, ctx) {
-  const inner = CONTENTS[б.type];
-  if (!inner) throw new Error(`unknown block filling: “${б.type}”`);
+export function buildBlock(b2, ctx) {
+  const inner = CONTENTS[b2.type];
+  if (!inner) throw new Error(`unknown block filling: “${b2.type}”`);
   const body = [
-    б.heading ? R('block-title', { heading: б.heading, sr: !!б.srHeading }) : '',
-    inner(б, ctx),
+    b2.heading ? R('block-title', { heading: b2.heading, sr: !!b2.srHeading }) : '',
+    inner(b2, ctx),
   ].filter(Boolean).join('\n');
   return R('block', {
-    classes: [inner.section || 'block', б.class].filter(Boolean).join(' '),
-    id: б.id, body,
+    classes: [inner.section || 'block', b2.class].filter(Boolean).join(' '),
+    id: b2.id, body,
   });
 }

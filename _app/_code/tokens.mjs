@@ -1,53 +1,50 @@
-/**
- * tokens.mjs — чтение и правка _assets/tokens.css. Значение меняется на месте.
- */
 
 function blocks(css) {
-  const результат = [];
+  const result = [];
   const re = /@media([^{]*)\{/g;
   let m;
   while ((m = re.exec(css))) {
-    let i = re.lastIndex, глубина = 1;
-    while (i < css.length && глубина > 0) {
-      if (css[i] === '{') глубина++;
-      else if (css[i] === '}') глубина--;
+    let i = re.lastIndex, depth = 1;
+    while (i < css.length && depth > 0) {
+      if (css[i] === '{') depth++;
+      else if (css[i] === '}') depth--;
       i++;
     }
-    результат.push({ condition: m[1].trim(), from: m.index, to: i });
+    result.push({ condition: m[1].trim(), from: m.index, to: i });
   }
-  return результат;
+  return result;
 }
 
 export function parseTokens(css) {
-  const медиа = blocks(css);
-  const токены = [];
+  const media = blocks(css);
+  const tokens = [];
   const re = /(--[a-zA-Z0-9-]+)\s*:\s*([^;]*);/g;
   let m;
   while ((m = re.exec(css))) {
-    const внутри = медиа.filter(б => m.index > б.from && m.index < б.to).pop();
-    const конец = m.index + m[0].length;
-    const строка = css.slice(конец, css.indexOf('\n', конец) < 0 ? css.length : css.indexOf('\n', конец));
-    const хвост = строка.match(/\/\*\s*([^*]*?)\s*\*\//);
-    токены.push({
+    const inside = media.filter(b2 => m.index > b2.from && m.index < b2.to).pop();
+    const end = m.index + m[0].length;
+    const line = css.slice(end, css.indexOf('\n', end) < 0 ? css.length : css.indexOf('\n', end));
+    const tail = line.match(/\/\*\s*([^*]*?)\s*\*\//);
+    tokens.push({
       name: m[1],
       value: m[2].trim(),
-      caption: хвост ? хвост[1] : '',
-      where: внутри ? `@media ${внутри.condition}` : ':root',
+      caption: tail ? tail[1] : '',
+      where: inside ? `@media ${inside.condition}` : ':root',
       from: m.index + m[0].indexOf(m[2], m[1].length),
-      to: конец - 1,
+      to: end - 1,
     });
   }
-  return токены;
+  return tokens;
 }
 
-export function replaceTokens(css, токены, значения) {
-  let итог = css;
-  [...токены].sort((a, b) => b.from - a.from).forEach(т => {
-    const новое = значения[т.name + '@' + т.where];
-    if (новое == null || новое === т.value) return;
-    итог = итог.slice(0, т.from) + новое + итог.slice(т.to);
+export function replaceTokens(css, tokens, values) {
+  let out = css;
+  [...tokens].sort((a, b) => b.from - a.from).forEach(t => {
+    const next = values[t.name + '@' + t.where];
+    if (next == null || next === t.value) return;
+    out = out.slice(0, t.from) + next + out.slice(t.to);
   });
-  return итог;
+  return out;
 }
 
 export const colorOf = v => /^#[0-9a-fA-F]{3,8}$/.test(v.trim()) || /^rgba?\(/.test(v.trim());

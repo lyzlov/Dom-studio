@@ -1,81 +1,69 @@
-/**
- * assemble.mjs — сборка всех страниц сайта из данных. Без файловой системы:
- * всё внешнее приходит аргументами.
- */
 
 import { entityPage, page, sectionHead, form, priceLine, isPast, ageText } from './render.mjs';
-import { buildBlock, buildElement, sessionTime, день, CONTENTS, PAGE_LEVEL, KINDS } from './blocks.mjs';
+import { buildBlock, buildElement, sessionTime, day, CONTENTS, PAGE_LEVEL, KINDS } from './blocks.mjs';
 import { t, tf } from './lang.mjs';
 
-/** Сумма со знаком валюты: знак объявлен в словаре языка. */
-const money = сумма => `${сумма}${t('ui.currency')}`;
+const money = amount => `${amount}${t('ui.currency')}`;
 
-export const substitute = (t, з) => String(t).replace(/\{([^}]+)\}/g, (_, k) => з[k] ?? '');
+export const substitute = (t, z) => String(t).replace(/\{([^}]+)\}/g, (_, k) => z[k] ?? '');
 
 export function imageBases({ site, catalog }) {
   return [...new Set([
     ...[...catalog.courses, ...catalog.events, ...catalog.camp.sessions].map(x => x.image),
-    ...(site.gallery || []).map(к => к.base),
-    ...catalog.team.map(т => т.photo),
+    ...(site.gallery || []).map(k2 => k2.base),
+    ...catalog.team.map(t2 => t2.photo),
   ].filter(Boolean))];
 }
 
-/** Типографика применяется к тексту страницы; теги и attrs не затрагиваются. */
-export function typeset(html, правила) {
-  if (!правила || !правила.length) return html;
-  const готовые = правила.map(п => ({ re: new RegExp(п.find, 'g'), to: п.replace }));
-  return html.replace(/(<[^>]*>)|([^<]+)/g, (всё, тег, текст) => {
-    if (тег) return тег;
-    let t = текст;
-    for (const п of готовые) t = t.replace(п.re, п.to);
+export function typeset(html, rules) {
+  if (!rules || !rules.length) return html;
+  const prepared = rules.map(p => ({ re: new RegExp(p.find, 'g'), to: p.replace }));
+  return html.replace(/(<[^>]*>)|([^<]+)/g, (everything, tag, text2) => {
+    if (tag) return tag;
+    let t = text2;
+    for (const p of prepared) t = t.replace(p.re, p.to);
     return t;
   });
 }
 
 export function checkTypes(types, structure) {
-  const беды = [];
+  const issues = [];
   const noMeta = o => Object.keys(o).filter(k => !k.startsWith('$'));
-  const verify = (что, объявлено, реализовано) => {
-    объявлено.filter(t => !реализовано.includes(t))
-      .forEach(t => беды.push(`${что}: “${t}” is declared in types.json but not implemented`));
-    реализовано.filter(t => !объявлено.includes(t))
-      .forEach(t => беды.push(`${что}: “${t}” is implemented but not declared in types.json`));
+  const verify = (what, declaredList, implemented) => {
+    declaredList.filter(t => !implemented.includes(t))
+      .forEach(t => issues.push(`${what}: “${t}” is declared in types.json but not implemented`));
+    implemented.filter(t => !declaredList.includes(t))
+      .forEach(t => issues.push(`${what}: “${t}” is implemented but not declared in types.json`));
   };
 
   verify('blockType', noMeta(types.blockTypes),
           [...Object.keys(CONTENTS), ...Object.keys(PAGE_LEVEL)]);
 
-  const виды = String((types.blockTypes.cards.fields || {}).kind || '')
+  const kinds = String((types.blockTypes.cards.fields || {}).kind || '')
     .split('|').map(x => x.trim()).filter(Boolean);
-  verify('card kind', виды, Object.keys(KINDS));
+  verify('card kind', kinds, Object.keys(KINDS));
 
-  const сущности = noMeta(types.entities);
-  verify('record kind', сущности, noMeta(structure.templates));
-  for (const вид of сущности) {
-    const о = types.entities[вид], ш = structure.templates[вид];
-    if (ш && о.folder !== ш.folder)
-      беды.push(`record kind “${вид}”: folder “${о.folder}” in types.json, “${ш.folder}” in the template`);
-    if (!виды.includes(вид))
-      беды.push(`record kind “${вид}”: no card kind of the same name`);
+  const entities = noMeta(types.entities);
+  verify('record kind', entities, noMeta(structure.templates));
+  for (const kind of entities) {
+    const o2 = types.entities[kind], sh = structure.templates[kind];
+    if (sh && o2.folder !== sh.folder)
+      issues.push(`record kind “${kind}”: folder “${o2.folder}” in types.json, “${sh.folder}” in the template`);
+    if (!kinds.includes(kind))
+      issues.push(`record kind “${kind}”: no card kind of the same name`);
   }
 
-  return беды;
+  return issues;
 }
 
-/** Скрытая запись не выводится нигде: ни карточкой, ни своей страницей. */
-export const visibleRecords = list => (list || []).filter(з => !(з && з.hidden));
+export const visibleRecords = list => (list || []).filter(z => !(z && z.hidden));
 
-/**
- * Порядок на сайте задаётся сборкой, а не тем, в каком порядке запись
- * дописали в файл. Где есть дата в машинном виде — по дате; где её нет —
- * порядок ручной, то есть порядок массива.
- */
-const ДАТА = { events: x => (x.date || {}).to, camp: x => (x.dates || {}).to };
-export function inOrder(имя, list, наоборот = false) {
-  const дата = ДАТА[имя];
-  if (!дата) return list;
-  const s = [...list].sort((a, b) => String(дата(a) || '').localeCompare(String(дата(b) || '')));
-  return наоборот ? s.reverse() : s;
+const DATE_OF = { events: x => (x.date || {}).to, camp: x => (x.dates || {}).to };
+export function inOrder(name2, list, reverse = false) {
+  const date = DATE_OF[name2];
+  if (!date) return list;
+  const s = [...list].sort((a, b) => String(date(a) || '').localeCompare(String(date(b) || '')));
+  return reverse ? s.reverse() : s;
 }
 
 export function buildSite({ data, sizes = {}, text = () => '', today,
@@ -83,102 +71,89 @@ export function buildSite({ data, sizes = {}, text = () => '', today,
   const { site, catalog, structure, types } = data;
   const { courses, events, camp, prices, blog } = catalog;
   const TODAY = today;
-  const замечания = [];
+  const notes = [];
 
   if (types) {
-    замечания.push(...checkTypes(types, structure));
+    notes.push(...checkTypes(types, structure));
   }
 
-  // Ссылка на словарь хранится адресом, показывается названием. Один резолвер
-  // на все dictionaries: направления, залы, виды событий и смен.
-  const byPath = путь => String(путь || '').split('.')
-    .reduce((о, к) => (о == null ? о : о[к]), { site, catalog });
-  const dict = вид => byPath((((types || {}).dictionaries || {})[вид] || {}).data) || [];
-  const name = (вид, id) => {
-    const з = dict(вид).find(x => x.id === id);
-    return з ? з.title : (id == null ? '' : String(id));
+  const byPath = filePath => String(filePath || '').split('.')
+    .reduce((o2, k2) => (o2 == null ? o2 : o2[k2]), { site, catalog });
+  const dict = kind => byPath((((types || {}).dictionaries || {})[kind] || {}).data) || [];
+  const name = (kind, id) => {
+    const z = dict(kind).find(x => x.id === id);
+    return z ? z.title : (id == null ? '' : String(id));
   };
-  const planBy = id => (catalog.prices.plans || []).find(т => т.id === id) || {};
+  const planBy = id => (catalog.prices.plans || []).find(t2 => t2.id === id) || {};
 
-  const isPageHidden = п => !!(structure.pages[п] && structure.pages[п].hidden);
-  /**
-   * Имя страницы одно: заголовок на самой странице. В меню и в крошках имя
-   * ставится только там, где оно отличается — «FAQ» в меню против «Памятки» на
-   * странице. Пустое поле значит «как у страницы», а не «без имени».
-   */
+  const isPageHidden = p => !!(structure.pages[p] && structure.pages[p].hidden);
   const pageName = href => {
-    const оп = structure.pages[href] || {};
-    const крошка = (оп.path || []).length ? оп.path[оп.path.length - 1].name : null;
-    // Заголовок страницы, а где его нет — её последняя крошка. Название в
-    // браузере («ДОМ — школа архитектуры…») именем страницы не работает.
-    return (оп.heading || {}).h1 || крошка || оп.metaTitle || href;
+    const pageDef = structure.pages[href] || {};
+    const crumb = (pageDef.path || []).length ? pageDef.path[pageDef.path.length - 1].name : null;
+    return (pageDef.heading || {}).h1 || crumb || pageDef.metaTitle || href;
   };
-  const withName = п => (п.name || !п.href ? п : { ...п, name: pageName(п.href) });
-  const withoutHidden = сп => (сп || [])
-    .map(п => (п.items
-      ? { ...п, items: п.items.filter(x => !isPageHidden(x.href)).map(withName) }
-      : withName(п)))
-    .filter(п => (п.items ? п.items.length > 0 : !isPageHidden(п.href)));
-  const структура = { ...structure, navigation: {
+  const withName = p => (p.name || !p.href ? p : { ...p, name: pageName(p.href) });
+  const withoutHidden = list2 => (list2 || [])
+    .map(p => (p.items
+      ? { ...p, items: p.items.filter(x => !isPageHidden(x.href)).map(withName) }
+      : withName(p)))
+    .filter(p => (p.items ? p.items.length > 0 : !isPageHidden(p.href)));
+  const structure2 = { ...structure, navigation: {
     ...structure.navigation,
     menu: withoutHidden(structure.navigation.menu),
     footer: withoutHidden(structure.navigation.footer),
   } };
 
-  const read = отн => {
-    const s = text(отн);
-    if (s == null) { замечания.push(`no file ${отн}`); return ''; }
+  const read = rel => {
+    const s = text(rel);
+    if (s == null) { notes.push(`no file ${rel}`); return ''; }
     return String(s).replace(/\n$/, '');
   };
 
-  // Имя человека живёт один раз — в справочнике людей. Скрытые в него тоже
-  // входят: приглашённый куратор на странице команды не показывается, но
-  // назван по имени там, где ведёт занятие.
-  const люди = new Map((catalog.team || []).map(р => [р.id, р.name]));
-  const person = id => (Array.isArray(id) ? id.map(person).join(', ') : (люди.get(id) || id || ''));
+  const people = new Map((catalog.team || []).map(r => [r.id, r.name]));
+  const person = id => (Array.isArray(id) ? id.map(person).join(', ') : (people.get(id) || id || ''));
 
-  const context = (сущность, values, путь) => ({
-    depth: путь.split('/').length - 1, up: '../'.repeat(путь.split('/').length - 1),
-    // Страницы адресуются от корня языка, общие ресурсы — от корня сайта.
-    assets: '../'.repeat(путь.split('/').length - 1 + langDepth),
+  const context = (entity, values, filePath) => ({
+    depth: filePath.split('/').length - 1, up: '../'.repeat(filePath.split('/').length - 1),
+    assets: '../'.repeat(filePath.split('/').length - 1 + langDepth),
     langDepth, prefix, alternates,
-    href: путь, sizes: sizes, values,
+    href: filePath, sizes: sizes, values,
     past: x => isPast((x.date || x.dates || {}).to || x, TODAY),
     name, dictionary: dict, person,
-    lessonTime: (c, о) => sessionTime(c, { ...о, room: id => name('room', id) }),
+    lessonTime: (c, o2) => sessionTime(c, { ...o2, room: id => name('room', id) }),
     payment: c => priceLine(planBy(c.plan)),
-    text: путь => read(substitute(путь, values)),
-    table: б => {
-      if (б.source === 'prices') {
-        const rows = visibleRecords(prices.plans).filter(т => т.tableLabel)
-          .map(т => [т.tableLabel,
-                     т.trial ? money(т.trial) : '—',
-                     т.single ? money(т.single) : '—',
-                     т.packages.map(п => `${п.tableLabel} — ${money(п.price)}`).join(', ')]);
+    text: filePath => read(substitute(filePath, values)),
+    table: b2 => {
+      if (b2.source === 'prices') {
+        const rows = visibleRecords(prices.plans).filter(t2 => t2.tableLabel)
+          .map(t2 => [t2.tableLabel,
+                     t2.trial ? money(t2.trial) : '—',
+                     t2.single ? money(t2.single) : '—',
+                     t2.packages.map(p => `${p.tableLabel} — ${money(p.price)}`).join(', ')]);
         return { columns: [t('ui.direction'), t('ui.planTrial'),
                   t('ui.planSingle'), t('ui.planPackage')], rows,
                  widths: ['33.3333%', '16.6667%', '16.6667%', '33.3333%'],
                  headNoScope: true, note: prices.note };
       }
-      if (б.source === 'camp.routine')
+      if (b2.source === 'camp.routine')
         return { columns: [t('ui.time'), t('ui.whatHappens')],
-                 rows: camp.routine.rows.map(с => [с.time, с.title]),
+                 rows: camp.routine.rows.map(s2 => [s2.time, s2.title]),
                  widths: ['22%', '78%'], note: camp.routine.note };
-      throw new Error(`unknown table source: ${б.source}`);
+      throw new Error(`unknown table source: ${b2.source}`);
     },
   });
 
-  const собрано = [];
+  const builtPages = [];
 
-  const buildEntities = (вид, list, valuesFn) => {
-    const шаблон = structure.templates[вид];
-    for (const сущность of visibleRecords(list)) {
-      const values = valuesFn(сущность);
-      const путь = `${шаблон.folder}/${сущность.id}/index.html`;
-      const ctx = context(сущность, values, путь);
-      const блоки = шаблон.blocks.filter(б => !б.hidden).map(б => buildBlock({ ...б, text: б.text && substitute(б.text, values) }, ctx));
-      собрано.push([путь, entityPage({ kind: вид, entity: сущность, template: шаблон, site, structure: структура,
-        elements: types.pageElements, ctx, blocks: блоки })]);
+  const buildEntities = (kind, list, valuesFn) => {
+    const tpl = structure.templates[kind];
+    for (const entity of visibleRecords(list)) {
+      const values = valuesFn(entity);
+      const filePath = `${tpl.folder}/${entity.id}/index.html`;
+      const ctx = context(entity, values, filePath);
+      const blocks = tpl.blocks.filter(b2 => !b2.hidden).map(b2 => buildBlock({ ...b2, text: b2.text && substitute(b2.text, values) }, ctx));
+      builtPages.push([filePath, entityPage({ kind: kind, entity: entity, template: tpl, site, structure: structure2,
+        elements: types.pageElements, ctx, blocks: blocks })]);
     }
   };
 
@@ -188,82 +163,80 @@ export function buildSite({ data, sizes = {}, text = () => '', today,
     curators: person(e.curators), type: name('event-kind', e.type) }));
   buildEntities('session', camp.sessions, s => ({ ...s, year: camp.year, date: s.dates.caption,
     age: ageText(s.age), curator: person(s.curator), type: name('session-kind', s.type) }));
-  buildEntities('post', blog, п => ({ ...п }));
+  buildEntities('post', blog, p => ({ ...p }));
 
-  const СПРАВОЧНИКИ = { courses, events, camp: camp.sessions, blog,
+  const CATALOGS = { courses, events, camp: camp.sessions, blog,
     team: catalog.team, faq: catalog.faq,
     services: catalog.services, universities: catalog.universities };
 
-  for (const [путь, оп] of Object.entries(structure.pages)) {
-    if (путь.startsWith('$') || оп.hidden) continue;
-    const ctx = { ...context({ id: '' }, {}, путь),
-      select: б => {
-        const list = СПРАВОЧНИКИ[б.source];
-        if (!list) throw new Error(`unknown source “${б.source}” on ${путь}`);
-        const видно = visibleRecords(list);
-        if (!б.filter) return inOrder(б.source, видно);
+  for (const [filePath, pageDef] of Object.entries(structure.pages)) {
+    if (filePath.startsWith('$') || pageDef.hidden) continue;
+    const ctx = { ...context({ id: '' }, {}, filePath),
+      select: b2 => {
+        const list = CATALOGS[b2.source];
+        if (!list) throw new Error(`unknown source “${b2.source}” on ${filePath}`);
+        const visible = visibleRecords(list);
+        if (!b2.filter) return inOrder(b2.source, visible);
         const past = x => isPast((x.date || x.dates).to, TODAY);
-        // Прошедшее читается от недавнего к давнему, предстоящее — от ближайшего.
-        if (б.filter === 'past') return inOrder(б.source, видно.filter(past), true);
-        if (б.filter === 'upcoming') return inOrder(б.source, видно.filter(x => !past(x)));
-        throw new Error(`unknown filter “${б.filter}” on ${путь}`);
+        if (b2.filter === 'past') return inOrder(b2.source, visible.filter(past), true);
+        if (b2.filter === 'upcoming') return inOrder(b2.source, visible.filter(x => !past(x)));
+        throw new Error(`unknown filter “${b2.filter}” on ${filePath}`);
       },
       rating: () => site.reviews, contacts: () => site.contacts,
-      banner: оп => {
-        if (!оп || оп.source === 'none') return null;
-        let сущ = null, папка = null;
-        if (оп.source === 'nearest') {
-          const все = [...visibleRecords(events).map(x => ({ x, folder: 'events', till: x.date.to })),
+      banner: pageDef => {
+        if (!pageDef || pageDef.source === 'none') return null;
+        let rec = null, folder = null;
+        if (pageDef.source === 'nearest') {
+          const all = [...visibleRecords(events).map(x => ({ x, folder: 'events', till: x.date.to })),
                        ...visibleRecords(camp.sessions).map(x => ({ x, folder: 'camp', till: x.dates.to }))]
             .filter(v => v.till >= TODAY).sort((a, b) => a.till.localeCompare(b.till));
-          if (!все.length) return оп.heading ? оп : null;
-          сущ = все[0].x; папка = все[0].folder;
-        } else if (оп.source) {
-          папка = оп.source;
-          сущ = (СПРАВОЧНИКИ[оп.source] || []).find(x => x.id === оп.id);
-          if (!сущ) замечания.push(`banner: “${оп.id}” is not in “${оп.source}”`);
+          if (!all.length) return pageDef.heading ? pageDef : null;
+          rec = all[0].x; folder = all[0].folder;
+        } else if (pageDef.source) {
+          folder = pageDef.source;
+          rec = (CATALOGS[pageDef.source] || []).find(x => x.id === pageDef.id);
+          if (!rec) notes.push(`banner: “${pageDef.id}” is not in “${pageDef.source}”`);
         }
-        const подпись = сущ && сущ.description
-          ? `${сущ.description}<br>${сущ.place || ''}` : (сущ ? сущ.place || '' : '');
-        const из = сущ ? {
-          heading: сущ.title, date: (сущ.date || сущ.dates).caption,
-          caption: подпись, link: `${папка}/${сущ.id}/index.html`,
+        const caption = rec && rec.description
+          ? `${rec.description}<br>${rec.place || ''}` : (rec ? rec.place || '' : '');
+        const from = rec ? {
+          heading: rec.title, date: (rec.date || rec.dates).caption,
+          caption: caption, link: `${folder}/${rec.id}/index.html`,
         } : {};
-        const итог = { ...из, ...Object.fromEntries(Object.entries(оп).filter(([k, v]) =>
+        const out = { ...from, ...Object.fromEntries(Object.entries(pageDef).filter(([k, v]) =>
           v != null && !['source', 'id'].includes(k))) };
-        if (сущ && isPast((сущ.date || сущ.dates).to, TODAY))
-          замечания.push(`banner points at “${сущ.title}” — it is past ${(сущ.date || сущ.dates).caption}`);
-        return итог.heading ? итог : null;
+        if (rec && isPast((rec.date || rec.dates).to, TODAY))
+          notes.push(`banner points at “${rec.title}” — it is past ${(rec.date || rec.dates).caption}`);
+        return out.heading ? out : null;
       },
-      schedule: () => visibleRecords(courses).flatMap(c => visibleRecords(c.lessons).map(з => ({
-        day: день(з.day), dayId: з.day, time: з.time, course: c.title, age: ageText(з.age),
+      schedule: () => visibleRecords(courses).flatMap(c => visibleRecords(c.lessons).map(z => ({
+        day: day(z.day), dayId: z.day, time: z.time, course: c.title, age: ageText(z.age),
         direction: name('direction', c.direction), directionId: c.direction,
-        hall: name('room', з.room),
+        hall: name('room', z.room),
         curator: person(c.curator) }))),
-      frames: б => (б.source === 'site.gallery' ? site.gallery : [])
-        .map(к => ({ ...к, ...(sizes[к.base] || { width: 400, height: 600 }) })),
+      frames: b2 => (b2.source === 'site.gallery' ? site.gallery : [])
+        .map(k2 => ({ ...k2, ...(sizes[k2.base] || { width: 400, height: 600 }) })),
       form: () => form('contacts', structure.form.fields) };
-    const з = оп.heading;
-    const шапкаСтраницы = з
-      ? sectionHead({ ...з, fields: з.fields || [], button: !!з.button,
-          extra: (з.extra || []).map(б => CONTENTS[б.type](б, ctx)).join('\n'),
+    const z = pageDef.heading;
+    const pageHead = z
+      ? sectionHead({ ...z, fields: z.fields || [], button: !!z.button,
+          extra: (z.extra || []).map(b2 => CONTENTS[b2.type](b2, ctx)).join('\n'),
           galleryHtml: '' })
       : null;
     let body = [
-      ...(шапкаСтраницы ? [шапкаСтраницы] : []),
-      ...оп.blocks.filter(б => !б.hidden).map((б, i) => (шапкаСтраницы || i ? '\n' : '') + buildElement(б, ctx)),
+      ...(pageHead ? [pageHead] : []),
+      ...pageDef.blocks.filter(b2 => !b2.hidden).map((b2, i) => (pageHead || i ? '\n' : '') + buildElement(b2, ctx)),
     ].join('\n');
-    if (оп.wrapper) body = `  <div class="${оп.wrapper}">\n${body}\n  </div>`;
-    собрано.push([путь, page({ site, structure: структура, elements: types.pageElements,
-      href: путь, body, title: оп.metaTitle, description: оп.metaDescription,
-      langDepth, prefix, alternates: alternates(путь),
-      active: оп.active || путь,
-      // Последнее звено крошек — сама страница: её имя берётся у неё же.
-      path: (оп.path || []).map(з => (з.href ? withName(з)
-        : { ...з, name: з.name || pageName(путь) })) })]);
+    if (pageDef.wrapper) body = `  <div class="${pageDef.wrapper}">\n${body}\n  </div>`;
+    builtPages.push([filePath, page({ site, structure: structure2, elements: types.pageElements,
+      href: filePath, body, title: pageDef.metaTitle, description: pageDef.metaDescription,
+      langDepth, prefix, alternates: alternates(filePath),
+      active: pageDef.active || filePath,
+      path: (pageDef.path || []).map(z => (z.href ? withName(z)
+        : { ...z, name: z.name || pageName(filePath) })) })]);
   }
 
-  const т = data.typography || {};
-  const правила = т.enabled ? (т.rules || []) : [];
-  return { pages: собрано.map(([п, html]) => [п, typeset(html, правила)]), notes: замечания };
+  const t2 = data.typography || {};
+  const rules = t2.enabled ? (t2.rules || []) : [];
+  return { pages: builtPages.map(([p, html]) => [p, typeset(html, rules)]), notes: notes };
 }

@@ -1,24 +1,3 @@
-/**
- * qa_editor.mjs — постоянная проверка редактора. Падает, а не рассказывает.
- *
- * Проверяет то, что раньше ловилось глазами и потому не ловилось:
- *   1. однотипные строки начинаются с одной вертикали;
- *   2. однотипные строки одной высоты;
- *   3. на экране нет цвета мимо палитры;
- *   4. в editor.css нет чисел и цветов мимо сортамента;
- *   5. у каждого элемента дерева есть человеческое имя и рабочий карандаш;
- *   6. форма элемента не пустая и не показывает путей к файлам;
- *   7. вложенность видна отступом: ребёнок сдвинут ровно на одну ячейку;
- *   8. отключённых кнопок на экране нет — невозможного действия просто нет;
- *   9. обводок фокуса нет: рамка вокруг поля читается как ошибка;
- *  10. у каждой страницы из списка есть непустая структура;
- *  11. поля и списки одной ширины — она не зависит от того, что в них написано;
- *  12. прошедшие события уходят из афиши в «Прошедшие» сами, по дате;
- *  13. разметка читается деревом и склеивается обратно байт в байт.
- *
- * Запуск:  node qa_editor.mjs [адрес]
- * По умолчанию http://127.0.0.1:8099/_app/
- */
 
 import { chromium } from 'playwright';
 import { readFileSync } from 'fs';
@@ -28,281 +7,248 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const href = process.argv[2] || 'http://127.0.0.1:8099/_app/';
-const здесь = dirname(fileURLToPath(import.meta.url));
-const беды = [];
-const bad = (что, подробно) => беды.push(`${что}: ${подробно}`);
+const here = dirname(fileURLToPath(import.meta.url));
 
-// 4. Литералы в css. Числа с единицами и цвета обязаны приходить из токенов.
+const WORDS = JSON.parse(readFileSync(join(here, '_lang/ru/ui.json'), 'utf8'));
+const PAGE_WORDS = JSON.parse(readFileSync(join(here, '../_lang/ru/pages.json'), 'utf8'));
+const word = key => WORDS[key];
+const pageWord = key => PAGE_WORDS[key];
+const LABELS = { edit: word('btn.edit'), expand: word('btn.expand'), revert: word('btn.revert') };
+
+const issues = [];
+const bad = (what, details) => issues.push(`${what}: ${details}`);
+
 function checkCSS() {
-  const текст = readFileSync(join(здесь, '_assets/style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  текст.split('\n').forEach((строка, i) => {
-    const без = строка.replace(/var\([^)]*\)/g, '');
-    if (/@media/.test(строка)) return;
-    if (/(?<![\w-])\d+(?:\.\d+)?(px|rem|em|ms)\b/.test(без))
-      bad('css', `строка ${i + 1}: число мимо сортамента — ${строка.trim().slice(0, 70)}`);
-    if (/#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(без))
-      bad('css', `строка ${i + 1}: цвет мимо палитры — ${строка.trim().slice(0, 70)}`);
+  const text = readFileSync(join(here, '_assets/style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  text.split('\n').forEach((line, i) => {
+    const without = line.replace(/var\([^)]*\)/g, '');
+    if (/@media/.test(line)) return;
+    if (/(?<![\w-])\d+(?:\.\d+)?(px|rem|em|ms)\b/.test(without))
+      bad('css', `line ${i + 1}: number outside the scale — ${line.trim().slice(0, 70)}`);
+    if (/#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(without))
+      bad('css', `line ${i + 1}: colour outside the palette — ${line.trim().slice(0, 70)}`);
   });
 }
 
-// 13. Разметка. Дерево — это показ разметки, а не вторая её запись: разбор
-// обязан склеиваться обратно в тот же байт. Иначе правка текста в дереве
-// молча портит шаблон, которого человек в глаза не видел.
 function checkMarkup() {
-  const set = parseSet(readFileSync(join(здесь, '../_code/markup.html'), 'utf8'));
-  const count = (у, из = { tags: 0 }) => {
-    if (у.type === 'tag') из.tags++;
-    (у.children || []).forEach(д => count(д, из));
-    return из;
+  const set = parseSet(readFileSync(join(here, '../_code/markup.html'), 'utf8'));
+  const count = (u, from = { tags: 0 }) => {
+    if (u.type === 'tag') from.tags++;
+    (u.children || []).forEach(d => count(d, from));
+    return from;
   };
-  for (const имя of set.names) {
-    const было = set.templates[имя];
-    if (serializeMarkup(parseMarkup(было)) !== было) {
-      bad('разметка', `шаблон «${имя}» после разбора собирается иначе`);
+  for (const name of set.names) {
+    const was = set.templates[name];
+    if (serializeMarkup(parseMarkup(was)) !== was) {
+      bad('markup', `template “${name}” serializes differently after parsing`);
       continue;
     }
-    // Склейка сходится и у неразобранного текста, поэтому считается ещё и то,
-    // что разбор увидел: пропущенный тег — это строка, которой в дереве нет.
-    // Подстановки не считаются: те, что стоят в свойствах тега, живут в самом
-    // теге, а не отдельным узлом.
-    const в = count(parseMarkup(было));
-    const тегов = (было.match(/<[a-zA-Z][a-zA-Z0-9-]*/g) || []).length;
-    if (в.tags !== тегов) bad('разметка', `шаблон «${имя}»: тегов ${тегов}, в дереве ${в.tags}`);
+    const v = count(parseMarkup(was));
+    const tagCount = (was.match(/<[a-zA-Z][a-zA-Z0-9-]*/g) || []).length;
+    if (v.tags !== tagCount) bad('markup', `template “${name}”: ${tagCount} tags, ${v.tags} in the tree`);
   }
 }
 
-// Где взять браузер: в песочнице он лежит отдельно от проекта и называется в
-// CHROME_PATH — так же, как у qa_site.mjs. Без переменной playwright находит
-// своё место сам, и проверка запускается на любой машине.
-const бр = await chromium.launch(process.env.CHROME_PATH
+const br = await chromium.launch(process.env.CHROME_PATH
   ? { executablePath: process.env.CHROME_PATH } : {});
-const стр = await бр.newPage({ viewport: { width: 1600, height: 1000 } });
-стр.on('pageerror', e => bad('js', e.message));
-await стр.goto(href);
-await стр.locator('#login .ed-btn').last().waitFor({ timeout: 20000 });
-await стр.locator('#login .ed-btn').last().click();
-// Готовность — это нарисованное дерево, а не «подождём восемь секунд».
-await стр.locator('#tree .ed-nav-row').first().waitFor({ timeout: 30000 });
+const page2 = await br.newPage({ viewport: { width: 1600, height: 1000 } });
+page2.on('pageerror', e => bad('js', e.message));
+await page2.goto(href);
+await page2.locator('#login .ed-btn').last().waitFor({ timeout: 20000 });
+await page2.locator('#login .ed-btn').last().click();
+await page2.locator('#tree .ed-nav-row').first().waitFor({ timeout: 30000 });
 
 checkCSS();
 checkMarkup();
 
-// 3. Цвета на экране. Любой цвет обязан совпадать с одним из токенов темы.
-const чужие = await стр.evaluate(() => {
-  const корень = getComputedStyle(document.documentElement);
-  const свои = new Set();
-  for (const имя of корень) {
-    if (!/^--(mono|accent|role|gradient|direction)-/.test(имя)) continue;
-    const пробник = document.createElement('span');
-    пробник.style.color = корень.getPropertyValue(имя).trim();
-    document.body.append(пробник);
-    const c = getComputedStyle(пробник).color;
-    пробник.remove();
-    if (c) свои.add(c);
+const foreign = await page2.evaluate(() => {
+  const root = getComputedStyle(document.documentElement);
+  const own = new Set();
+  for (const name of root) {
+    if (!/^--(mono|accent|role|gradient|direction)-/.test(name)) continue;
+    const probe = document.createElement('span');
+    probe.style.color = root.getPropertyValue(name).trim();
+    document.body.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    if (c) own.add(c);
   }
-  свои.add('rgba(0, 0, 0, 0)');
-  const найдено = new Map();
-  for (const э of document.querySelectorAll('#top *, #tree *, #fields *')) {
-    if (!э.getClientRects().length) continue;
-    const c = getComputedStyle(э).color;
-    if (!свои.has(c)) найдено.set(c, (найдено.get(c) || '') + ' ' + (э.className || э.tagName));
+  own.add('rgba(0, 0, 0, 0)');
+  const found = new Map();
+  for (const ee of document.querySelectorAll('#top *, #tree *, #fields *')) {
+    if (!ee.getClientRects().length) continue;
+    const c = getComputedStyle(ee).color;
+    if (!own.has(c)) found.set(c, (found.get(c) || '') + ' ' + (ee.className || ee.tagName));
   }
-  return [...найдено].map(([c, где]) => `${c} — ${где.trim().slice(0, 60)}`);
+  return [...found].map(([c, where]) => `${c} — ${where.trim().slice(0, 60)}`);
 });
-чужие.forEach(x => bad('цвет', x));
+foreign.forEach(x => bad('colour', x));
 
-// 8 и 9. Отключённых кнопок и обводок фокуса на экране быть не должно.
-const лишнее = await стр.evaluate(() => {
-  const итог = [];
+const extraItem = await page2.evaluate(() => {
+  const out = [];
   document.querySelectorAll('#top button[disabled], #tree button[disabled], #fields button[disabled]')
-    .forEach(b => итог.push('отключённая кнопка: ' + (b.title || b.className)));
-  for (const э of document.querySelectorAll('#top *, #tree *, #fields *')) {
-    const c = getComputedStyle(э);
+    .forEach(b => out.push('disabled button: ' + (b.title || b.className)));
+  for (const ee of document.querySelectorAll('#top *, #tree *, #fields *')) {
+    const c = getComputedStyle(ee);
     if (c.outlineStyle !== 'none' && parseFloat(c.outlineWidth) > 0)
-      итог.push('обводка: ' + (э.className || э.tagName));
+      out.push('outline: ' + (ee.className || ee.tagName));
   }
-  return итог;
+  return out;
 });
-лишнее.forEach(x => bad('лишнее', x));
+extraItem.forEach(x => bad('extra', x));
 
-// 11. Ширина управления не зависит от содержимого: у одинаковых по назначению
-// элементов она одна и та же.
-const ширины = await стр.evaluate(() => {
-  const set = сел => [...new Set([...document.querySelectorAll(сел)]
+const widths = await page2.evaluate(() => {
+  const set = picked => [...new Set([...document.querySelectorAll(picked)]
     .filter(e => e.getClientRects().length)
     .map(e => Math.round(e.getBoundingClientRect().width)))];
   return { pagePicker: set('.ed-pick') };
 });
-for (const [что, ш] of Object.entries(ширины))
-  if (ш.length > 1) bad('ширина', `${что}: ${ш.length} разных ширин — ${ш}`);
+for (const [what, sh] of Object.entries(widths))
+  if (sh.length > 1) bad('width', `${what}: ${sh.length} different widths — ${sh}`);
 
-// 12. Прошедшее событие показывается в «Прошедших», а не в афише: отбор идёт
-// по дате, и календарь не должен требовать ручной правки данных.
-const афиша = await стр.evaluate(() => {
-  const рамка = document.querySelector('#frame');
-  const д = рамка && рамка.contentDocument;
-  if (!д) return null;
-  const section = сел => [...д.querySelectorAll('section')].find(с => с.id === сел);
-  const names = с => (с ? [...с.querySelectorAll('.card-title, h3, .card-link')]
-    .map(э => э.textContent.trim()) : []);
+const upcoming = await page2.evaluate(() => {
+  const frame = document.querySelector('#frame');
+  const d = frame && frame.contentDocument;
+  if (!d) return null;
+  const section = picked => [...d.querySelectorAll('section')].find(s => s.id === picked);
+  const names = s => (s ? [...s.querySelectorAll('.card-title, h3, .card-link')]
+    .map(ee => ee.textContent.trim()) : []);
   return { before: !!section('afisha'), past: names(section('past')).length };
 });
 
-// 1 и 2. Однотипные строки: одна вертикаль кнопок и одна высота.
-const списки = await стр.evaluate(() => {
-  const итог = {};
-  for (const [имя, сел] of [['навигатор', '#tree .ed-nav-row'], ['правка', '#fields .ed-line']]) {
-    const строки = [...document.querySelectorAll(сел)];
+const lists = await page2.evaluate(() => {
+  const out = {};
+  for (const [name, picked] of [['navigator', '#tree .ed-nav-row'], ['form', '#fields .ed-line']]) {
+    const lines = [...document.querySelectorAll(picked)];
     const x = new Set(), h = new Set();
-    строки.forEach(р => {
-      const к = р.querySelector('.ed-line-tools');
-      if (к) x.add(Math.round(к.getBoundingClientRect().left));
-      const я = р.firstElementChild;
-      if (я) h.add(Math.round(я.getBoundingClientRect().height));
+    lines.forEach(r2 => {
+      const k = r2.querySelector('.ed-line-tools');
+      if (k) x.add(Math.round(k.getBoundingClientRect().left));
+      const ya = r2.firstElementChild;
+      if (ya) h.add(Math.round(ya.getBoundingClientRect().height));
     });
-    итог[имя] = { rows: строки.length, columns: [...x], heights: [...h] };
+    out[name] = { rows: lines.length, columns: [...x], heights: [...h] };
   }
-  return итог;
+  return out;
 });
-for (const [имя, с] of Object.entries(списки)) {
-  if (с.columns.length > 1) bad('вертикаль', `${имя}: кнопки на ${с.columns.length} вертикалях — ${с.columns}`);
-  if (с.heights.length > 1) bad('высота', `${имя}: строки ${с.heights.length} разных высот — ${с.heights}`);
+for (const [name, s] of Object.entries(lists)) {
+  if (s.columns.length > 1) bad('column', `${name}: buttons on ${s.columns.length} columns — ${s.columns}`);
+  if (s.heights.length > 1) bad('height', `${name}: rows of ${s.heights.length} different heights — ${s.heights}`);
 }
 
-/**
- * 5, 6 и 7. Каждый элемент каждой страницы: имя, карандаш, непустая форма,
- * отступ по вложенности.
- *
- * Обход идёт целиком внутри страницы, одним заходом на раздел. Тот же обход
- * снаружи — это четыре обращения к браузеру на элемент, по четверти секунды
- * каждое, и на четырёх сотнях элементов проверка занимала шесть минут при
- * секунде полезной работы. Рисование в редакторе синхронно: после click
- * разметка уже новая, и ждать нечего — сторож на случай, если однажды станет
- * иначе, стоит внутри страницы и опрашивает по кадру.
- */
-const обход = async ([раздел, где]) => {
-  const пауза = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
-  const ждать = async (условие, мс = 2000) => {
-    const до = Date.now() + мс;
-    while (Date.now() < до) { if (условие()) return true; await пауза(); }
+const walk = async ([section2, where, labels]) => {
+  const issues = [];
+  const pause = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+  const wait = async (cond, ms = 2000) => {
+    const to = Date.now() + ms;
+    while (Date.now() < to) { if (cond()) return true; await pause(); }
     return false;
   };
-  const беды = [];
-  const строки = () => [...document.querySelectorAll('#tree .ed-list-body .ed-nav-row')];
-  const кнопки = (гдеИскать, подпись) => [...document.querySelectorAll(гдеИскать + ' .ed-icon-btn')]
-    .filter(b => b.title === подпись);
-  const карандаши = () => кнопки('#fields', 'Править');
-  const развернуть = async () => {
-    for (let к = 0; к < 30; к++) {
-      const кн = кнопки('#tree .ed-list-body', 'Развернуть');
-      if (!кн.length) return;
-      кн.forEach(b => b.click());
-      await пауза();
+  const lines = () => [...document.querySelectorAll('#tree .ed-list-body .ed-nav-row')];
+  const buttons = (searchIn, caption) => [...document.querySelectorAll(searchIn + ' .ed-icon-btn')]
+    .filter(b => b.title === caption);
+  const pencils = () => buttons('#fields', labels.edit);
+  const expand = async () => {
+    for (let k = 0; k < 30; k++) {
+      const btn = buttons('#tree .ed-list-body', labels.expand);
+      if (!btn.length) return;
+      btn.forEach(b => b.click());
+      await pause();
     }
   };
-  /**
-   * Пункт меню в дереве — это ссылка: щелчок по нему уводит редактор на
-   * другую страницу, и остаток списка перестаёт существовать. Проверка
-   * возвращается на свою страницу сама, иначе половина элементов считалась бы
-   * пропавшей.
-   */
-  const вернуться = async () => {
-    // Уйти можно и в чужой раздел: тогда в нижнем окне нашей страницы нет, и
-    // возвращать нужно с верхнего.
-    const верх = document.getElementById('page-section');
-    if (верх && верх.value !== раздел) {
-      верх.value = раздел;
-      верх.dispatchEvent(new Event('change'));
-      await ждать(() => строки().length > 0);
+  const back = async () => {
+    const top = document.getElementById('page-section');
+    if (top && top.value !== section2) {
+      top.value = section2;
+      top.dispatchEvent(new Event('change'));
+      await wait(() => lines().length > 0);
     }
-    const низ = document.getElementById('page-select');
-    if (низ && низ.value !== где) {
-      низ.value = где;
-      низ.dispatchEvent(new Event('change'));
-      await ждать(() => строки().length > 0);
+    const bottom = document.getElementById('page-select');
+    if (bottom && bottom.value !== where) {
+      bottom.value = where;
+      bottom.dispatchEvent(new Event('change'));
+      await wait(() => lines().length > 0);
     }
-    await развернуть();
+    await expand();
   };
 
-  await развернуть();
-  const план = строки().map(r => ({
+  await expand();
+  const plan = lines().map(r => ({
     key: r.dataset.key,
     name: ((r.querySelector('.ed-name') || {}).textContent || '').trim(),
     x: Math.round(r.querySelector('.ed-name').getBoundingClientRect().left),
   }));
-  if (!план.length) беды.push(['структура', где + ': пустая']);
+  if (!plan.length) issues.push(['structure', where + ': empty']);
 
-  const вертикали = [...new Set(план.map(с => с.x))].sort((a, b) => a - b);
-  if (план.length > 3 && вертикали.length < 2)
-    беды.push(['отступ', где + ': все имена на одной вертикали — вложенность не видна']);
-  const шаг = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--size-cell'));
-  вертикали.slice(1).forEach((x, i) => {
-    const д = Math.round(x - вертикали[i]);
-    if (д % шаг !== 0) беды.push(['отступ', где + ': ступень ' + д + 'px не кратна ячейке ' + шаг + 'px']);
+  const columnsX = [...new Set(plan.map(s => s.x))].sort((a, b) => a - b);
+  if (plan.length > 3 && columnsX.length < 2)
+    issues.push(['indent', where + ': every name on one column — nesting invisible']);
+  const step = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--size-cell'));
+  columnsX.slice(1).forEach((x, i) => {
+    const d = Math.round(x - columnsX[i]);
+    if (d % step !== 0) issues.push(['indent', where + ': step ' + d + 'px is not a multiple of ' + step + 'px']);
   });
 
-  const пройдено = new Set();
-  for (const { key: ключ, name: имя } of план) {
-    if (пройдено.has(ключ)) continue;
-    пройдено.add(ключ);
-    if (!имя || /^\d+$/.test(имя)) беды.push(['имя', где + ' ' + ключ + ': «' + имя + '»']);
-    let строка = строки().find(r => r.dataset.key === ключ);
-    if (!строка) { await вернуться(); строка = строки().find(r => r.dataset.key === ключ); }
-    if (!строка) { беды.push(['строка', где + ' ' + ключ + ': пропала из дерева']); continue; }
-    строка.querySelector('.ed-item').click();
-    if (!await ждать(() => карандаши().length) || карандаши()[0].disabled) {
-      беды.push(['карандаш', где + ' ' + ключ]);
+  const passed = new Set();
+  for (const { key: key, name: name } of plan) {
+    if (passed.has(key)) continue;
+    passed.add(key);
+    if (!name || /^\d+$/.test(name)) issues.push(['name', where + ' ' + key + ': “' + name + '”']);
+    let line = lines().find(r => r.dataset.key === key);
+    if (!line) { await back(); line = lines().find(r => r.dataset.key === key); }
+    if (!line) { issues.push(['row', where + ' ' + key + ': gone from the tree']); continue; }
+    line.querySelector('.ed-item').click();
+    if (!await wait(() => pencils().length) || pencils()[0].disabled) {
+      issues.push(['pencil', where + ' ' + key]);
       continue;
     }
-    карандаши()[0].click();
-    await ждать(() => document.querySelector('#fields .ed-fields'));
-    const форма = document.querySelector('#fields .ed-fields');
-    const полей = форма
-      ? форма.querySelectorAll('input, select, textarea, .ed-rich-body, .ed-gallery').length : 0;
-    if (!полей) беды.push(['форма', где + ' ' + ключ + ': пустая']);
-    if (форма && /(data|assets)\/(text|media)\//.test(форма.textContent || ''))
-      беды.push(['форма', где + ' ' + ключ + ': виден путь к файлу']);
-    // Правка закрывается сразу: открытых форм за спиной не остаётся, и
-    // следующий элемент начинает с того же состояния, что и первый.
-    const назад = кнопки('#bar-form', 'Вернуть как было')[0];
-    if (назад) { назад.click(); await ждать(() => карандаши().length); }
+    pencils()[0].click();
+    await wait(() => document.querySelector('#fields .ed-fields'));
+    const form = document.querySelector('#fields .ed-fields');
+    const fieldsOf = form
+      ? form.querySelectorAll('input, select, textarea, .ed-rich-body, .ed-gallery').length : 0;
+    if (!fieldsOf) issues.push(['form', where + ' ' + key + ': empty']);
+    if (form && /(data|assets)\/(text|media)\//.test(form.textContent || ''))
+      issues.push(['form', where + ' ' + key + ': file path is visible']);
+    const back2 = buttons('#bar-form', labels.revert)[0];
+    if (back2) { back2.click(); await wait(() => pencils().length); }
   }
-  return беды;
+  return issues;
 };
 
-const разделы = await стр.locator('#page-section option').evaluateAll(o => o.map(x => x.value));
-for (const р of разделы) {
-  await стр.selectOption('#page-section', р);
-  await стр.locator('#tree .ed-list-body .ed-nav-row').first().waitFor({ timeout: 10000 }).catch(() => {});
-  const где = await стр.evaluate(() => document.getElementById('page-select').value);
-  (await стр.evaluate(обход, [р, где])).forEach(([что, подробно]) => bad(что, подробно));
+const sections = await page2.locator('#page-section option').evaluateAll(o => o.map(x => x.value));
+for (const r2 of sections) {
+  await page2.selectOption('#page-section', r2);
+  await page2.locator('#tree .ed-list-body .ed-nav-row').first().waitFor({ timeout: 10000 }).catch(() => {});
+  const where = await page2.evaluate(() => document.getElementById('page-select').value);
+  (await page2.evaluate(walk, [r2, where, LABELS])).forEach(([what, details]) => bad(what, details));
 }
 
-// Проверка отбора по дате идёт на самой странице событий.
-await стр.selectOption('#page-section', 'events').catch(() => {});
-// Ждём не время, а саму страницу в рамке: собралась — можно смотреть отбор.
-await стр.waitForFunction(() => {
-  const д = document.querySelector('#frame').contentDocument;
-  return !!(д && д.querySelector('section h2'));
+await page2.selectOption('#page-section', 'events').catch(() => {});
+await page2.waitForFunction(() => {
+  const d = document.querySelector('#frame').contentDocument;
+  return !!(d && d.querySelector('section h2'));
 }, null, { timeout: 15000 }).catch(() => {});
-const отбор = await стр.evaluate(() => {
-  const д = document.querySelector('#frame').contentDocument;
-  if (!д) return null;
-  const заголовки = [...д.querySelectorAll('section h2')].map(э => э.textContent.trim());
-  const cards = с => [...(с ? с.querySelectorAll('.card') : [])].length;
-  const by = имя => cards([...д.querySelectorAll('section')]
-    .find(с => (с.querySelector('h2') || {}).textContent === имя));
-  return { headings: заголовки, upcoming: by('Афиша'), past: by('Прошедшие') };
-});
-if (!отбор || !отбор.headings.includes('Прошедшие'))
-  bad('отбор', 'на странице событий нет раздела «Прошедшие»');
-else if (!отбор.past)
-  bad('отбор', 'раздел «Прошедшие» пуст — отбор по дате не сработал');
+const UPCOMING = pageWord('events/index.html#blocks.afisha.heading');
+const PAST = pageWord('events/index.html#blocks.past.heading');
+const filtered = await page2.evaluate(([UPCOMING, PAST]) => {
+  const d = document.querySelector('#frame').contentDocument;
+  if (!d) return null;
+  const headings = [...d.querySelectorAll('section h2')].map(ee => ee.textContent.trim());
+  const cards = s => [...(s ? s.querySelectorAll('.card') : [])].length;
+  const by = name => cards([...d.querySelectorAll('section')]
+    .find(s => (s.querySelector('h2') || {}).textContent === name));
+  return { headings: headings, upcoming: by(UPCOMING), past: by(PAST) };
+}, [UPCOMING, PAST]);
+if (!filtered || !filtered.headings.includes(PAST))
+  bad('filter', 'the events page has no past section');
+else if (!filtered.past)
+  bad('filter', 'the past section is empty — filtering by date did not work');
 
-await бр.close();
-if (беды.length) {
-  console.error(`проверка не прошла, замечаний ${беды.length}:`);
-  беды.slice(0, 40).forEach(б => console.error('  ' + б));
+await br.close();
+if (issues.length) {
+  console.error(`check failed, ${issues.length} notes:`);
+  issues.slice(0, 40).forEach(b2 => console.error('  ' + b2));
   process.exit(1);
 }
-console.log('проверка пройдена');
+console.log('check passed');

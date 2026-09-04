@@ -1,121 +1,83 @@
-/**
- * captions.mjs — разделение устройства страницы и её слов.
- *
- * `_data/pages.json` говорит, из чего страница состоит: какие блоки, в
- * каком порядке, откуда берут данные. `_data/captions.<язык>.json`
- * говорит, какими словами это подписано. Состав один на все языки, слова —
- * свои у каждого; иначе перевод сайта означал бы вторую копию структуры,
- * которая разойдётся с первой на первой же правке.
- *
- * Код работает с одним слитым объектом: разделение живёт только на диске.
- *
- * Адрес подписи — путь до поля: `blog/index.html#blocks.0.heading`.
- */
 
-/**
- * Поля со словами объявлены в словаре устройства, по файлу структуры: одно и
- * то же имя в разных файлах значит разное.
- */
-export const captionFields = (types, файл) =>
-  new Set((((types && types.captions) || {})[файл]) || []);
+export const captionFields = (types, file) =>
+  new Set((((types && types.captions) || {})[file]) || []);
 
-const служебный = к => String(к).startsWith('$');
+const isService = k => String(k).startsWith('$');
 
-/** Обход всех словесных полей: зовёт `нашли(путь, значение, владелец, ключ)`. */
-function обойти(о, поля, путь, нашли) {
-  if (Array.isArray(о)) {
-    // Запись адресуется своим идентификатором, если он у неё есть: адрес,
-    // файл и идентификатор — одно и то же. Номер остаётся там, где записи
-    // безымянны, — у блоков страницы.
-    о.forEach((з, i) => {
-      const свой = (з && typeof з === 'object' && !Array.isArray(з) && з.id) ? String(з.id) : String(i);
-      обойти(з, поля, путь ? `${путь}.${свой}` : свой, нашли);
+function visit(o, fields, filePath, hit) {
+  if (Array.isArray(o)) {
+    o.forEach((z, i) => {
+      const ownOf = (z && typeof z === 'object' && !Array.isArray(z) && z.id) ? String(z.id) : String(i);
+      visit(z, fields, filePath ? `${filePath}.${ownOf}` : ownOf, hit);
     });
     return;
   }
-  if (!о || typeof о !== 'object') return;
-  for (const [к, з] of Object.entries(о)) {
-    if (служебный(к)) continue;
-    const свой = путь ? `${путь}.${к}` : к;
-    if (поля.has(к) && typeof з === 'string') { nashli(нашли, свой, з, о, к); continue; }
-    // Абзац — тоже слово: список строк уезжает по одной, каждая своим номером.
-    if (поля.has(к) && Array.isArray(з) && з.every(x => typeof x === 'string')) {
-      з.forEach((x, i) => нашли(`${свой}.${i}`, x, {}, i));
-      delete о[к];
+  if (!o || typeof o !== 'object') return;
+  for (const [k, z] of Object.entries(o)) {
+    if (isService(k)) continue;
+    const ownOf = filePath ? `${filePath}.${k}` : k;
+    if (fields.has(k) && typeof z === 'string') { nashli(hit, ownOf, z, o, k); continue; }
+    if (fields.has(k) && Array.isArray(z) && z.every(x => typeof x === 'string')) {
+      z.forEach((x, i) => hit(`${ownOf}.${i}`, x, {}, i));
+      delete o[k];
       continue;
     }
-    обойти(з, поля, свой, нашли);
+    visit(z, fields, ownOf, hit);
   }
 }
 
-const nashli = (нашли, путь, значение, владелец, ключ) => нашли(путь, значение, владелец, ключ);
+const nashli = (hit, filePath, value, owner, key) => hit(filePath, value, owner, key);
 
-/** Ключ элемента корня: имя в объекте, идентификатор или номер в списке. */
-const ключиКорня = о => (Array.isArray(о)
-  ? о.map((з, i) => [(з && typeof з === 'object' && з.id) ? String(з.id) : String(i), з])
-  : Object.entries(о || {}));
+const rootKeys = o => (Array.isArray(o)
+  ? o.map((z, i) => [(z && typeof z === 'object' && z.id) ? String(z.id) : String(i), z])
+  : Object.entries(o || {}));
 
-/**
- * Разделить: вернуть устройство без слов и отдельный словарь подписей.
- * Исходный объект не меняется — его копия чистится.
- */
-export function splitCaptions(данные, поля) {
-  const копия = JSON.parse(JSON.stringify(данные));
-  const подписи = {};
-  for (const [запись, о] of ключиКорня(копия)) {
-    if (служебный(запись)) continue;
-    // Слово прямо в корне файла — у него нет записи-владельца, и адрес
-    // начинается с решётки: `#note`.
-    if (поля.has(запись) && typeof о === 'string') {
-      подписи[`#${запись}`] = о;
-      delete копия[запись];
+export function splitCaptions(data, fields) {
+  const copy = JSON.parse(JSON.stringify(data));
+  const captions = {};
+  for (const [record, o] of rootKeys(copy)) {
+    if (isService(record)) continue;
+    if (fields.has(record) && typeof o === 'string') {
+      captions[`#${record}`] = o;
+      delete copy[record];
       continue;
     }
-    обойти(о, поля, '', (путь, значение, владелец, ключ) => {
-      подписи[`${запись}#${путь}`] = значение;
-      delete владелец[ключ];
+    visit(o, fields, '', (filePath, value, owner, key) => {
+      captions[`${record}#${filePath}`] = value;
+      delete owner[key];
     });
   }
-  return { structure: копия, captions: подписи };
+  return { structure: copy, captions: captions };
 }
 
-/**
- * Шаг по адресу. В списке запись ищется тем же способом, каким адресовалась:
- * по идентификатору, если он есть, иначе по номеру. Списка абзацев на диске
- * нет вовсе — он весь в словаре, поэтому под него заводится место.
- */
-function шаг(место, ключ, следующий) {
-  if (Array.isArray(место)) {
-    if (/^\d+$/.test(ключ)) return место[Number(ключ)];
-    return место.find(з => з && typeof з === 'object' && String(з.id) === ключ);
+function step(spot, key, next2) {
+  if (Array.isArray(spot)) {
+    if (/^\d+$/.test(key)) return spot[Number(key)];
+    return spot.find(z => z && typeof z === 'object' && String(z.id) === key);
   }
-  if (место && typeof место === 'object' && место[ключ] == null && /^\d+$/.test(следующий))
-    место[ключ] = [];
-  return место && typeof место === 'object' ? место[ключ] : undefined;
+  if (spot && typeof spot === 'object' && spot[key] == null && /^\d+$/.test(next2))
+    spot[key] = [];
+  return spot && typeof spot === 'object' ? spot[key] : undefined;
 }
 
-/**
- * Слить обратно: подписи ложатся на устройство по своим путям. Чего нет в
- * словаре подписей, остаётся как есть — недопереведённая страница собирается.
- */
-export function mergeCaptions(данные, подписи) {
-  const копия = JSON.parse(JSON.stringify(данные));
-  const корень = new Map(ключиКорня(копия));
-  for (const [адрес, значение] of Object.entries(подписи || {})) {
-    if (служебный(адрес)) continue;
-    const [запись, путь] = адрес.split('#');
-    if (запись === '' && путь) { копия[путь] = значение; continue; }
-    const узел = корень.get(запись);
-    if (!узел || !путь) continue;
-    const части = путь.split('.');
-    let место = узел;
-    for (let i = 0; i < части.length - 1; i++) {
-      if (место == null) break;
-      место = шаг(место, части[i], части[i + 1]);
+export function mergeCaptions(data, captions) {
+  const copy = JSON.parse(JSON.stringify(data));
+  const root = new Map(rootKeys(copy));
+  for (const [url, value] of Object.entries(captions || {})) {
+    if (isService(url)) continue;
+    const [record, filePath] = url.split('#');
+    if (record === '' && filePath) { copy[filePath] = value; continue; }
+    const node = root.get(record);
+    if (!node || !filePath) continue;
+    const parts = filePath.split('.');
+    let spot = node;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (spot == null) break;
+      spot = step(spot, parts[i], parts[i + 1]);
     }
-    const последний = части[части.length - 1];
-    if (Array.isArray(место)) место[Number(последний)] = значение;
-    else if (место && typeof место === 'object') место[последний] = значение;
+    const last = parts[parts.length - 1];
+    if (Array.isArray(spot)) spot[Number(last)] = value;
+    else if (spot && typeof spot === 'object') spot[last] = value;
   }
-  return копия;
+  return copy;
 }

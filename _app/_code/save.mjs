@@ -1,8 +1,4 @@
-/**
- * save.mjs — запись изменённых файлов коммитом в GitHub.
- */
 
-/** Содержимое файла — текст или уже готовые bytes (картинки). */
 function base64(content) {
   const bytes = typeof content === 'string'
     ? new TextEncoder().encode(content)
@@ -14,8 +10,6 @@ function base64(content) {
 }
 
 async function api(token, path, method = 'GET', body) {
-  // Лишние заголовки на GET заставляют браузер слать предварительный запрос,
-  // который GitHub не пропускает: ставим только то, что нужно.
   const headers = { Accept: 'application/vnd.github+json' };
   if (token) headers.Authorization = 'Bearer ' + token;
   if (body) headers['Content-Type'] = 'application/json';
@@ -33,7 +27,6 @@ export async function checkAccess(token, { owner, repo }) {
   return { user: me.login, commit: !!(repository.permissions && repository.permissions.push) };
 }
 
-/** Голова ветки: с ней сверяется запись, чтобы не затереть чужую правку. */
 export const targetKey = target => `${target.owner}/${target.repo}#${target.branch}`;
 
 export async function branchHeads(targets, token) {
@@ -47,11 +40,6 @@ export async function branchHeads(targets, token) {
   return out;
 }
 
-/**
- * Запись идёт по целям одна за другой, и оборваться может на любой. О каждой
- * записанной цели сообщается сразу: без этого повтор упрётся в сверку ветки,
- * которую сам же и сдвинул, и человек останется с разъехавшимися репозиториями.
- */
 export async function writeToGitHub(files, { token, targets, message, base = {} },
                                     onProgress = () => {}, onTarget = () => {}) {
   const report = [];
@@ -60,8 +48,6 @@ export async function writeToGitHub(files, { token, targets, message, base = {} 
     const ref = await api(token, `/repos/${target.owner}/${target.repo}/git/ref/heads/${target.branch}`);
     const parent = ref.object.sha;
     const expected = base[targetKey(target)];
-    // Ветка ушла вперёд с тех пор, как редактор прочитал site: наша запись
-    // затёрла бы чужую правку. Ничего не пишем, пока страница не перечитана.
     if (expected && expected !== parent)
       throw Object.assign(new Error('branch moved'),
         { code: 'save.branchMoved',

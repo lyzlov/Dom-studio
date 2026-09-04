@@ -1,8 +1,6 @@
 (function () {
   "use strict";
 
-  /* Слова страницы. Подставляются при сборке из словаря языка: в самом скрипте
-     ни одного слова нет, поэтому другой язык — только другой словарь. */
   var UI = {
     "address": "Адрес",
     "addressLabel": "Адрес:",
@@ -88,14 +86,13 @@
     "weekday.wed": "Ср",
     "whatHappens": "Что происходит"
   };
-  function T(ключ, значения) {
-    var текст = UI[ключ] == null ? "" : String(UI[ключ]);
-    return значения ? текст.replace(/\{([^}]+)\}/g, function (_, к) {
-      return значения[к] == null ? "" : String(значения[к]);
-    }) : текст;
+  function T(key2, values) {
+    var text = UI[key2] == null ? "" : String(UI[key2]);
+    return values ? text.replace(/\{([^}]+)\}/g, function (_, k) {
+      return values[k] == null ? "" : String(values[k]);
+    }) : text;
   }
 
-  /* #region Просмотр с диска */
   if (location.protocol === "file:") {
     document.querySelectorAll("a[href]").forEach(function (a) {
       var h = a.getAttribute("href");
@@ -103,9 +100,7 @@
       if (h.slice(-1) === "/") a.setAttribute("href", h + "index.html");
     });
   }
-  /* #endregion */
 
-  /* #region Фильтр карточек курсов */
   function applyFilters(grid) {
     var active = {};
     document.querySelectorAll("[data-filter-group]").forEach(function (g) {
@@ -166,9 +161,7 @@
     var target = group && group.querySelector('[data-value="' + pair[1] + '"]');
     if (target) target.click();
   }
-  /* #endregion */
 
-  /* #region Вкладки на узком экране */
   document.querySelectorAll(".tabs").forEach(function (tabs) {
     var labels = Array.prototype.slice.call(tabs.querySelectorAll(".tab-labels label"));
     if (labels.length < 2) return;
@@ -214,7 +207,6 @@
     bar.insertAdjacentElement("beforebegin", box);
   });
 
-  /* #region Управление фокусом для наложений (модалка, лайтбокс) */
   var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
   function createOverlay(root, panelSelector) {
@@ -256,7 +248,6 @@
     return api;
   }
 
-  /* #region Модальное окно записи */
   var modal = createOverlay(document.querySelector("[data-modal]"), ".modal-panel");
   function lessonContext(btn) {
     var card = btn.closest(".card");
@@ -305,7 +296,6 @@
     el.addEventListener("click", function () { if (modal) modal.close(); });
   });
 
-  /* #region Форма записи */
   document.querySelectorAll('[data-role="signup"]').forEach(function (form) {
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -323,9 +313,6 @@
     });
   });
 
-  /* #region Таблица расписания */
-  /* Череда дней машинная: строка сортируется по коду дня, а показывает слово.
-     Слово приходит из словаря вместе со страницей. */
   var WEEKDAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
   function weekdayIndex(day) {
@@ -344,8 +331,6 @@
     return (a[key] || "").toString().localeCompare((b[key] || "").toString(), "ru");
   }
 
-  /* Класс направления выводится из его опознавателя, а не из названия: имя
-     меняется при переводе, опознаватель — нет. */
   function typeTag(name, id) {
     if (!id) return name;
     return '<span class="type-tag type-' + id + '">' + name + "</span>";
@@ -360,7 +345,7 @@
     }
     var tbody = table.querySelector("tbody");
     var headers = table.querySelectorAll("th[data-sort-key]");
-    var sortKey = "day"; // при первой отрисовке — всегда по дням недели
+    var sortKey = "day"; 
     var live = table.parentNode.querySelector("[data-schedule-status]");
 
     function render() {
@@ -416,7 +401,6 @@
     btn.addEventListener("click", function () { window.print(); });
   });
 
-  /* #region Лайтбокс */
   var lightboxRoot = document.querySelector("[data-lightbox]");
   var lightboxImg = lightboxRoot ? lightboxRoot.querySelector("[data-lightbox-img]") : null;
   var lightbox = createOverlay(lightboxRoot, ".lightbox-figure");
@@ -438,7 +422,6 @@
     });
   });
 
-  /* #region Команда */
   var teamGrid = document.querySelector("[data-team-grid]");
   if (teamGrid) {
     var bio = teamGrid.querySelector("[data-team-bio]");
@@ -497,21 +480,17 @@
     window.addEventListener("resize", function () { if (openCard) openBio(openCard); });
   }
 
-  /* #region Мобильное меню и подменю шапки */
   var toggle = document.querySelector(".nav-toggle");
   var nav = document.querySelector(".site-nav");
-  // Порог тот же, что у медиазапроса раскладки шапки в style.css.
-  var УЗКИЙ = window.matchMedia("(max-width: 899px)");
+  var NARROW = window.matchMedia("(max-width: 899px)");
 
-  // На узком экране подменю раскрыты правилом CSS и не сворачиваются. Лейбл
-  // группы там не переключатель: он сообщает раскрытое состояние и не меняет его.
-  function группыРаскрыты(да) {
+  function groupsOpen(yes) {
     document.querySelectorAll(".nav-group-label").forEach(function (b) {
-      b.setAttribute("aria-expanded", String(да));
+      b.setAttribute("aria-expanded", String(yes));
     });
   }
   function closeAllGroups() {
-    if (УЗКИЙ.matches) { группыРаскрыты(true); return; }
+    if (NARROW.matches) { groupsOpen(true); return; }
     document.querySelectorAll('.nav-group-label[aria-expanded="true"]').forEach(function (b) {
       b.setAttribute("aria-expanded", "false");
     });
@@ -527,8 +506,6 @@
     nav.classList.remove("is-open");
     toggle.setAttribute("aria-expanded", "false");
     setToggleIcon(false);
-    // Тот же замок, что у модалки и лайтбокса: наложение на весь экран
-    // не даёт прокручивать страницу под собой.
     document.body.classList.remove("is-locked");
     closeAllGroups();
   }
@@ -550,20 +527,18 @@
   document.querySelectorAll(".nav-group-label").forEach(function (label) {
     label.addEventListener("click", function (e) {
       e.stopPropagation();
-      if (УЗКИЙ.matches) return;
+      if (NARROW.matches) return;
       var open = label.getAttribute("aria-expanded") !== "true";
       closeAllGroups();
       label.setAttribute("aria-expanded", String(open));
     });
   });
 
-  // Состояние групп принадлежит одной из сторон: на узком экране — CSS, на
-  // широком — этому скрипту. При переходе через порог владелец меняется.
-  группыРаскрыты(УЗКИЙ.matches);
-  УЗКИЙ.addEventListener("change", function () {
-    if (УЗКИЙ.matches) { группыРаскрыты(true); return; }
+  groupsOpen(NARROW.matches);
+  NARROW.addEventListener("change", function () {
+    if (NARROW.matches) { groupsOpen(true); return; }
     closeNav();
-    группыРаскрыты(false);
+    groupsOpen(false);
   });
 
   document.addEventListener("click", function (e) {
@@ -571,11 +546,10 @@
   });
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
-    if (!УЗКИЙ.matches && document.querySelector('.nav-group-label[aria-expanded="true"]')) { closeAllGroups(); return; }
+    if (!NARROW.matches && document.querySelector('.nav-group-label[aria-expanded="true"]')) { closeAllGroups(); return; }
     if (nav && nav.classList.contains("is-open")) { closeNav(); toggle.focus(); }
   });
 
-  /* #region Подменю шапки */
   document.querySelectorAll(".nav-group").forEach(function (group) {
     var dropdown = group.querySelector(".dropdown");
     if (!dropdown) return;
@@ -589,7 +563,6 @@
     group.addEventListener("focusin", setBackdrop);
     window.addEventListener("resize", setBackdrop);
   });
-  /* #region Галерея */
   document.querySelectorAll("[data-gallery]").forEach(function (gallery) {
     var view = gallery.querySelector("[data-gallery-view]");
     var counter = gallery.querySelector("[data-gallery-counter]");
