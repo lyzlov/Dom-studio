@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="375" height="3711" viewBox="0 0 375 3711" data-page="События" data-device="mobile">
+<title>События · mobile</title>
+<rect width="375" height="3711" fill="#ffffff"/>
+<g id="03-cards">
+<rect x="0" y="496" width="375" height="94" fill="none"/>
+<g id="03-cards/heading">
+<rect x="16" y="544" width="343" height="22" fill="none"/>
+<text x="16" y="562.64" font-family="&quot;Golos Text&quot;, ui-sans-serif, system-ui, sans-serif" font-size="20" font-weight="700" fill="#3a3a3a" xml:space="preserve">АФИША</text>
+</g>
+</g>
+</svg>
